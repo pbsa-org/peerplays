@@ -138,6 +138,7 @@ namespace graphene { namespace chain {
       tournament_details_object_type,
       match_object_type,
       game_object_type,
+      info_for_vout_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -186,6 +187,7 @@ namespace graphene { namespace chain {
    class tournament_details_object;
    class match_object;
    class game_object;
+   class info_for_vout_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -205,6 +207,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, tournament_details_object_type, tournament_details_object>    tournament_details_id_type;
    typedef object_id< protocol_ids, match_object_type,              match_object>                 match_id_type;
    typedef object_id< protocol_ids, game_object_type,               game_object>                  game_id_type;
+   typedef object_id< protocol_ids, info_for_vout_object_type,      info_for_vout_object>         info_for_vout_id_type;
 
    // implementation types
    class global_property_object;
@@ -365,6 +368,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (tournament_details_object_type)
                  (match_object_type)
                  (game_object_type)
+                 (info_for_vout_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
