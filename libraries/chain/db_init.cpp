@@ -49,6 +49,8 @@
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
+#include <graphene/chain/info_for_vout_object.hpp>
+#include <graphene/chain/bitcoin_address_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -65,6 +67,7 @@
 #include <graphene/chain/witness_evaluator.hpp>
 #include <graphene/chain/worker_evaluator.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
+#include <graphene/chain/bitcoin_address_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -74,7 +77,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <graphene/chain/info_for_vout_object.hpp>
 
 namespace graphene { namespace chain {
 
@@ -182,6 +184,7 @@ void database::initialize_evaluators()
    register_evaluator<tournament_join_evaluator>();
    register_evaluator<game_move_evaluator>();
    register_evaluator<tournament_leave_evaluator>();
+   register_evaluator<bitcoin_address_create_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -238,6 +241,7 @@ void database::initialize_indexes()
    add_index< primary_index<total_distributed_dividend_balance_object_index > >();
 
    add_index< primary_index<info_for_vout_index                           > >();
+   add_index< primary_index<bitcoin_address_index                         > >();
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)

@@ -139,6 +139,7 @@ namespace graphene { namespace chain {
       match_object_type,
       game_object_type,
       info_for_vout_object_type,
+      bitcoin_address_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -188,11 +189,12 @@ namespace graphene { namespace chain {
    class match_object;
    class game_object;
    class info_for_vout_object;
+   class bitcoin_address_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
    typedef object_id< protocol_ids, force_settlement_object_type,   force_settlement_object>      force_settlement_id_type;
-   typedef object_id< protocol_ids, committee_member_object_type,           committee_member_object>              committee_member_id_type;
+   typedef object_id< protocol_ids, committee_member_object_type,   committee_member_object>      committee_member_id_type;
    typedef object_id< protocol_ids, witness_object_type,            witness_object>               witness_id_type;
    typedef object_id< protocol_ids, limit_order_object_type,        limit_order_object>           limit_order_id_type;
    typedef object_id< protocol_ids, call_order_object_type,         call_order_object>            call_order_id_type;
@@ -208,6 +210,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, match_object_type,              match_object>                 match_id_type;
    typedef object_id< protocol_ids, game_object_type,               game_object>                  game_id_type;
    typedef object_id< protocol_ids, info_for_vout_object_type,      info_for_vout_object>         info_for_vout_id_type;
+   typedef object_id< protocol_ids, bitcoin_address_object_type,    bitcoin_address_object>       bitcoin_address_id_type;
 
    // implementation types
    class global_property_object;
@@ -369,6 +372,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (match_object_type)
                  (game_object_type)
                  (info_for_vout_object_type)
+                 (bitcoin_address_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
@@ -411,6 +415,8 @@ FC_REFLECT_TYPENAME( graphene::chain::vesting_balance_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::worker_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::balance_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::tournament_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::info_for_vout_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::bitcoin_address_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::global_property_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::dynamic_global_property_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::asset_dynamic_data_id_type )

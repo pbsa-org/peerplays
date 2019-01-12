@@ -39,6 +39,7 @@
 #include <graphene/chain/protocol/witness.hpp>
 #include <graphene/chain/protocol/worker.hpp>
 #include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/chain/protocol/bitcoin_address.hpp>
 
 namespace graphene { namespace chain {
 
@@ -99,7 +100,8 @@ namespace graphene { namespace chain {
             asset_update_dividend_operation,
             asset_dividend_distribution_operation, // VIRTUAL
             tournament_payout_operation, // VIRTUAL
-            tournament_leave_operation
+            tournament_leave_operation,
+            bitcoin_address_create_operation
          > operation;
 
    /// @} // operations group

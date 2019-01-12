@@ -233,6 +233,11 @@ struct get_impacted_account_visitor
    {
       _impacted.insert( op.payout_account_id );
    }
+
+   void operator()( const bitcoin_address_create_operation& op )
+   {
+      _impacted.insert( op.payer );
+   }
 };
 
 void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
