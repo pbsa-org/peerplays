@@ -37,7 +37,6 @@
 #include <fc/io/datastream.hpp>
 #include <fc/io/raw_fwd.hpp>
 #include <fc/static_variant.hpp>
-#include <fc/smart_ref_fwd.hpp>
 
 #include <memory>
 #include <vector>
@@ -88,7 +87,6 @@ namespace graphene { namespace chain {
    using                               std::tie;
    using                               std::make_pair;
 
-   using                               fc::smart_ref;
    using                               fc::variant_object;
    using                               fc::variant;
    using                               fc::enum_type;

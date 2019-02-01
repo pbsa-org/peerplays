@@ -39,7 +39,6 @@
 
 #include <fc/crypto/base64.hpp>
 #include <fc/crypto/hex.hpp>
-#include <fc/smart_ref_impl.hpp>
 #include <fc/rpc/api_connection.hpp>
 #include <fc/thread/future.hpp>
 

@@ -42,8 +42,6 @@
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <fc/crypto/digest.hpp>
 
-#include <fc/smart_ref_impl.hpp>
-
 namespace {
     
    struct proposed_operations_digest_accumulator
