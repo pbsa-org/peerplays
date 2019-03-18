@@ -90,8 +90,8 @@ void transaction::set_expiration( fc::time_point_sec expiration_time )
 
 void transaction::set_reference_block( const block_id_type& reference_block )
 {
-   ref_block_num = fc::endian_reverse_u32(reference_block._hash[0]);
-   ref_block_prefix = reference_block._hash[1];
+   ref_block_num = boost::endian::endian_reverse(reference_block._hash[0].value());
+   ref_block_prefix = reference_block._hash[1].value();
 }
 
 void transaction::get_required_authorities( flat_set<account_id_type>& active, flat_set<account_id_type>& owner, vector<authority>& other )const
