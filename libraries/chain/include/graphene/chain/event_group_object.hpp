@@ -28,8 +28,6 @@
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
 
-#include <boost/multi_index/composite_key.hpp>
-
 namespace graphene { namespace chain {
 
 class database;
@@ -52,9 +50,7 @@ typedef multi_index_container<
    event_group_object,
    indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >, 
-      ordered_unique< tag<by_sport_id>, composite_key<event_group_object,
-                                                      member< event_group_object, sport_id_type, &event_group_object::sport_id >,
-                                                      member<object, object_id_type, &object::id> > > >
+      ordered_non_unique< tag<by_sport_id>, member< event_group_object, sport_id_type, &event_group_object::sport_id > >      >
    > event_group_object_multi_index_type;
 
 typedef generic_index<event_group_object, event_group_object_multi_index_type> event_group_object_index;

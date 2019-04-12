@@ -29,8 +29,6 @@
 #include <graphene/chain/protocol/event.hpp>
 #include <boost/multi_index/composite_key.hpp>
 
-#include <boost/multi_index/composite_key.hpp>
-
 namespace graphene { namespace chain {
    class event_object;
 } }
@@ -103,12 +101,8 @@ typedef multi_index_container<
    event_object,
    indexed_by<
       ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
-      ordered_unique< tag<by_event_group_id>, composite_key<event_object,
-                                                            member< event_object, event_group_id_type, &event_object::event_group_id >,
-                                                            member<object, object_id_type, &object::id> > >,
-      ordered_unique< tag<by_event_status>, composite_key<event_object,
-                                                          const_mem_fun< event_object, event_status, &event_object::get_status >,
-                                                          member<object, object_id_type, &object::id> > > > > event_object_multi_index_type;
+      ordered_non_unique< tag<by_event_group_id>, member< event_object, event_group_id_type, &event_object::event_group_id > >,
+      ordered_non_unique< tag<by_event_status>, const_mem_fun< event_object, event_status, &event_object::get_status > > > > event_object_multi_index_type;
 
 typedef generic_index<event_object, event_object_multi_index_type> event_object_index;
 
