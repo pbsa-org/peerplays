@@ -24,10 +24,10 @@
 
 #include <fc/container/flat.hpp>
 
-#include <graphene/chain/protocol/authority.hpp>
-#include <graphene/chain/protocol/operations.hpp>
-#include <graphene/chain/protocol/transaction.hpp>
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/protocol/authority.hpp>
+#include <graphene/protocol/operations.hpp>
+#include <graphene/protocol/transaction.hpp>
+
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/confidential_object.hpp>

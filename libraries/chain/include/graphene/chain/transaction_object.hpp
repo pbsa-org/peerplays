@@ -23,7 +23,7 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/transaction.hpp>
+#include <graphene/protocol/transaction.hpp>
 #include <graphene/db/index.hpp>
 #include <graphene/db/generic_index.hpp>
 
@@ -55,7 +55,6 @@ namespace graphene { namespace chain {
    };
 
    struct by_expiration;
-   struct by_id;
    struct by_trx_id;
    typedef multi_index_container<
       transaction_object,
@@ -68,6 +67,8 @@ namespace graphene { namespace chain {
 
    typedef generic_index<transaction_object, transaction_multi_index_type> transaction_index;
 } }
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::transaction_object)
 
 FC_REFLECT_DERIVED( graphene::chain::transaction_object, (graphene::db::object), (trx)(trx_id) )
 

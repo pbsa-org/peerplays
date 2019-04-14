@@ -26,8 +26,10 @@
 #include <graphene/app/application.hpp>
 #include <graphene/app/plugin.hpp>
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/db_with.hpp>
+#include <graphene/chain/genesis_state.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/types.hpp>
 
 #include <graphene/egenesis/egenesis.hpp>
 

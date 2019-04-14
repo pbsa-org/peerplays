@@ -86,8 +86,6 @@
 #include <graphene/chain/offer_evaluator.hpp>
 #include <graphene/chain/nft_evaluator.hpp>
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
-
 #include <fc/uint128.hpp>
 #include <fc/crypto/digest.hpp>
 

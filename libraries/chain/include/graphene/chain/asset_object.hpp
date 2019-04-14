@@ -22,11 +22,10 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/db/generic_index.hpp>
-#include <graphene/db/flat_index.hpp>
-#include <graphene/chain/protocol/asset_ops.hpp>
+#include <graphene/protocol/asset_ops.hpp>
 #include <boost/multi_index/composite_key.hpp>
+#include <graphene/db/generic_index.hpp>
+#include <graphene/chain/types.hpp>
 
 /**
  * @defgroup prediction_market Prediction Market
@@ -39,6 +38,8 @@
  */
 
 namespace graphene { namespace chain {
+   class account_object;
+   class asset_bitasset_data_object;
    class database;
    class transaction_evaluation_state;
    using namespace graphene::db;
@@ -111,13 +112,13 @@ namespace graphene { namespace chain {
          string amount_to_string(share_type amount)const;
          /// Convert an asset to a textual representation, i.e. "123.45"
          string amount_to_string(const asset& amount)const
-         { FC_ASSERT(amount.asset_id == id); return amount_to_string(amount.amount); }
+         { FC_ASSERT(amount.asset_id == get_id()); return amount_to_string(amount.amount); }
          /// Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
          string amount_to_pretty_string(share_type amount)const
          { return amount_to_string(amount) + " " + symbol; }
          /// Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
          string amount_to_pretty_string(const asset &amount)const
-         { FC_ASSERT(amount.asset_id == id); return amount_to_pretty_string(amount.amount); }
+         { FC_ASSERT(amount.asset_id == get_id()); return amount_to_pretty_string(amount.amount); }
 
          uint32_t get_issuer_num()const
          { return issuer.instance.value; }
@@ -512,6 +513,10 @@ namespace graphene { namespace chain {
    typedef generic_index<sweeps_vesting_balance_object, sweeps_vesting_balance_index_type> sweeps_vesting_balance_index;
 
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_dynamic_data_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_bitasset_data_object)
 
 FC_REFLECT_DERIVED( graphene::chain::asset_dynamic_data_object, (graphene::db::object),
                     (current_supply)(sweeps_tickets_sold)(confidential_supply)(accumulated_fees)(fee_pool) )

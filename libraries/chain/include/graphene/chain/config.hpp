@@ -23,6 +23,8 @@
  */
 #pragma once
 
+#include <graphene/protocol/config.hpp>
+
 #define GRAPHENE_SYMBOL "TEST"
 #define GRAPHENE_ADDRESS_PREFIX "TEST"
 

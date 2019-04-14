@@ -37,7 +37,7 @@
 #include <graphene/chain/game_object.hpp>
 #include <graphene/chain/betting_market_object.hpp>
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 
 namespace graphene { namespace chain {
 

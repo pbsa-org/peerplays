@@ -24,14 +24,16 @@
 #pragma once
 
 #include <fc/exception/exception.hpp>
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/exceptions.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/operations.hpp>
+#include <graphene/chain/types.hpp>
 
 #define GRAPHENE_ASSERT( expr, exc_type, FORMAT, ... )                \
    FC_MULTILINE_MACRO_BEGIN                                           \
    if( !(expr) )                                                      \
       FC_THROW_EXCEPTION( exc_type, FORMAT, __VA_ARGS__ );            \
    FC_MULTILINE_MACRO_END
-
 
 #define GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( op_name )                \
    FC_DECLARE_DERIVED_EXCEPTION(                                      \

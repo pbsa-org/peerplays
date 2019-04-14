@@ -79,7 +79,10 @@
 #include <graphene/net/exceptions.hpp>
 
 #include <graphene/chain/config.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
+// Nasty hack: A circular dependency around fee_schedule is resolved by fwd-declaring it and using a shared_ptr
+// to it in chain_parameters, which is used in an operation and thus must be serialized by the net library.
+// Resolving that forward declaration doesn't happen until now:
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <fc/git_revision.hpp>
 

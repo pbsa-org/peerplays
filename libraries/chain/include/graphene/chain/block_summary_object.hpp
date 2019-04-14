@@ -48,6 +48,7 @@ namespace graphene { namespace chain {
 
 } }
 
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::block_summary_object)
 
 FC_REFLECT_DERIVED( graphene::chain::block_summary_object, (graphene::db::object), (block_id) )
 

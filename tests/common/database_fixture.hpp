@@ -23,11 +23,18 @@
  */
 #pragma once
 
-#include <graphene/app/application.hpp>
-#include <graphene/chain/database.hpp>
 #include <fc/io/json.hpp>
 
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/market.hpp>
+
+#include <graphene/chain/committee_member_object.hpp>
+#include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
+
+#include <graphene/chain/database.hpp>
+#include <graphene/app/application.hpp>
+#include <graphene/market_history/market_history_plugin.hpp>
 
 #include <boost/parameter.hpp>
 
