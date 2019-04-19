@@ -22,10 +22,10 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/db/object_id.hpp>
-#include <boost/multiprecision/integer.hpp>
+#include <graphene/protocol/object_id.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/crypto/city.hpp>
+#include <boost/multiprecision/integer.hpp>
 
 #define MAX_NESTING (200)
 
