@@ -29,6 +29,7 @@
 #include <graphene/bookie/bookie_plugin.hpp>
 #include <graphene/bookie/bookie_api.hpp>
 #include <graphene/affiliate_stats/affiliate_stats_plugin.hpp>
+#include <graphene/grouped_orders/grouped_orders_plugin.hpp>
 
 #include <graphene/db/simple_index.hpp>
 
@@ -45,6 +46,7 @@
 #include <graphene/chain/event_group_object.hpp>
 #include <graphene/chain/event_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
+#include <graphene/chain/worker_object.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
 
@@ -85,6 +87,7 @@ database_fixture::database_fixture()
    auto mhplugin = app.register_plugin<graphene::market_history::market_history_plugin>();
    auto bookieplugin = app.register_plugin<graphene::bookie::bookie_plugin>();
    auto affiliateplugin = app.register_plugin<graphene::affiliate_stats::affiliate_stats_plugin>();
+   auto goplugin = app.register_plugin<graphene::grouped_orders::grouped_orders_plugin>();
    init_account_pub_key = init_account_priv_key.get_public_key();
 
    boost::program_options::variables_map options;
@@ -96,7 +99,7 @@ database_fixture::database_fixture()
    genesis_state.initial_parameters.witness_schedule_algorithm = GRAPHENE_WITNESS_SHUFFLED_ALGORITHM;
 
    genesis_state.initial_active_witnesses = 10;
-   for( unsigned i = 0; i < genesis_state.initial_active_witnesses; ++i )
+   for( unsigned int i = 0; i < genesis_state.initial_active_witnesses; ++i )
    {
       auto name = "init"+fc::to_string(i);
       genesis_state.initial_accounts.emplace_back(name,
@@ -109,9 +112,28 @@ database_fixture::database_fixture()
    genesis_state.initial_parameters.current_fees->zero_all_fees();
    open_database();
 
-   // app.initialize();
+   // add account tracking for ahplugin for special test case with track-account enabled
+   if( !options.count("track-account") && boost::unit_test::framework::current_test_case().p_name.value == "track_account") {
+      std::vector<std::string> track_account;
+      std::string track = "\"1.2.17\"";
+      track_account.push_back(track);
+      options.insert(std::make_pair("track-account", boost::program_options::variable_value(track_account, false)));
+      options.insert(std::make_pair("partial-operations", boost::program_options::variable_value(true, false)));
+   }
+   // account tracking 2 accounts
+   if( !options.count("track-account") && boost::unit_test::framework::current_test_case().p_name.value == "track_account2") {
+      std::vector<std::string> track_account;
+      std::string track = "\"1.2.0\"";
+      track_account.push_back(track);
+      track = "\"1.2.16\"";
+      track_account.push_back(track);
+      options.insert(std::make_pair("track-account", boost::program_options::variable_value(track_account, false)));
+   }
+
    ahplugin->plugin_set_app(&app);
    ahplugin->plugin_initialize(options);
+
+   options.insert(std::make_pair("bucket-size", boost::program_options::variable_value(string("[15]"),false)));
    mhplugin->plugin_set_app(&app);
    mhplugin->plugin_initialize(options);
    bookieplugin->plugin_set_app(&app);
@@ -119,10 +141,14 @@ database_fixture::database_fixture()
    affiliateplugin->plugin_set_app(&app);
    affiliateplugin->plugin_initialize(options);
 
+   goplugin->plugin_set_app(&app);
+   goplugin->plugin_initialize(options);
+
    ahplugin->plugin_startup();
    mhplugin->plugin_startup();
    bookieplugin->plugin_startup();
    affiliateplugin->plugin_startup();
+   goplugin->plugin_startup();
 
    generate_block();
 
@@ -146,9 +172,6 @@ database_fixture::~database_fixture()
       verify_account_history_plugin_index();
       BOOST_CHECK( db.get_node_properties().skip_flags == database::skip_nothing );
    }
-
-   if( data_dir )
-      db.close();
    return;
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -177,6 +200,7 @@ void database_fixture::verify_asset_supplies( const database& db )
    const auto& balance_index = db.get_index_type<account_balance_index>().indices();
    const auto& settle_index = db.get_index_type<force_settlement_index>().indices();
    const auto& tournaments_index = db.get_index_type<tournament_index>().indices();
+   const auto& bids = db.get_index_type<collateral_bid_index>().indices();
 
    map<asset_id_type,share_type> total_balances;
    map<asset_id_type,share_type> total_debts;
@@ -191,6 +215,8 @@ void database_fixture::verify_asset_supplies( const database& db )
       total_balances[b.asset_type] += b.balance;
    for( const force_settlement_object& s : settle_index )
       total_balances[s.balance.asset_id] += s.balance.amount;
+   for( const collateral_bid_object& b : bids )
+      total_balances[b.inv_swan_price.base.asset_id] += b.inv_swan_price.base.amount;
    for( const account_statistics_object& a : statistics_index )
    {
       reported_core_in_orders += a.total_core_in_orders;
@@ -343,7 +369,7 @@ void database_fixture::open_database()
 {
    if( !data_dir ) {
       data_dir = fc::temp_directory( graphene::utilities::temp_directory_path() );
-      db.open(data_dir->path(), [this]{return genesis_state;});
+      db.open(data_dir->path(), [this]{return genesis_state;}, "test");
    }
 }
 
@@ -710,6 +736,21 @@ const witness_object& database_fixture::create_witness( const account_object& ow
    return db.get<witness_object>(ptx.operation_results[0].get<object_id_type>());
 } FC_CAPTURE_AND_RETHROW() }
 
+const worker_object& database_fixture::create_worker( const account_id_type owner, const share_type daily_pay, const fc::microseconds& duration )
+{ try {
+   worker_create_operation op;
+   op.owner = owner;
+   op.daily_pay = daily_pay;
+   op.initializer = burn_worker_initializer();
+   op.work_begin_date = db.head_block_time();
+   op.work_end_date = op.work_begin_date + duration;
+   trx.operations.push_back(op);
+   trx.validate();
+   processed_transaction ptx = db.push_transaction(trx, ~0);
+   trx.clear();
+   return db.get<worker_object>(ptx.operation_results[0].get<object_id_type>());
+} FC_CAPTURE_AND_RETHROW() }
+
 uint64_t database_fixture::fund(
    const account_object& account,
    const asset& amount /* = asset(500000) */
@@ -913,6 +954,22 @@ void database_fixture::cover(const account_object& who, asset what, asset collat
    verify_asset_supplies(db);
 } FC_CAPTURE_AND_RETHROW( (who.name)(what)(collateral) ) }
 
+void database_fixture::bid_collateral(const account_object& who, const asset& to_bid, const asset& to_cover)
+{ try {
+   set_expiration( db, trx );
+   trx.operations.clear();
+   bid_collateral_operation bid;
+   bid.bidder = who.id;
+   bid.additional_collateral = to_bid;
+   bid.debt_covered = to_cover;
+   trx.operations.push_back(bid);
+   for( auto& op : trx.operations ) db.current_fee_schedule().set_fee(op);
+   trx.validate();
+   db.push_transaction(trx, ~0);
+   trx.operations.clear();
+   verify_asset_supplies(db);
+} FC_CAPTURE_AND_RETHROW( (who.name)(to_bid)(to_cover) ) }
+
 void database_fixture::fund_fee_pool( const account_object& from, const asset_object& asset_to_fund, const share_type amount )
 {
    asset_fund_fee_pool_operation fund;
@@ -1115,6 +1172,25 @@ vector< operation_history_object > database_fixture::get_operation_history( acco
    }
    return result;
 }
+
+vector< graphene::market_history::order_history_object > database_fixture::get_market_order_history( asset_id_type a, asset_id_type b )const
+{
+   const auto& history_idx = db.get_index_type<graphene::market_history::history_index>().indices().get<graphene::market_history::by_key>();
+   graphene::market_history::history_key hkey;
+   if( a > b ) std::swap(a,b);
+   hkey.base = a;
+   hkey.quote = b;
+   hkey.sequence = std::numeric_limits<int64_t>::min();
+   auto itr = history_idx.lower_bound( hkey );
+   vector<graphene::market_history::order_history_object> result;
+   while( itr != history_idx.end())
+   {
+       result.push_back( *itr );
+       ++itr;
+   }
+   return result;
+}
+
 
 void database_fixture::process_operation_by_witnesses(operation op)
 {

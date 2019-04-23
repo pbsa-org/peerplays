@@ -315,7 +315,7 @@ processed_transaction database::_push_transaction( const signed_transaction& trx
    temp_session.merge();
 
    // notify anyone listening to pending transactions
-   on_pending_transaction( trx );
+   notify_on_pending_transaction( trx );
    return processed_trx;
 }
 
@@ -354,7 +354,7 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
       {
          _applied_ops.resize( old_applied_ops_size );
       }
-      edump((e));
+      elog( "${e}", ("e",e.to_detail_string() ) );
       throw;
    }
 
@@ -507,7 +507,6 @@ void database::pop_block()
    GRAPHENE_ASSERT( head_block.valid(), pop_empty_chain, "there are no blocks to pop" );
 
    _fork_db.pop_block();
-   _block_id_to_block.remove( head_id );
    pop_undo();
 
    _popped_tx.insert( _popped_tx.begin(), head_block->transactions.begin(), head_block->transactions.end() );
@@ -633,7 +632,7 @@ void database::_apply_block( const signed_block& next_block )
       apply_debug_updates();
 
    // notify observers that the block has been applied
-   applied_block( next_block ); //emit
+   notify_applied_block( next_block ); //emit
    _applied_ops.clear();
 
    notify_changed_objects();

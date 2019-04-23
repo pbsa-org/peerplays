@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Cryptonomex, Inc., and contributors.
+ * Copyright (c) 2017 Cryptonomex, Inc., and contributors.
  *
  * The MIT License
  *
@@ -73,9 +73,9 @@ class database_api_impl;
 
 struct order
 {
-   double                     price;
-   double                     quote;
-   double                     base;
+   string                     price;
+   string                     quote;
+   string                     base;
 };
 
 struct order_book
@@ -88,30 +88,35 @@ struct order_book
 
 struct market_ticker
 {
+   time_point_sec             time;
    string                     base;
    string                     quote;
-   double                     latest;
-   double                     lowest_ask;
-   double                     highest_bid;
-   double                     percent_change;
-   double                     base_volume;
-   double                     quote_volume;
+   string                     latest;
+   string                     lowest_ask;
+   string                     highest_bid;
+   string                     percent_change;
+   string                     base_volume;
+   string                     quote_volume;
 };
 
 struct market_volume
 {
+   time_point_sec             time;
    string                     base;
    string                     quote;
-   double                     base_volume;
-   double                     quote_volume;
+   string                     base_volume;
+   string                     quote_volume;
 };
 
 struct market_trade
 {
+   int64_t                    sequence = 0;
    fc::time_point_sec         date;
-   double                     price;
-   double                     amount;
-   double                     value;
+   string                     price;
+   string                     amount;
+   string                     value;
+   account_id_type            side1_account_id = GRAPHENE_NULL_ACCOUNT;
+   account_id_type            side2_account_id = GRAPHENE_NULL_ACCOUNT;
 };
 
 /**
@@ -124,7 +129,7 @@ struct market_trade
 class database_api
 {
    public:
-      database_api(graphene::chain::database& db);
+      database_api(graphene::chain::database& db, const application_options* app_options = nullptr );
       ~database_api();
 
       /////////////
@@ -144,8 +149,29 @@ class database_api
       // Subscriptions //
       ///////////////////
 
-      void set_subscribe_callback( std::function<void(const variant&)> cb, bool clear_filter );
-      void set_pending_transaction_callback( std::function<void(const variant&)> cb );
+      /**
+       * @brief Register a callback handle which then can be used to subscribe to object database changes
+       * @param cb The callback handle to register
+       * @param nofity_remove_create Whether subscribe to universal object creation and removal events.
+       *        If this is set to true, the API server will notify all newly created objects and ID of all
+       *        newly removed objects to the client, no matter whether client subscribed to the objects.
+       *        By default, API servers don't allow subscribing to universal events, which can be changed
+       *        on server startup.
+       */
+      void set_subscribe_callback( std::function<void(const variant&)> cb, bool notify_remove_create );
+      /**
+       * @brief Register a callback handle which will get notified when a transaction is pushed to database
+       * @param cb The callback handle to register
+       *
+       * Note: a transaction can be pushed to database and be popped from database several times while
+       *   processing, before and after included in a block. Everytime when a push is done, the client will
+       *   be notified.
+       */
+      void set_pending_transaction_callback( std::function<void(const variant& signed_transaction_object)> cb );
+      /**
+       * @brief Register a callback handle which will get notified when a block is pushed to database
+       * @param cb The callback handle to register
+       */
       void set_block_applied_callback( std::function<void(const variant& block_id)> cb );
       /**
        * @brief Stop receiving any notifications
@@ -329,7 +355,7 @@ class database_api
       /**
        * @brief Get assets alphabetically by symbol name
        * @param lower_bound_symbol Lower bound of symbol names to retrieve
-       * @param limit Maximum number of assets to fetch (must not exceed 100)
+       * @param limit Maximum number of assets to fetch (must not exceed 101)
        * @return The assets found
        */
       vector<asset_object> list_assets(const string& lower_bound_symbol, uint32_t limit)const;
@@ -417,6 +443,15 @@ class database_api
       vector<force_settlement_object> get_settle_orders(asset_id_type a, uint32_t limit)const;
 
       /**
+       * @brief Get collateral_bid_objects for a given asset
+       * @param a ID of asset
+       * @param limit Maximum number of objects to retrieve
+       * @param start skip that many results
+       * @return The settle orders, ordered from earliest settlement date to latest
+       */
+      vector<collateral_bid_object> get_collateral_bids(const asset_id_type asset, uint32_t limit, uint32_t start)const;
+
+      /**
        *  @return all open margin positions for a given account id.
        */
       vector<call_order_object> get_margin_positions( const account_id_type& id )const;
@@ -466,16 +501,36 @@ class database_api
       order_book get_order_book( const string& base, const string& quote, unsigned limit = 50 )const;
 
       /**
-       * @brief Returns recent trades for the market assetA:assetB
-       * Note: Currentlt, timezone offsets are not supported. The time must be UTC.
+       * @brief Returns vector of 24 hour volume markets sorted by reverse base_volume
+       * Note: this API is experimental and subject to change in next releases
+       * @param limit Max number of results
+       * @return Desc Sorted volume vector
+       */
+      vector<market_volume> get_top_markets(uint32_t limit)const;
+
+      /**
+       * @brief Returns recent trades for the market assetA:assetB, ordered by time, most recent first. The range is [stop, start)
+       * Note: Currently, timezone offsets are not supported. The time must be UTC.
        * @param a String name of the first asset
        * @param b String name of the second asset
-       * @param stop Stop time as a UNIX timestamp
+       * @param stop Stop time as a UNIX timestamp, the earliest trade to retrieve
        * @param limit Number of trasactions to retrieve, capped at 100
-       * @param start Start time as a UNIX timestamp
+       * @param start Start time as a UNIX timestamp, the latest trade to retrieve
        * @return Recent transactions in the market
        */
       vector<market_trade> get_trade_history( const string& base, const string& quote, fc::time_point_sec start, fc::time_point_sec stop, unsigned limit = 100 )const;
+
+      /**
+       * @brief Returns trades for the market assetA:assetB, ordered by time, most recent first. The range is [stop, start)
+       * Note: Currently, timezone offsets are not supported. The time must be UTC.
+       * @param a String name of the first asset
+       * @param b String name of the second asset
+       * @param stop Stop time as a UNIX timestamp, the earliest trade to retrieve
+       * @param limit Number of trasactions to retrieve, capped at 100
+       * @param start Start sequence as an Integer, the latest trade to retrieve
+       * @return Transactions in the market
+       */
+      vector<market_trade> get_trade_history_by_sequence( const string& base, const string& quote, int64_t start, fc::time_point_sec stop, unsigned limit = 100 )const;
 
 
 
@@ -540,13 +595,35 @@ class database_api
        */
       map<string, committee_member_id_type> lookup_committee_member_accounts(const string& lower_bound_name, uint32_t limit)const;
 
+      /**
+       * @brief Get the total number of committee registered with the blockchain
+      */
+      uint64_t get_committee_count()const;
 
-      /// WORKERS
+
+      ///////////////////////
+      // Worker proposals  //
+      ///////////////////////
 
       /**
-       * Return the worker objects associated with this account.
+       * @brief Get all workers
+       * @return All the workers
+       *
+      */
+      vector<worker_object> get_all_workers()const;
+
+      /**
+       * @brief Get the workers owned by a given account
+       * @param account The ID of the account whose worker should be retrieved
+       * @return The worker object, or null if the account does not have a worker
        */
-      vector<worker_object> get_workers_by_account(account_id_type account)const;
+      vector<optional<worker_object>> get_workers_by_account(account_id_type account)const;
+
+      /**
+       * @brief Get the total number of workers registered with the blockchain
+      */
+      uint64_t get_worker_count()const;
+
 
 
       ///////////
@@ -624,6 +701,28 @@ class database_api
       vector<blinded_balance_object> get_blinded_balances( const flat_set<commitment_type>& commitments )const;
 
       /////////////////
+      // Withdrawals //
+      /////////////////
+
+      /**
+       *  @brief Get non expired withdraw permission objects for a giver(ex:recurring customer)
+       *  @param account Account to get objects from
+       *  @param start Withdraw permission objects(1.12.X) before this ID will be skipped in results. Pagination purposes.
+       *  @param limit Maximum number of objects to retrieve
+       *  @return Withdraw permission objects for the account
+       */
+      vector<withdraw_permission_object> get_withdraw_permissions_by_giver(account_id_type account, withdraw_permission_id_type start, uint32_t limit)const;
+
+      /**
+       *  @brief Get non expired withdraw permission objects for a recipient(ex:service provider)
+       *  @param account Account to get objects from
+       *  @param start Withdraw permission objects(1.12.X) before this ID will be skipped in results. Pagination purposes.
+       *  @param limit Maximum number of objects to retrieve
+       *  @return Withdraw permission objects for the account
+       */
+      vector<withdraw_permission_object> get_withdraw_permissions_by_recipient(account_id_type account, withdraw_permission_id_type start, uint32_t limit)const;
+
+      /////////////////
       // Tournaments //
       /////////////////
       /**
@@ -653,9 +752,10 @@ class database_api
 
 FC_REFLECT( graphene::app::order, (price)(quote)(base) );
 FC_REFLECT( graphene::app::order_book, (base)(quote)(bids)(asks) );
-FC_REFLECT( graphene::app::market_ticker, (base)(quote)(latest)(lowest_ask)(highest_bid)(percent_change)(base_volume)(quote_volume) );
-FC_REFLECT( graphene::app::market_volume, (base)(quote)(base_volume)(quote_volume) );
-FC_REFLECT( graphene::app::market_trade, (date)(price)(amount)(value) );
+FC_REFLECT( graphene::app::market_ticker,
+            (time)(base)(quote)(latest)(lowest_ask)(highest_bid)(percent_change)(base_volume)(quote_volume) );
+FC_REFLECT( graphene::app::market_volume, (time)(base)(quote)(base_volume)(quote_volume) );
+FC_REFLECT( graphene::app::market_trade, (sequence)(date)(price)(amount)(value)(side1_account_id)(side2_account_id) );
 
 FC_API(graphene::app::database_api,
    // Objects
@@ -722,11 +822,14 @@ FC_API(graphene::app::database_api,
    (get_call_orders)
    (get_settle_orders)
    (get_margin_positions)
+   (get_collateral_bids)
    (subscribe_to_market)
    (unsubscribe_from_market)
    (get_ticker)
    (get_24_volume)
+   (get_top_markets)
    (get_trade_history)
+   (get_trade_history_by_sequence)
 
    // Witnesses
    (get_witnesses)
@@ -738,9 +841,13 @@ FC_API(graphene::app::database_api,
    (get_committee_members)
    (get_committee_member_by_account)
    (lookup_committee_member_accounts)
+   (get_committee_count)
 
    // workers
+   (get_all_workers)
    (get_workers_by_account)
+   (get_worker_count)
+
    // Votes
    (lookup_vote_ids)
 
@@ -760,9 +867,14 @@ FC_API(graphene::app::database_api,
    // Blinded balances
    (get_blinded_balances)
 
+   // Withdrawals
+   (get_withdraw_permissions_by_giver)
+   (get_withdraw_permissions_by_recipient)
+
    // Tournaments
    (get_tournaments_in_state)
    (get_tournaments_by_state)
    (get_tournaments )
    (get_registered_tournaments)
+
 )

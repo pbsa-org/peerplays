@@ -54,6 +54,11 @@ std::string snapshot_plugin::plugin_name()const
    return "snapshot";
 }
 
+std::string snapshot_plugin::plugin_description()const
+{
+   return "Create snapshots at a specified time or block number.";
+}
+
 void snapshot_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 { try {
    ilog("snapshot plugin: plugin_initialize() begin");
@@ -87,7 +92,11 @@ static void create_snapshot( const graphene::chain::database& db, const fc::path
    {
       out.open( dest );
    }
+<<<<<<< HEAD
    catch ( fc::exception& e )
+=======
+   catch ( fc::exception e )
+>>>>>>> bitshares-core/pr921
    {
       wlog( "Failed to open snapshot destination: ${ex}", ("ex",e) );
       return;
@@ -99,7 +108,11 @@ static void create_snapshot( const graphene::chain::database& db, const fc::path
          {
             db.get_index( (uint8_t)space_id, (uint8_t)type_id );
          }
+<<<<<<< HEAD
          catch (fc::assert_exception& e)
+=======
+         catch (fc::assert_exception e)
+>>>>>>> bitshares-core/pr921
          {
             continue;
          }
