@@ -192,8 +192,8 @@ namespace graphene { namespace app {
     {
        _app.chain_database()->check_tansaction_for_duplicated_operations(trx);
         
-       fc::promise<fc::variant>::ptr prom( new fc::promise<fc::variant>() );
-       broadcast_transaction_with_callback( [=]( const fc::variant& v ){
+       fc::promise<fc::variant>::ptr prom = fc::promise<fc::variant>::create();
+       broadcast_transaction_with_callback( [prom]( const fc::variant& v ){
         prom->set_value(v);
        }, trx );
 
