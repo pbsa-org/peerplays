@@ -66,6 +66,7 @@ add_library( graphene_chain
              fba_object.cpp
              proposal_object.cpp
              vesting_balance_object.cpp
+             transaction_history_object.cpp
              small_objects.cpp
 
              block_database.cpp

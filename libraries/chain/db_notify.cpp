@@ -38,7 +38,7 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
-#include <graphene/chain/transaction_object.hpp>
+#include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/impacted.hpp>
 
 
@@ -366,7 +366,6 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
       {
         case null_object_type:
         case base_object_type:
-        case OBJECT_TYPE_COUNT:
            return;
         case account_object_type:{
            accounts.insert( obj->id );
@@ -445,9 +444,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               break;
              case impl_reserved0_object_type:
               break;
-             case impl_asset_dynamic_data_type:
+             case impl_asset_dynamic_data_object_type:
               break;
-             case impl_asset_bitasset_data_type:
+             case impl_asset_bitasset_data_object_type:
               break;
              case impl_account_balance_object_type:{
               const auto& aobj = dynamic_cast<const account_balance_object*>(obj);
@@ -459,9 +458,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               assert( aobj != nullptr );
               accounts.insert( aobj->owner );
               break;
-           } case impl_transaction_object_type:{
-              const auto& aobj = dynamic_cast<const transaction_object*>(obj);
-              assert( aobj != nullptr );
+           } case impl_transaction_history_object_type:{
+              const auto& aobj = dynamic_cast<const transaction_history_object*>(obj);
+              FC_ASSERT( aobj != nullptr );
               transaction_get_impacted_accounts( aobj->trx, accounts );
               break;
            } case impl_blinded_balance_object_type:{
