@@ -62,7 +62,13 @@
 #include <fc/crypto/hex.hpp>
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/scoped_lock.hpp>
+<<<<<<< HEAD
 #include <fc/crypto/rand.hpp>
+=======
+#include <fc/rpc/api_connection.hpp>
+#include <fc/crypto/base58.hpp>
+#include <fc/popcount.hpp>
+>>>>>>> 8f1eca14... Replace fc::uint128 with boost::multiprecision::uint128_t
 
 #include <graphene/app/api.hpp>
 #include <graphene/chain/asset_object.hpp>
@@ -680,7 +686,13 @@ public:
                                                                           " old");
       result["next_maintenance_time"] = fc::get_approximate_relative_time_string(dynamic_props.next_maintenance_time);
       result["chain_id"] = chain_props.chain_id;
+<<<<<<< HEAD
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
+=======
+      stringstream participation;
+      participation << fixed << std::setprecision(2) << (100.0*fc::popcount(dynamic_props.recent_slots_filled)) / 128.0;
+      result["participation"] = participation.str();
+>>>>>>> 8f1eca14... Replace fc::uint128 with boost::multiprecision::uint128_t
       result["active_witnesses"] = fc::variant(global_props.active_witnesses, GRAPHENE_MAX_NESTED_OBJECTS);
       result["active_committee_members"] = fc::variant(global_props.active_committee_members, GRAPHENE_MAX_NESTED_OBJECTS);
       result["entropy"] = fc::variant(dynamic_props.random, GRAPHENE_MAX_NESTED_OBJECTS);

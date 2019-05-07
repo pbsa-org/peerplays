@@ -39,8 +39,6 @@
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
-#include <fc/uint128.hpp>
-
 namespace graphene { namespace chain {
 
 void database::update_global_dynamic_data( const signed_block& b, const uint32_t missed_blocks )

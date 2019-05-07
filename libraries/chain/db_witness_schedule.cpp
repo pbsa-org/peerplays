@@ -27,6 +27,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 
+#include <fc/popcount.hpp>
+
 namespace graphene { namespace chain {
 
 using boost::container::flat_set;

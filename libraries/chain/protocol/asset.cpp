@@ -25,6 +25,7 @@
 #include <boost/rational.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <fc/io/raw.hpp>
+#include <fc/uint128.hpp>
 
 namespace graphene { namespace chain {
       typedef boost::multiprecision::uint128_t uint128_t;

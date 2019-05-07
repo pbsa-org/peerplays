@@ -127,7 +127,7 @@ asset cdd_vesting_policy::get_allowed_withdraw(const vesting_policy_context& ctx
    fc::uint128_t cs_earned = compute_coin_seconds_earned(ctx);
    fc::uint128_t withdraw_available = cs_earned / std::max(vesting_seconds, 1u);
    assert(withdraw_available <= ctx.balance.amount.value);
-   return asset(withdraw_available.to_uint64(), ctx.balance.asset_id);
+   return asset(static_cast<uint64_t>(withdraw_available), ctx.balance.asset_id);
 }
 
 void cdd_vesting_policy::on_deposit(const vesting_policy_context& ctx)

@@ -36,6 +36,7 @@ namespace fc
 }
 
 #include <fc/io/raw.hpp>
+#include <fc/uint128.hpp>
 
 #define MAX_FEE_STABILIZATION_ITERATION 4
 
@@ -131,7 +132,7 @@ namespace graphene { namespace chain {
       auto itr = parameters.find(params);
       if( itr != parameters.end() ) params = *itr;
       auto base_value = op.visit( calc_fee_visitor( params ) );
-      auto scaled = fc::uint128(base_value) * scale;
+      auto scaled = fc::uint128_t(base_value) * scale;
       scaled /= GRAPHENE_100_PERCENT;
       FC_ASSERT( scaled <= GRAPHENE_MAX_SHARE_SUPPLY );
       //idump( (base_value)(scaled)(core_exchange_rate) );

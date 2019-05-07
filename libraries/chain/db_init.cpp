@@ -89,7 +89,6 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
 #include <fc/smart_ref_impl.hpp>
-#include <fc/uint128.hpp>
 #include <fc/crypto/digest.hpp>
 
 #include <boost/algorithm/string.hpp>
@@ -614,7 +613,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       p.time = genesis_state.initial_timestamp;
       p.dynamic_flags = 0;
       p.witness_budget = 0;
-      p.recent_slots_filled = fc::uint128::max_value();
+      p.recent_slots_filled = std::numeric_limits<fc::uint128_t>::max();
    });
    create<global_betting_statistics_object>([&](global_betting_statistics_object& betting_statistics) {
       betting_statistics.number_of_active_events = 0;
@@ -989,7 +988,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
       _wso.last_scheduling_block = 0;
 
-      _wso.recent_slots_filled = fc::uint128::max_value();
+      _wso.recent_slots_filled = fc::uint128_t::max_value();
 
       // for shuffled
       for( const witness_id_type& wid : get_global_properties().active_witnesses )
