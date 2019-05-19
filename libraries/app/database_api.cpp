@@ -26,8 +26,8 @@
 #include <graphene/chain/get_config.hpp>
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/account_object.hpp>
-#include <graphene/chain/protocol/address.hpp>
-#include <graphene/chain/pts_address.hpp>
+#include <graphene/protocol/address.hpp>
+#include <graphene/protocol/pts_address.hpp>
 
 #include <fc/bloom_filter.hpp>
 

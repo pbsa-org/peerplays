@@ -27,7 +27,6 @@
 #include <../hardfork.d/GPOS.hf>
 #include <memory>
 #include <graphene/protocol/base.hpp>
-#include <graphene/protocol/types.hpp>
 
 namespace graphene { namespace protocol {
    struct fee_schedule;
@@ -218,4 +217,4 @@ FC_REFLECT( graphene::protocol::chain_parameters,
             (extensions)
           )
 
-GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::chain_parameters )
+GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::protocol::chain_parameters )

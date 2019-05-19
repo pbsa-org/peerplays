@@ -22,11 +22,12 @@
  * THE SOFTWARE.
  */
 #pragma once
+
 #include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
+#include <graphene/protocol/authority.hpp>
 #include <graphene/protocol/buyback.hpp>
-#include <graphene/protocol/ext.hpp>
 #include <graphene/protocol/special_authority.hpp>
-#include <graphene/protocol/types.hpp>
 #include <graphene/protocol/vote.hpp>
 
 namespace graphene { namespace protocol {

@@ -24,6 +24,8 @@
 #include <fc/io/raw.hpp>
 #include <graphene/protocol/market.hpp>
 
+#include <fc/io/raw.hpp>
+
 namespace graphene { namespace protocol {
 
 void limit_order_create_operation::validate()const
@@ -55,3 +57,4 @@ GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::limit_order
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::limit_order_cancel_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::call_order_update_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::fill_order_operation )
+

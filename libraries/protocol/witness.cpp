@@ -24,6 +24,8 @@
 #include <fc/io/raw.hpp>
 #include <graphene/protocol/witness.hpp>
 
+#include <fc/io/raw.hpp>
+
 namespace graphene { namespace protocol {
 
 void witness_create_operation::validate() const

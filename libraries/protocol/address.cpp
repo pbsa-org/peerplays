@@ -21,11 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/protocol/types.hpp>
 #include <graphene/protocol/address.hpp>
-#include <fc/crypto/elliptic.hpp>
+#include <graphene/protocol/pts_address.hpp>
 #include <fc/crypto/base58.hpp>
 #include <algorithm>
+
+#include <fc/io/raw.hpp>
 
 namespace graphene { namespace protocol {
    address::address( const std::string& base58str )
@@ -109,4 +110,4 @@ namespace fc
     }
 }
 
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::address )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::address )

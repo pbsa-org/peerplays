@@ -25,6 +25,8 @@
 #include <fc/uint128.hpp>
 #include <graphene/protocol/operations.hpp>
 
+#include <fc/io/raw.hpp>
+
 namespace graphene { namespace protocol {
 
 uint64_t base_operation::calculate_data_fee( uint64_t bytes, uint64_t price_per_kbyte )

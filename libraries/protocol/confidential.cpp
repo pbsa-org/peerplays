@@ -162,4 +162,3 @@ GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::blind_trans
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::transfer_to_blind_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::transfer_from_blind_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::blind_transfer_operation )
-

@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/protocol/config.hpp>
 #include <graphene/protocol/types.hpp>
 
 namespace graphene { namespace protocol {

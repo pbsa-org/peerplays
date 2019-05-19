@@ -21,7 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/account.hpp>
+#include <graphene/protocol/asset_ops.hpp>
+#include <graphene/protocol/assert.hpp>
+
+#include <fc/io/raw.hpp>
 
 namespace graphene { namespace protocol {
 

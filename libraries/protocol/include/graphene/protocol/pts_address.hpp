@@ -25,6 +25,8 @@
 
 #include <array>
 #include <cstring>
+#include <fc/io/datastream.hpp>
+#include <fc/io/raw_fwd.hpp>
 #include <string>
 
 #include <fc/io/datastream.hpp>
@@ -80,6 +82,7 @@ namespace fc
 { 
    void to_variant( const graphene::protocol::pts_address& var,  fc::variant& vo, uint32_t max_depth = 1 );
    void from_variant( const fc::variant& var,  graphene::protocol::pts_address& vo, uint32_t max_depth = 1 );
+
 namespace raw {
    extern template void pack( datastream<size_t>& s, const graphene::protocol::pts_address& tx,
                               uint32_t _max_depth=FC_PACK_MAX_DEPTH );

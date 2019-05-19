@@ -24,6 +24,8 @@
 #include <fc/io/raw.hpp>
 #include <graphene/protocol/worker.hpp>
 
+#include <fc/io/raw.hpp>
+
 namespace graphene { namespace protocol {
 
 void worker_create_operation::validate() const
@@ -38,5 +40,5 @@ void worker_create_operation::validate() const
 
 } }
 
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::worker_create_operation::fee_parameters_type )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::worker_create_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::worker_create_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::worker_create_operation )

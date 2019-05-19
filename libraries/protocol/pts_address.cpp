@@ -96,10 +96,10 @@ namespace fc
    }
 
 namespace raw {
-   template void pack( datastream<size_t>& s, const graphene::chain::pts_address& tx,
+   template void pack( datastream<size_t>& s, const graphene::protocol::pts_address& tx,
                        uint32_t _max_depth=FC_PACK_MAX_DEPTH );
-   template void pack( datastream<char*>& s, const graphene::chain::pts_address& tx,
+   template void pack( datastream<char*>& s, const graphene::protocol::pts_address& tx,
                        uint32_t _max_depth=FC_PACK_MAX_DEPTH );
-   template void unpack( datastream<const char*>& s, graphene::chain::pts_address& tx,
+   template void unpack( datastream<const char*>& s, graphene::protocol::pts_address& tx,
                          uint32_t _max_depth=FC_PACK_MAX_DEPTH );
 } } // fc::raw

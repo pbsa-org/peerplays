@@ -22,12 +22,12 @@
  * THE SOFTWARE.
  */
 
-#include <graphene/chain/protocol/balance.hpp>
-#include <graphene/chain/protocol/buyback.hpp>
-#include <graphene/chain/protocol/fba.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/vesting.hpp>
-#include <graphene/chain/protocol/chain_parameters.hpp>
+#include <graphene/protocol/balance.hpp>
+#include <graphene/protocol/buyback.hpp>
+#include <graphene/protocol/fba.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/vesting.hpp>
+#include <graphene/protocol/chain_parameters.hpp>
 
 #include <fc/io/raw.hpp>
 
@@ -54,13 +54,14 @@ FC_IMPLEMENT_DERIVED_EXCEPTION( insufficient_fee,           transaction_exceptio
 
 } } // graphene::protocol
 
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::balance_claim_operation )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::buyback_account_options )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::fba_distribute_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::balance_claim_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::buyback_account_options )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::fba_distribute_operation )
 
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::vesting_balance_create_operation::fee_parameters_type )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::vesting_balance_withdraw_operation::fee_parameters_type )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::vesting_balance_create_operation )
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::vesting_balance_withdraw_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::vesting_balance_create_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::vesting_balance_withdraw_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::vesting_balance_create_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::vesting_balance_withdraw_operation )
 
-GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::chain_parameters )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::protocol::chain_parameters )
+

@@ -23,6 +23,7 @@
  */
 #pragma once
 #include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
 #include <graphene/protocol/chain_parameters.hpp>
 
 namespace graphene { namespace protocol { 
@@ -94,10 +95,10 @@ namespace graphene { namespace protocol {
    /// TODO: committee_member_resign_operation : public base_operation
 
 } } // graphene::protocol
+
 FC_REFLECT( graphene::protocol::committee_member_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::protocol::committee_member_update_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::protocol::committee_member_update_global_parameters_operation::fee_parameters_type, (fee) )
-
 
 FC_REFLECT( graphene::protocol::committee_member_create_operation,
             (fee)(committee_member_account)(url) )

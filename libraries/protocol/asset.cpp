@@ -27,6 +27,8 @@
 #include <fc/io/raw.hpp>
 #include <fc/uint128.hpp>
 
+#include <fc/io/raw.hpp>
+
 namespace graphene { namespace protocol {
       typedef boost::multiprecision::uint128_t uint128_t;
       typedef boost::multiprecision::int128_t  int128_t;

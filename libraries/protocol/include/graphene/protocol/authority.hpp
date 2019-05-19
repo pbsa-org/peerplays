@@ -23,6 +23,7 @@
  */
 #pragma once
 #include <graphene/protocol/types.hpp>
+#include <graphene/protocol/address.hpp>
 
 namespace graphene { namespace protocol {
 

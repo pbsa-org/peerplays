@@ -22,6 +22,9 @@
  * THE SOFTWARE.
  */
 #include <graphene/protocol/committee_member.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+
+#include <fc/io/raw.hpp>
 
 namespace graphene { namespace protocol {
 
