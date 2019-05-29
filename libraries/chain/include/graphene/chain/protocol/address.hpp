@@ -27,8 +27,8 @@
 #include <graphene/chain/pts_address.hpp>
 #include <graphene/chain/protocol/types.hpp>
 
+#include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
-#include <fc/reflect/typename.hpp>
 
 namespace graphene { namespace chain {
 
