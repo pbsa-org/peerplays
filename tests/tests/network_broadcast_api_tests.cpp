@@ -12,6 +12,7 @@
 #include <graphene/chain/protocol/sport.hpp>
 #include <fc/crypto/digest.hpp>
 #include <graphene/app/database_api.hpp>
+#include <graphene/app/api.hpp>
 
 #include "../common/database_fixture.hpp"
 
