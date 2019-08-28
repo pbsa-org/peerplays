@@ -118,7 +118,7 @@ namespace graphene { namespace chain {
     *  @note static_variant compares only the type tag and not the 
     *  content.
     */
-   typedef flat_set<future_extensions> extensions_type;
+   typedef future_extensions::flat_set_type extensions_type;
 
    ///@}
 
