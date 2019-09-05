@@ -14,7 +14,7 @@ build:
 test:
   stage: test
   script:
-    - ./test/betting_test
-    - ./test/chain_test
+    - ./tests/betting_test
+    - ./tests/chain_test
   tags:
     - builder
