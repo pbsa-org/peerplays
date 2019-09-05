@@ -26,7 +26,7 @@ class peerplays_sidechain_plugin : public graphene::app::plugin
          boost::program_options::options_description& cfg) override;
       virtual void plugin_initialize(const boost::program_options::variables_map& options) override;
       virtual void plugin_startup() override;
-      
+
       std::unique_ptr<detail::peerplays_sidechain_plugin_impl> my;
 };
 
