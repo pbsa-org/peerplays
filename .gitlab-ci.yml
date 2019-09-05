@@ -8,6 +8,11 @@ build:
     - git submodule update --init --recursive
     - cmake .
     - make -j$(nproc)
+  cache:
+    paths:
+      - libraries/
+      - programs/
+      - test/
   tags:
     - builder
     
@@ -16,11 +21,5 @@ test:
   script:
     - ./tests/betting_test
     - ./tests/chain_test
-  cache:
-    key: $CI_COMMIT_REF_NAME
-    paths:
-      - libraries/
-      - programs/
-      - test/
   tags:
     - builder
