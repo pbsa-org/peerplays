@@ -1,11 +1,20 @@
 stages:
   - build
-  
+  - test
+
 build:
   stage: build
   script:
     - git submodule update --init --recursive
     - cmake .
     - make -j$(nproc)
+  tags:
+    - builder
+    
+test:
+  state: test
+  script:
+    - ./betting_test
+    - ./chain_test
   tags:
     - builder
