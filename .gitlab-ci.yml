@@ -12,7 +12,7 @@ build:
     - builder
     
 test:
-  state: test
+  stage: test
   script:
     - ./betting_test
     - ./chain_test
