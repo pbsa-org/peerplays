@@ -8,16 +8,15 @@ build:
     - git submodule update --init --recursive
     - cmake .
     - make -j$(nproc)
-  cache:
-    paths:
-      - libraries/
-      - programs/
-      - test/
+  artifacts:
+    untracked: true
   tags:
     - builder
     
 test:
   stage: test
+  dependencies: 
+    - build
   script:
     - ./tests/betting_test
     - ./tests/chain_test
