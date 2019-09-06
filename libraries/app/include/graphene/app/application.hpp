@@ -70,7 +70,7 @@ namespace graphene { namespace app {
                _cfg_options.add(plugin_cfg_options);
             }
 
-            add_plugin( plug->plugin_name(), plug );
+            add_available_plugin( plug );
             return plug;
          }
          std::shared_ptr<abstract_plugin> get_plugin( const string& name )const;
