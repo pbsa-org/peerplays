@@ -78,11 +78,22 @@ int main(int argc, char** argv) {
       bpo::options_description cfg_options("Graphene Witness Node");
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
-            ("version", "Display the version info and exit")
-            ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, configuration file, etc.")
-            ;
+            ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"),
+                    "Directory containing databases, configuration file, etc.")
+            ("version,v", "Display version information")
+            ("plugins", bpo::value<std::string>()
+                            ->default_value("witness account_history market_history grouped_orders api_helper_indexes"),
+                    "Space-separated list of plugins to activate");
 
       bpo::variables_map options;
+
+      bpo::options_description cli, cfg;
+      node->set_program_options(cli, cfg);
+      cfg_options.add(cfg);
+
+      cfg_options.add_options()
+              ("plugins", bpo::value<std::string>()->default_value("witness account_history market_history grouped_orders"),
+               "Space-separated list of plugins to activate");
 
       auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
       auto history_plug = node->register_plugin<account_history::account_history_plugin>();
@@ -95,6 +106,7 @@ int main(int argc, char** argv) {
       auto peerplays_sidechain = node->register_plugin<peerplays_sidechain::peerplays_sidechain_plugin>();
 //      auto snapshot_plug = node->register_plugin<snapshot_plugin::snapshot_plugin>();
 
+      // add plugin options to config
       try
       {
          bpo::options_description cli, cfg;
@@ -109,11 +121,6 @@ int main(int argc, char** argv) {
         return 1;
       }
 
-      if( options.count("help") )
-      {
-         std::cout << app_options << "\n";
-         return 0;
-      }
       if (options.count("version"))
       {
          std::string witness_version(graphene::utilities::git_revision_description);
@@ -125,6 +132,11 @@ int main(int argc, char** argv) {
          std::cerr << "Built: " << __DATE__ " at " __TIME__ << "\n";
          std::cout << "SSL: " << OPENSSL_VERSION_TEXT << "\n";
          std::cout << "Boost: " << boost::replace_all_copy(std::string(BOOST_LIB_VERSION), "_", ".") << "\n";
+         return 0;
+      }
+      if( options.count("help") )
+      {
+         std::cout << app_options << "\n";
          return 0;
       }
 
@@ -160,6 +172,7 @@ int main(int argc, char** argv) {
          if( !fc::exists(data_dir) )
             fc::create_directories(data_dir);
 
+         boost::container::flat_set<std::string> seen;
          std::ofstream out_cfg(config_ini_path.preferred_string());
          for( const boost::shared_ptr<bpo::option_description> od : cfg_options.options() )
          {
@@ -169,6 +182,9 @@ int main(int argc, char** argv) {
             if( !od->semantic()->apply_default(store) )
                out_cfg << "# " << od->long_name() << " = \n";
             else {
+               const std::string name = od->long_name();
+               if( seen.find(name) != seen.end() ) continue;
+               seen.insert(name);
                auto example = od->format_parameter();
                if( example.empty() )
                   // This is a boolean switch
@@ -190,7 +206,22 @@ int main(int argc, char** argv) {
             fc::configure_logging(*logging_config);
       }
 
+      std::set<std::string> plugins;
+      boost::split(plugins, options.at("plugins").as<std::string>(), [](char c){return c == ' ';});
+
+      if(plugins.count("account_history") && plugins.count("elasticsearch")) {
+         std::cerr << "Plugin conflict: Cannot load both account_history plugin and elasticsearch plugin\n";
+         return 1;
+      }
+
+      std::for_each(plugins.begin(), plugins.end(), [node](const std::string& plug) mutable {
+         if (!plug.empty()) {
+            node->enable_plugin(plug);
+         }
+      });
+
       bpo::notify(options);
+
       node->initialize(data_dir, options);
       node->initialize_plugins( options );
 
