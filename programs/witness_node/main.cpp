@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
                     "Directory containing databases, configuration file, etc.")
             ("version,v", "Display version information")
             ("plugins", bpo::value<std::string>()
-                            ->default_value("witness account_history market_history grouped_orders api_helper_indexes"),
+                            ->default_value("witness account_history market_history grouped_orders"),
                     "Space-separated list of plugins to activate");
 
       bpo::variables_map options;
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
       cfg_options.add(cfg);
 
       cfg_options.add_options()
-              ("plugins", bpo::value<std::string>()->default_value("witness account_history market_history grouped_orders"),
+              ("plugins", bpo::value<std::string>()->default_value("witness account_history market_history accounts_list affiliate_stats bookie"),
                "Space-separated list of plugins to activate");
 
       auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
