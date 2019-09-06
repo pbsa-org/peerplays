@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
                     "Directory containing databases, configuration file, etc.")
             ("version,v", "Display version information")
             ("plugins", bpo::value<std::string>()
-                            ->default_value("witness account_history market_history grouped_orders"),
+                            ->default_value("witness account_history market_history accounts_list affiliate_stats bookie"),
                     "Space-separated list of plugins to activate");
 
       bpo::variables_map options;
