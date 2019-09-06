@@ -10,6 +10,10 @@ build:
     - make -j$(nproc)
   artifacts:
     untracked: true
+    paths:
+      - libraries/
+      - programs/
+      - tests/
   tags:
     - builder
     
