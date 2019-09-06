@@ -95,8 +95,11 @@ namespace graphene { namespace app {
          /// Emitted when syncing finishes (is_finished_syncing will return true)
          boost::signals2::signal<void()> syncing_finished;
 
-      private:
          void enable_plugin( const string& name );
+
+         bool is_plugin_enabled(const string& name) const;
+
+      private:
          void add_available_plugin( std::shared_ptr<abstract_plugin> p );
          std::shared_ptr<detail::application_impl> my;
 
