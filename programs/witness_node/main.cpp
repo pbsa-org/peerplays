@@ -36,28 +36,18 @@
 #include <graphene/utilities/git_revision.hpp>
 //#include <graphene/snapshot/snapshot.hpp>
 
-#include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/interprocess/signals.hpp>
-#include <fc/log/console_appender.hpp>
-#include <fc/log/file_appender.hpp>
-#include <fc/log/logger.hpp>
-#include <fc/log/logger_config.hpp>
 
 #include <boost/filesystem.hpp>
-
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
+#include <boost/container/flat_set.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <graphene/utilities/git_revision.hpp>
-#include <boost/version.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
 #include <iostream>
-#include <fstream>
 
 #ifdef WIN32
 # include <signal.h> 
@@ -68,9 +58,6 @@
 using namespace graphene;
 namespace bpo = boost::program_options;
          
-void write_default_logging_config_to_stream(std::ostream& out);
-fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::path& config_ini_filename);
-
 int main(int argc, char** argv) {
    app::application* node = new app::application();
    fc::oexception unhandled_exception;
@@ -192,7 +179,7 @@ int main(int argc, char** argv) {
       node->shutdown_plugins();
       node->shutdown();
       delete node;
-      return 0;
+      return EXIT_SUCCESS;
    } catch( const fc::exception& e ) {
       // deleting the node can yield, so do this outside the exception handler
       unhandled_exception = e;
@@ -203,7 +190,7 @@ int main(int argc, char** argv) {
       elog("Exiting with error:\n${e}", ("e", unhandled_exception->to_detail_string()));
       node->shutdown();
       delete node;
-      return 1;
+      return EXIT_FAILURE;
    }
 }
 

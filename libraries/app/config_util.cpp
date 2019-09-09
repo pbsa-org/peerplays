@@ -151,7 +151,7 @@ static fc::optional<fc::logging_config> load_logging_config_from_ini_file(const 
             fc::console_appender::level_color(fc::log_level::error,
                                               fc::console_appender::color::cyan));
             console_appender_config.stream = fc::variant(stream_name).as<fc::console_appender::stream::type>(GRAPHENE_MAX_NESTED_OBJECTS);
-            logging_config.appenders.push_back(fc::appender_config(console_appender_name, "console", fc::variant(console_appender_config, GRAPHENE_MAX_NESTED_OBJECTS)));
+            logging_config.appenders.push_back(fc::appender_config(console_appender_name, "console", fc::variant(console_appender_config)));
             found_logging_config = true;
          }
          else if (boost::starts_with(section_name, file_appender_section_prefix))
