@@ -181,7 +181,7 @@ static fc::optional<fc::logging_config> load_logging_config_from_ini_file(const 
             std::string level_string = section_tree.get<std::string>("level");
             std::string appenders_string = section_tree.get<std::string>("appenders");
             fc::logger_config logger_config(logger_name);
-            logger_config.level = fc::variant(level_string).as<fc::log_level>(5);
+            logger_config.level = fc::variant(level_string).as<fc::log_level>();
             boost::split(logger_config.appenders, appenders_string,
                          boost::is_any_of(" ,"),
                          boost::token_compress_on);
