@@ -964,7 +964,6 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("genesis-json", bpo::value<boost::filesystem::path>(), "File to read Genesis State from")
          ("dbg-init-key", bpo::value<string>(), "Block signing key to use for init witnesses, overrides genesis file")
          ("api-access", bpo::value<boost::filesystem::path>(), "JSON file specifying API permissions")
-         ("plugins", bpo::value<string>(), "Space-separated list of plugins to activate")
          ;
    command_line_options.add(configuration_file_options);
    command_line_options.add_options()
