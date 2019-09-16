@@ -1,6 +1,7 @@
 #pragma once
 
 #include <graphene/peerplays_sidechain/zmq_listener.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_transaction.hpp>
 #include <graphene/peerplays_sidechain/bitcoin_rpc_client.hpp>
 #include <graphene/chain/database.hpp>
 

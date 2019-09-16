@@ -2,6 +2,8 @@
 
 #include <graphene/peerplays_sidechain/sidechain_network_manager.hpp>
 
+namespace bpo = boost::program_options;
+
 namespace graphene { namespace peerplays_sidechain {
 
 namespace detail
