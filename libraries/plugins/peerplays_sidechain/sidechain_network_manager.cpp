@@ -1,6 +1,6 @@
-#include <sidechain/network/sidechain_net_manager.hpp>
-#include <sidechain/serialize.hpp>
-#include <sidechain/sidechain_parameters.hpp>
+#include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
+#include <graphene/peerplays_sidechain/serialize.hpp>
+#include <graphene/peerplays_sidechain/sidechain_parameters.hpp>
 
 #include <fc/network/http/connection.hpp>
 #include <fc/network/ip.hpp>

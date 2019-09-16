@@ -1,4 +1,4 @@
-#include <sidechain/network/bitcoin_rpc_client.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_rpc_client.hpp>
 
 #include <sstream>
 
