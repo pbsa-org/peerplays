@@ -1,8 +1,8 @@
-#include <sidechain/bitcoin_address.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_address.hpp>
 #include <sstream>
 #include <fc/crypto/base58.hpp>
-#include <sidechain/segwit_addr.hpp>
-#include <sidechain/bitcoin_script.hpp>
+#include <graphene/peerplays_sidechain/segwit_addr.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_script.hpp>
 
 namespace sidechain {
 
