@@ -1,3 +1,5 @@
+add_subdirectory( sidechain )
+
 file(GLOB HEADERS "include/graphene/peerplays_sidechain_history/*.hpp")
 
 add_library( peerplays_sidechain
