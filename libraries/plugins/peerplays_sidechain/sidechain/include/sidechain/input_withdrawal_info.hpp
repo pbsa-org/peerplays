@@ -4,11 +4,12 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
+#include <sidechain/types.hpp>
+#include <sidechain/thread_safe_index.hpp>
 #include <fc/crypto/sha256.hpp>
+
+#include <graphene/chain/info_for_vout_object.hpp>
 #include <graphene/chain/protocol/types.hpp>
-#include <graphene/peerplays_sidechain/thread_safe_index.hpp>
-#include <graphene/peerplays_sidechain/info_for_vout_object.hpp>
-#include <graphene/peerplays_sidechain/types.hpp>
 
 using boost::multi_index_container;
 using namespace boost::multi_index;

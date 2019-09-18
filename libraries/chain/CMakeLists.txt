@@ -21,6 +21,7 @@ if( GRAPHENE_DISABLE_UNITY_BUILD )
         db_market.cpp
         db_update.cpp
         db_witness_schedule.cpp
+        db_sidechain.cpp
       )
    message( STATUS "Graphene database unity build disabled" )
 else( GRAPHENE_DISABLE_UNITY_BUILD )
@@ -85,6 +86,9 @@ add_library( graphene_chain
              confidential_evaluator.cpp
              special_authority.cpp
              buyback.cpp
+             bitcoin_address_evaluator.cpp
+             bitcoin_transaction_evaluator.cpp
+             sidechain_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp
@@ -110,6 +114,7 @@ add_library( graphene_chain
              betting_market_group_object.cpp
 
              affiliate_payout.cpp
+             withdraw_pbtc_evaluator.cpp
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}
@@ -117,9 +122,11 @@ add_library( graphene_chain
            )
 
 add_dependencies( graphene_chain build_hardfork_hpp )
-target_link_libraries( graphene_chain fc graphene_db )
+
+target_link_libraries( graphene_chain fc graphene_db sidechain )
 target_include_directories( graphene_chain
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" 
+                            "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/peerplays_sidechain/sidechain/include" )
 
 if(MSVC)
   set_source_files_properties( db_init.cpp db_block.cpp database.cpp block_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )

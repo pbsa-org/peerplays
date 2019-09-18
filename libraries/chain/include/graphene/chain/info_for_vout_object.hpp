@@ -2,8 +2,8 @@
 
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/generic_index.hpp>
-#include <graphene/peerplays_sidechain/types.hpp>
-#include <graphene/peerplays_sidechain/bitcoin_address.hpp>
+#include <sidechain/types.hpp>
+#include <sidechain/bitcoin_address.hpp>
 
 namespace graphene { namespace chain {
 
@@ -52,3 +52,4 @@ typedef generic_index<info_for_vout_object, info_for_vout_multi_index_container>
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::info_for_vout_object, (graphene::chain::object), (payer)(address)(amount)(used) )
+

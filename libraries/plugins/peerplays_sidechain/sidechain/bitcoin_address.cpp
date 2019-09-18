@@ -1,8 +1,8 @@
-#include <graphene/peerplays_sidechain/bitcoin_address.hpp>
+#include <sidechain/bitcoin_address.hpp>
 #include <sstream>
 #include <fc/crypto/base58.hpp>
-#include <graphene/peerplays_sidechain/segwit_addr.hpp>
-#include <graphene/peerplays_sidechain/bitcoin_script.hpp>
+#include <sidechain/segwit_addr.hpp>
+#include <sidechain/bitcoin_script.hpp>
 
 namespace sidechain {
 
@@ -85,7 +85,7 @@ bool bitcoin_address::check_segwit_address( const size_segwit_address& size ) co
                                                          std::string(address.begin(), address.begin() + 2) );
 
       const auto& decode_bech32 = segwit_addr::decode( prefix, address );
-
+      
       if( decode_bech32.first == -1 || decode_bech32.second.size() != size ) {
          return false;
       }
@@ -158,7 +158,7 @@ btc_multisig_address::btc_multisig_address( const size_t n_required, const accou
 size_t btc_multisig_address::count_intersection( const accounts_keys& keys ) const
 {
    FC_ASSERT( keys.size() > 0 );
-
+   
    int intersections_count = 0;
    for( auto& key : keys ) {
       auto witness_key = witnesses_keys.find( key.first );
@@ -240,7 +240,7 @@ void btc_multisig_segwit_address::create_segwit_address()
 {
    fc::sha256 hash256 = fc::sha256::hash( witness_script.data(), witness_script.size() );
    fc::ripemd160 hash160 = fc::ripemd160::hash( hash256.data(), hash256.data_size() );
-
+   
    raw_address = bytes(hash160.data(), hash160.data() + hash160.data_size() );
    address = fc::to_base58( get_address_bytes( raw_address ) );
 }
@@ -251,7 +251,7 @@ bytes btc_multisig_segwit_address::get_address_bytes( const bytes& script_hash )
    address_bytes.insert( address_bytes.end(), script_hash.begin(), script_hash.end() );
    fc::sha256 hash256 = fc::sha256::hash( fc::sha256::hash( address_bytes.data(), address_bytes.size() ) );
    address_bytes.insert( address_bytes.end(), hash256.data(), hash256.data() + 4 ); // 4 byte checksum
-
+   
    return address_bytes;
 }
 

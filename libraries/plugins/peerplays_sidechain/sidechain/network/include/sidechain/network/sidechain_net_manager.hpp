@@ -1,25 +1,24 @@
 #pragma once
 
-#include <graphene/peerplays_sidechain/zmq_listener.hpp>
-#include <graphene/peerplays_sidechain/bitcoin_transaction.hpp>
-#include <graphene/peerplays_sidechain/bitcoin_rpc_client.hpp>
+#include <sidechain/network/zmq_listener.hpp>
+#include <sidechain/network/bitcoin_rpc_client.hpp>
 #include <graphene/chain/database.hpp>
 
 namespace sidechain {
 
-class sidechain_net_manager
+class sidechain_net_manager 
 {
 
 public:
 
    sidechain_net_manager() {};
 
-   sidechain_net_manager( graphene::chain::database* _db, std::string _ip,
+   sidechain_net_manager( graphene::chain::database* _db, std::string _ip, 
                          uint32_t _zmq, uint32_t _rpc, std::string _user, std::string _password );
 
    ~sidechain_net_manager() { db = nullptr; }
 
-   void initialize_manager( graphene::chain::database* _db, std::string _ip,
+   void initialize_manager( graphene::chain::database* _db, std::string _ip, 
                            uint32_t _zmq, uint32_t _rpc, std::string _user, std::string _password );
 
    void update_tx_infos( const std::string& block_hash );

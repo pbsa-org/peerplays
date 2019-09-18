@@ -1,7 +1,7 @@
 #pragma once
 
-#include <graphene/peerplays_sidechain/types.hpp>
-#include <graphene/peerplays_sidechain/bitcoin_transaction.hpp>
+#include <sidechain/types.hpp>
+#include <sidechain/bitcoin_transaction.hpp>
 
 namespace sidechain {
 

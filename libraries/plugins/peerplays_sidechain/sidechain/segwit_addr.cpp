@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#include <graphene/peerplays_sidechain/segwit_addr.hpp>
-#include <graphene/peerplays_sidechain/bech32.hpp>
+#include <sidechain/segwit_addr.hpp>
+#include <sidechain/bech32.hpp>
 
 namespace
 {

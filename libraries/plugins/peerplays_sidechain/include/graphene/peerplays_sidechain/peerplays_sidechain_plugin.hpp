@@ -31,4 +31,3 @@ class peerplays_sidechain_plugin : public graphene::app::plugin
 };
 
 } } //graphene::peerplays_sidechain_plugin
-

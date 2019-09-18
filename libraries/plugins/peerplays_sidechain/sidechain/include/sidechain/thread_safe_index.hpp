@@ -74,7 +74,7 @@ private:
    }
 
    std::recursive_mutex lock;
-
+   
    T1 data;
 
 };

@@ -1,7 +1,7 @@
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
-#include <graphene/peerplays_sidechain/input_withdrawal_info.hpp>
-#include <graphene/peerplays_sidechain/bitcoin_transaction.hpp>
+#include <sidechain/input_withdrawal_info.hpp>
+#include <sidechain/bitcoin_transaction.hpp>
 
 namespace graphene { namespace chain {
 
@@ -94,4 +94,3 @@ FC_REFLECT( graphene::chain::bitcoin_transaction_sign_operation, (fee)(payer)(pr
 FC_REFLECT( graphene::chain::revert_trx_info, (transaction_id)(valid_vins) )
 FC_REFLECT( graphene::chain::bitcoin_transaction_revert_operation::fee_parameters_type, (fee)(price_per_kbyte) )
 FC_REFLECT( graphene::chain::bitcoin_transaction_revert_operation, (fee)(payer)(transactions_info) )
-

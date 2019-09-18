@@ -1,5 +1,5 @@
-#include <graphene/peerplays_sidechain/bitcoin_script.hpp>
-#include <graphene/peerplays_sidechain/serialize.hpp>
+#include <sidechain/bitcoin_script.hpp>
+#include <sidechain/serialize.hpp>
 
 namespace sidechain {
 

@@ -1,4 +1,4 @@
-#include <graphene/peerplays_sidechain/zmq_listener.hpp>
+#include <sidechain/network/zmq_listener.hpp>
 #include <boost/algorithm/hex.hpp>
 #include <thread>
 

@@ -44,11 +44,11 @@
 #include <fc/smart_ref_impl.hpp>
 
 namespace {
-    
+
    struct proposed_operations_digest_accumulator
    {
       typedef void result_type;
-      
+
       void operator()(const graphene::chain::proposal_create_operation& proposal)
       {
          for (auto& operation: proposal.proposed_ops)
@@ -56,20 +56,20 @@ namespace {
             proposed_operations_digests.push_back(fc::digest(operation.op));
          }
       }
-       
+
       //empty template method is needed for all other operation types
       //we can ignore them, we are interested in only proposal_create_operation
       template<class T>
-      void operator()(const T&) 
+      void operator()(const T&)
       {}
-      
+
       std::vector<fc::sha256> proposed_operations_digests;
    };
-   
+
    std::vector<fc::sha256> gather_proposed_operations_digests(const graphene::chain::transaction& trx)
    {
       proposed_operations_digest_accumulator digest_accumulator;
-      
+
       for (auto& operation: trx.operations)
       {
          if( operation.which() != graphene::chain::operation::tag<graphene::chain::betting_market_group_create_operation>::value
@@ -78,7 +78,7 @@ namespace {
          else
             edump( ("Found dup"));
       }
-       
+
       return digest_accumulator.proposed_operations_digests;
    }
 }
@@ -148,24 +148,24 @@ std::vector<block_id_type> database::get_block_ids_on_fork(block_id_type head_of
   result.emplace_back(branches.first.back()->previous_id());
   return result;
 }
-    
+
 void database::check_tansaction_for_duplicated_operations(const signed_transaction& trx)
 {
    const auto& proposal_index = get_index<proposal_object>();
    std::set<fc::sha256> existed_operations_digests;
-   
+
    proposal_index.inspect_all_objects( [&](const object& obj){
       const proposal_object& proposal = static_cast<const proposal_object&>(obj);
       auto proposed_operations_digests = gather_proposed_operations_digests( proposal.proposed_transaction );
       existed_operations_digests.insert( proposed_operations_digests.begin(), proposed_operations_digests.end() );
    });
-   
+
    for (auto& pending_transaction: _pending_tx)
    {
       auto proposed_operations_digests = gather_proposed_operations_digests(pending_transaction);
       existed_operations_digests.insert(proposed_operations_digests.begin(), proposed_operations_digests.end());
    }
-    
+
    auto proposed_operations_digests = gather_proposed_operations_digests(trx);
    for (auto& digest: proposed_operations_digests)
    {
@@ -182,6 +182,9 @@ void database::check_tansaction_for_duplicated_operations(const signed_transacti
 bool database::push_block(const signed_block& new_block, uint32_t skip)
 {
 //   idump((new_block.block_num())(new_block.id())(new_block.timestamp)(new_block.previous));
+
+   send_btc_tx_flag = true;
+
    bool result;
    detail::with_skip_flags( *this, skip, [&]()
    {
@@ -339,6 +342,7 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
       auto session = _undo_db.start_undo_session(true);
       for( auto& op : proposal.proposed_transaction.operations )
          eval_state.operation_results.emplace_back(apply_operation(eval_state, op));
+      remove_sidechain_proposal_object(proposal);
       remove(proposal);
       session.merge();
    } catch ( const fc::exception& e ) {
@@ -399,6 +403,10 @@ signed_block database::_generate_block(
    auto maximum_block_size = get_global_properties().parameters.maximum_block_size;
    size_t total_block_size = max_block_header_size;
 
+   if( !is_sidechain_fork_needed() ) {
+      processing_sidechain_proposals( witness_obj, block_signing_private_key );
+   }
+
    signed_block pending_block;
 
    //
@@ -414,6 +422,27 @@ signed_block database::_generate_block(
    //
    _pending_tx_session.reset();
    _pending_tx_session = _undo_db.start_undo_session();
+
+   if( !is_sidechain_fork_needed() ) {
+      auto op = create_send_btc_tx_proposal( witness_obj );
+      if( op.valid() ) {
+         _pending_tx.insert( _pending_tx.begin(), create_signed_transaction( block_signing_private_key, *op ) );
+      }
+
+      auto iss_op = create_bitcoin_issue_proposals( witness_obj );
+      if( iss_op.valid() ) {
+         _pending_tx.insert( _pending_tx.begin(), create_signed_transaction( block_signing_private_key, *iss_op ) );
+      }
+
+      auto revert_op = create_bitcoin_revert_proposals( witness_obj );
+      if( revert_op.valid() ) {
+         _pending_tx.insert( _pending_tx.begin(), create_signed_transaction( block_signing_private_key, *revert_op ) );
+      }
+   }
+
+   send_btc_tx_flag = false;
+
+   _current_witness_id = witness_obj.id;
 
    uint64_t postponed_tx_count = 0;
    // pop pending state (reset to head block state)
@@ -465,21 +494,21 @@ signed_block database::_generate_block(
    pending_block.transaction_merkle_root = pending_block.calculate_merkle_root();
    pending_block.witness = witness_id;
 
-   // Genesis witnesses start with a default initial secret        
-   if( witness_obj.next_secret_hash == secret_hash_type::hash( secret_hash_type() ) )     
-       pending_block.previous_secret = secret_hash_type();       
-   else       
-   {      
-       secret_hash_type::encoder last_enc;        
-       fc::raw::pack( last_enc, block_signing_private_key );      
-       fc::raw::pack( last_enc, witness_obj.previous_secret );        
-       pending_block.previous_secret = last_enc.result();        
-   }      
-      
-   secret_hash_type::encoder next_enc;        
-   fc::raw::pack( next_enc, block_signing_private_key );      
-   fc::raw::pack( next_enc, pending_block.previous_secret );     
-   pending_block.next_secret_hash = secret_hash_type::hash(next_enc.result());       
+   // Genesis witnesses start with a default initial secret
+   if( witness_obj.next_secret_hash == secret_hash_type::hash( secret_hash_type() ) )
+       pending_block.previous_secret = secret_hash_type();
+   else
+   {
+       secret_hash_type::encoder last_enc;
+       fc::raw::pack( last_enc, block_signing_private_key );
+       fc::raw::pack( last_enc, witness_obj.previous_secret );
+       pending_block.previous_secret = last_enc.result();
+   }
+
+   secret_hash_type::encoder next_enc;
+   fc::raw::pack( next_enc, block_signing_private_key );
+   fc::raw::pack( next_enc, pending_block.previous_secret );
+   pending_block.next_secret_hash = secret_hash_type::hash(next_enc.result());
 
    if( !(skip & skip_witness_signature) )
       pending_block.sign( block_signing_private_key );
@@ -566,6 +595,8 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
          skip = ~0;// WE CAN SKIP ALMOST EVERYTHING
    }
 
+   _current_witness_id = next_block.witness;
+
    detail::with_skip_flags( *this, skip, [&]()
    {
       _apply_block( next_block );
@@ -578,6 +609,11 @@ void database::_apply_block( const signed_block& next_block )
    uint32_t next_block_num = next_block.block_num();
    uint32_t skip = get_node_properties().skip_flags;
    _applied_ops.clear();
+
+   if( head_block_time() > HARDFORK_SIDECHAIN_TIME && is_sidechain_fork_needed() )
+   {
+      perform_sidechain_fork();
+   }
 
    FC_ASSERT( (skip & skip_merkle_check) || next_block.transaction_merkle_root == next_block.calculate_merkle_root(), "", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",next_block.calculate_merkle_root())("next_block",next_block)("id",next_block.id()) );
 
@@ -742,10 +778,10 @@ const witness_object& database::validate_block_header( uint32_t skip, const sign
    FC_ASSERT( head_block_time() < next_block.timestamp, "", ("head_block_time",head_block_time())("next",next_block.timestamp)("blocknum",next_block.block_num()) );
    const witness_object& witness = next_block.witness(*this);
 //DLN: TODO: Temporarily commented out to test shuffle vs RNG scheduling algorithm for witnesses, this was causing shuffle agorithm to fail during create_witness test. This should be re-enabled for RNG, and maybe for shuffle too, don't really know for sure.
-//   FC_ASSERT( secret_hash_type::hash( next_block.previous_secret ) == witness.next_secret_hash, "",        
+//   FC_ASSERT( secret_hash_type::hash( next_block.previous_secret ) == witness.next_secret_hash, "",
 //              ("previous_secret", next_block.previous_secret)("next_secret_hash", witness.next_secret_hash)("null_secret_hash", secret_hash_type::hash( secret_hash_type())));
 
-   if( !(skip&skip_witness_signature) ) 
+   if( !(skip&skip_witness_signature) )
       FC_ASSERT( next_block.validate_signee( witness.signing_key ) );
 
    if( !(skip&skip_witness_schedule_check) )

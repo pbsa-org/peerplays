@@ -105,7 +105,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<optional<asset_object>> lookup_asset_symbols(const vector<string>& symbols_or_ids)const;
 
       // Peerplays
-      vector<sport_object>                list_sports() const; 
+      vector<sport_object>                list_sports() const;
       vector<event_group_object>          list_event_groups(sport_id_type sport_id) const;
       vector<event_object>                list_events_in_group(event_group_id_type event_group_id) const;
       vector<betting_market_group_object> list_betting_market_groups(event_id_type) const;
@@ -160,6 +160,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<tournament_object> get_tournaments(tournament_id_type stop, unsigned limit, tournament_id_type start);
       vector<tournament_object> get_tournaments_by_state(tournament_id_type stop, unsigned limit, tournament_id_type start, tournament_state state);
       vector<tournament_id_type> get_registered_tournaments(account_id_type account_filter, uint32_t limit) const;
+
+      //Sidechain
+      vector<bitcoin_address_object> get_bitcoin_addresses(const account_id_type& acc_id) const;
 
       // gpos
       gpos_info get_gpos_info(const account_id_type account) const;
@@ -733,7 +736,7 @@ std::map<std::string, full_account> database_api_impl::get_full_accounts( const 
                        acnt.withdraws.emplace_back(withdraw);
                     });
 
-      auto pending_payouts_range = 
+      auto pending_payouts_range =
          _db.get_index_type<pending_dividend_payout_balance_for_holder_object_index>().indices().get<by_account_dividend_payout>().equal_range(boost::make_tuple(account->id));
 
       std::copy(pending_payouts_range.first, pending_payouts_range.second, std::back_inserter(acnt.pending_dividend_payments));
@@ -1965,7 +1968,7 @@ vector<tournament_object> database_api::get_tournaments(tournament_id_type stop,
 
 vector<tournament_object> database_api_impl::get_tournaments(tournament_id_type stop,
                                                              unsigned limit,
-                                                             tournament_id_type start) 
+                                                             tournament_id_type start)
 {
    vector<tournament_object> result;
    const auto& tournament_idx = _db.get_index_type<tournament_index>().indices().get<by_id>();
@@ -1992,7 +1995,7 @@ vector<tournament_object> database_api_impl::get_tournaments_by_state(tournament
                                                                       unsigned limit,
                                                                       tournament_id_type start,
                                                                       tournament_state state)
-{   
+{
    vector<tournament_object> result;
    const auto& tournament_idx = _db.get_index_type<tournament_index>().indices().get<by_id>();
    for (auto elem: tournament_idx) {
@@ -2021,6 +2024,32 @@ vector<tournament_id_type> database_api_impl::get_registered_tournaments(account
    if (tournament_ids.size() >= limit)
       tournament_ids.resize(limit);
    return tournament_ids;
+}
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Sidechain                                                        //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+vector<bitcoin_address_object> database_api::get_bitcoin_addresses(const account_id_type& acc) const
+{
+   return my->get_bitcoin_addresses(acc);
+}
+
+vector<bitcoin_address_object> database_api_impl::get_bitcoin_addresses(const account_id_type& acc) const
+{
+   vector<bitcoin_address_object> result;
+
+   const auto& btc_addr_idx = _db.get_index_type<bitcoin_address_index>().indices().get<by_owner>();
+
+   auto itr = btc_addr_idx.lower_bound( acc );
+   while( itr != btc_addr_idx.end() && itr->owner == acc )
+   {
+      result.push_back( *itr );
+      ++itr;
+   }
+   return result;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -2170,7 +2199,7 @@ void database_api_impl::handle_object_changed(bool force_notify, bool full_objec
    /// if a connection hangs then this could get backed up and result in
    /// a failure to exit cleanly.
    //fc::async([capture_this,this,updates,market_broadcast_queue](){
-   //if( _subscribe_callback ) 
+   //if( _subscribe_callback )
    //         _subscribe_callback( updates );
 
       for(auto id : ids)

@@ -1,6 +1,6 @@
-#include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
-#include <graphene/peerplays_sidechain/serialize.hpp>
-#include <graphene/peerplays_sidechain/sidechain_parameters.hpp>
+#include <sidechain/network/sidechain_net_manager.hpp>
+#include <sidechain/serialize.hpp>
+#include <sidechain/sidechain_parameters.hpp>
 
 #include <fc/network/http/connection.hpp>
 #include <fc/network/ip.hpp>
@@ -14,13 +14,13 @@
 
 namespace sidechain {
 
-sidechain_net_manager::sidechain_net_manager( graphene::chain::database* _db, std::string _ip,
+sidechain_net_manager::sidechain_net_manager( graphene::chain::database* _db, std::string _ip, 
                                              uint32_t _zmq, uint32_t _rpc, std::string _user, std::string _password )
 {
    initialize_manager(_db, _ip, _zmq, _rpc, _user, _password );
 }
 
-void sidechain_net_manager::initialize_manager( graphene::chain::database* _db, std::string _ip,
+void sidechain_net_manager::initialize_manager( graphene::chain::database* _db, std::string _ip, 
                                              uint32_t _zmq, uint32_t _rpc, std::string _user, std::string _password )
 {
    fc::http::connection conn;

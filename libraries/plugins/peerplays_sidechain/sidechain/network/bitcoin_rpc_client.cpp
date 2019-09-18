@@ -1,4 +1,4 @@
-#include <graphene/peerplays_sidechain/bitcoin_rpc_client.hpp>
+#include <sidechain/network/bitcoin_rpc_client.hpp>
 
 #include <sstream>
 
@@ -10,7 +10,7 @@
 namespace sidechain {
 
 bitcoin_rpc_client::bitcoin_rpc_client( std::string _ip, uint32_t _rpc, std::string _user, std::string _password ):
-                      ip( _ip ), rpc_port( _rpc ), user( _user ), password( _password )
+                      ip( _ip ), rpc_port( _rpc ), user( _user ), password( _password ) 
 {
    authorization.key = "Authorization";
    authorization.val = "Basic " + fc::base64_encode( user + ":" + password );
@@ -42,7 +42,7 @@ int32_t bitcoin_rpc_client::receive_confirmations_tx( const std::string& tx_hash
       return 0;
 
    const auto result = std::string( reply.body.begin(), reply.body.end() );
-
+   
    std::stringstream ss( result );
    boost::property_tree::ptree tx;
    boost::property_tree::read_json( ss, tx );

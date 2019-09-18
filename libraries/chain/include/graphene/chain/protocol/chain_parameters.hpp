@@ -26,6 +26,7 @@
 #include <graphene/chain/protocol/ext.hpp>
 #include <graphene/chain/protocol/types.hpp>
 #include <fc/smart_ref_fwd.hpp>
+#include <sidechain/sidechain_parameters.hpp>
 
 #include <graphene/chain/hardfork.hpp>
 
@@ -39,6 +40,7 @@ namespace graphene { namespace chain {
       optional< uint16_t >            betting_rake_fee_percentage;
       optional< flat_map<bet_multiplier_type, bet_multiplier_type> > permitted_betting_odds_increments;
       optional< uint16_t >            live_betting_delay_time;
+      optional< sidechain::sidechain_parameters_extension > sidechain_parameters;
       /* gpos parameters */
       optional < uint32_t >           gpos_period;
       optional < uint32_t >           gpos_subperiod;

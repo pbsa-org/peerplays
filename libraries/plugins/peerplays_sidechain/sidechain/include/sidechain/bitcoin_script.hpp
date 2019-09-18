@@ -1,6 +1,6 @@
 #pragma once
 
-#include <graphene/peerplays_sidechain/types.hpp>
+#include <sidechain/types.hpp>
 
 namespace sidechain {
 
