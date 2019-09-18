@@ -286,8 +286,8 @@ struct get_impacted_account_visitor
 
 void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
 {
-   get_impacted_account_visitor vtor = get_impacted_account_visitor( result );
-   op.visit( vtor );
+   //get_impacted_account_visitor vtor = get_impacted_account_visitor( result );
+   //op.visit( vtor );
 }
 
 void transaction_get_impacted_accounts( const transaction& tx, flat_set<account_id_type>& result )

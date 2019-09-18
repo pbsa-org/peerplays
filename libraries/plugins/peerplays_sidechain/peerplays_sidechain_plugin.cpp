@@ -1,6 +1,6 @@
 #include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
 
-#include <graphene/sidechain/network/sidechain_network_manager.hpp>
+#include <sidechain/network/sidechain_net_manager.hpp>
 
 namespace bpo = boost::program_options;
 
@@ -74,7 +74,7 @@ void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options:
       const auto rpc_user = options.at("bitcoin-node-rpc-user").as<std::string>();
       const auto rpc_password = options.at("bitcoin-node-rpc-password").as<std::string>();
 
-      my.bitcoin_manager.initialize_manager(&database(), ip, zmq_port, rpc_port, rpc_user, rpc_password);
+      my->bitcoin_manager.initialize_manager(&database(), ip, zmq_port, rpc_port, rpc_user, rpc_password);
    } else {
       wlog("Haven't set up sidechain parameters");
    }
