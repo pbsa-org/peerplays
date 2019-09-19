@@ -1,7 +1,5 @@
 #include <boost/test/unit_test.hpp>
 
-#include <fc/crypto/digest.hpp>
-
 #include "../common/database_fixture.hpp"
 
 #include <graphene/chain/son_object.hpp>
