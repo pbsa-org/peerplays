@@ -4,22 +4,22 @@
 
 namespace graphene { namespace chain {
 
-class create_son_member_evaluator : public evaluator<create_son_member_evaluator>
+class create_son_evaluator : public evaluator<create_son_evaluator>
 {
 public:
-    typedef son_member_create_operation operation_type;
+    typedef son_create_operation operation_type;
 
-    void_result do_evaluate(const son_member_create_operation& o);
-    object_id_type do_apply(const son_member_create_operation& o);
+    void_result do_evaluate(const son_create_operation& o);
+    object_id_type do_apply(const son_create_operation& o);
 };
 
-class delete_son_member_evaluator : public evaluator<delete_son_member_evaluator>
+class delete_son_evaluator : public evaluator<delete_son_evaluator>
 {
 public:
-    typedef son_member_delete_operation operation_type;
+    typedef son_delete_operation operation_type;
 
-    void_result do_evaluate(const son_member_delete_operation& o);
-    void_result do_apply(const son_member_delete_operation& o);
+    void_result do_evaluate(const son_delete_operation& o);
+    void_result do_apply(const son_delete_operation& o);
 };
 
 } } // namespace graphene::chain

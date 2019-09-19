@@ -3,7 +3,7 @@
 
 namespace graphene { namespace chain {
 
-    struct son_member_create_operation : public base_operation
+    struct son_create_operation : public base_operation
     {
         struct fee_parameters_type { uint64_t fee = 0; };
 
@@ -15,7 +15,7 @@ namespace graphene { namespace chain {
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
     };
 
-    struct son_member_delete_operation : public base_operation
+    struct son_delete_operation : public base_operation
     {
         struct fee_parameters_type { uint64_t fee = 0; };
 
@@ -28,8 +28,8 @@ namespace graphene { namespace chain {
 
 } } // namespace graphene::chain
 
-FC_REFLECT( graphene::chain::son_member_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::son_member_create_operation, (fee)(owner_account)(url) )
+FC_REFLECT( graphene::chain::son_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::son_create_operation, (fee)(owner_account)(url) )
 
-FC_REFLECT( graphene::chain::son_member_delete_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::son_member_delete_operation, (fee)(owner_account) )
+FC_REFLECT( graphene::chain::son_delete_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::son_delete_operation, (fee)(owner_account) )

@@ -10,7 +10,7 @@
 using namespace graphene::chain;
 using namespace graphene::chain::test;
 
-class test_create_son_member_evaluator: public create_son_member_evaluator {
+class test_create_son_member_evaluator: public create_son_evaluator {
 public:
     test_create_son_member_evaluator( database& link_db ): 
                                       ptr_trx_state( new transaction_evaluation_state( &link_db ) )
@@ -20,7 +20,7 @@ public:
     std::unique_ptr<transaction_evaluation_state> ptr_trx_state;
 };
 
-class test_delete_son_member_evaluator: public delete_son_member_evaluator {
+class test_delete_son_member_evaluator: public delete_son_evaluator {
 public:
     test_delete_son_member_evaluator( database& link_db ): 
                                       ptr_trx_state( new transaction_evaluation_state( &link_db ) )
@@ -35,7 +35,7 @@ BOOST_FIXTURE_TEST_SUITE( son_operation_tests, database_fixture )
 BOOST_AUTO_TEST_CASE( create_son_test ){
     std::string test_url = "https://create_son_test";
     test_create_son_member_evaluator test_eval( db );
-    son_member_create_operation op;
+    son_create_operation op;
     op.owner_account = account_id_type(1);
     op.url = test_url;
 
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( delete_son_test ){
     INVOKE(create_son_test);
     test_delete_son_member_evaluator test_eval( db );
 
-    son_member_delete_operation delete_op;
+    son_delete_operation delete_op;
     delete_op.owner_account = account_id_type(1);
     BOOST_CHECK_NO_THROW( test_eval.do_evaluate( delete_op ) );
     test_eval.do_apply( delete_op );

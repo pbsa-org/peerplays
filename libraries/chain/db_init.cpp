@@ -237,9 +237,8 @@ void database::initialize_evaluators()
    register_evaluator<tournament_join_evaluator>();
    register_evaluator<game_move_evaluator>();
    register_evaluator<tournament_leave_evaluator>();
-
-   register_evaluator<create_son_member_evaluator>();
-   register_evaluator<delete_son_member_evaluator>();
+   register_evaluator<create_son_evaluator>();
+   register_evaluator<delete_son_evaluator>();
 }
 
 void database::initialize_indexes()
