@@ -1,7 +1,7 @@
-#include <graphene/chain/btc-sidechain/son_operations_evaluator.hpp>
+#include <graphene/chain/son_evaluator.hpp>
 
 #include <graphene/chain/database.hpp>
-#include <graphene/chain/btc-sidechain/son.hpp>
+#include <graphene/chain/son_object.hpp>
 
 namespace graphene { namespace chain {
 

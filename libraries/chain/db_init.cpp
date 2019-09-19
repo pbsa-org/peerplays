@@ -49,13 +49,12 @@
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
-
-
 #include <graphene/chain/sport_object.hpp>
 #include <graphene/chain/event_group_object.hpp>
 #include <graphene/chain/event_object.hpp>
 #include <graphene/chain/betting_market_object.hpp>
 #include <graphene/chain/global_betting_statistics_object.hpp>
+#include <graphene/chain/son_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -76,12 +75,9 @@
 #include <graphene/chain/event_evaluator.hpp>
 #include <graphene/chain/betting_market_evaluator.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
-
-#include <graphene/chain/btc-sidechain/son_operations_evaluator.hpp>
+#include <graphene/chain/son_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
-
-#include <graphene/chain/btc-sidechain/son.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/uint128.hpp>

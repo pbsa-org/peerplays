@@ -1,6 +1,6 @@
 #pragma once
 #include <graphene/chain/evaluator.hpp>
-#include <graphene/chain/btc-sidechain/son_operations.hpp>
+#include <graphene/chain/protocol/son.hpp>
 
 namespace graphene { namespace chain {
 

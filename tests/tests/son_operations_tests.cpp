@@ -4,8 +4,8 @@
 
 #include "../common/database_fixture.hpp"
 
-#include <graphene/chain/btc-sidechain/son.hpp>
-#include <graphene/chain/btc-sidechain/son_operations_evaluator.hpp>
+#include <graphene/chain/son_object.hpp>
+#include <graphene/chain/son_evaluator.hpp>
 
 using namespace graphene::chain;
 using namespace graphene::chain::test;

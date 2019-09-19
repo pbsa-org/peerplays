@@ -44,8 +44,7 @@
 #include <graphene/chain/protocol/event.hpp>
 #include <graphene/chain/protocol/betting_market.hpp>
 #include <graphene/chain/protocol/tournament.hpp>
-
-#include <graphene/chain/btc-sidechain/son_operations.hpp>
+#include <graphene/chain/protocol/son.hpp>
 
 namespace graphene { namespace chain {
 

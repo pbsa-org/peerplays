@@ -111,7 +111,7 @@ add_library( graphene_chain
 
              affiliate_payout.cpp
 
-             btc-sidechain/son_operations_evaluator.cpp
+             son_evaluator.cpp
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}
