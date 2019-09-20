@@ -137,7 +137,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       map<string, committee_member_id_type> lookup_committee_member_accounts(const string& lower_bound_name, uint32_t limit)const;
 
       // SON members
-      fc::optional<son_member_object> get_son_member_by_account(account_id_type account)const;
+      fc::optional<son_object> get_son_member_by_account(account_id_type account)const;
 
       // Votes
       vector<variant> lookup_vote_ids( const vector<vote_id_type>& votes )const;
@@ -1586,12 +1586,12 @@ map<string, committee_member_id_type> database_api_impl::lookup_committee_member
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-fc::optional<son_member_object> database_api::get_son_member_by_account(account_id_type account)const
+fc::optional<son_object> database_api::get_son_member_by_account(account_id_type account)const
 {
    return my->get_son_member_by_account( account );
 }
 
-fc::optional<son_member_object> database_api_impl::get_son_member_by_account(account_id_type account) const
+fc::optional<son_object> database_api_impl::get_son_member_by_account(account_id_type account) const
 {
    const auto& idx = _db.get_index_type<son_member_index>().indices().get<by_account>();
    auto itr = idx.find(account);

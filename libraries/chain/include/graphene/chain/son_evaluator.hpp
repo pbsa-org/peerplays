@@ -13,6 +13,15 @@ public:
     object_id_type do_apply(const son_create_operation& o);
 };
 
+class update_son_evaluator : public evaluator<update_son_evaluator>
+{
+public:
+    typedef son_update_operation operation_type;
+
+    void_result do_evaluate(const son_update_operation& o);
+    object_id_type do_apply(const son_update_operation& o);
+};
+
 class delete_son_evaluator : public evaluator<delete_son_evaluator>
 {
 public:

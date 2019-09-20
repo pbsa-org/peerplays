@@ -272,6 +272,9 @@ struct get_impacted_account_visitor
    void operator()( const son_create_operation& op ) {
       _impacted.insert( op.owner_account );
    }
+   void operator()( const son_update_operation& op ) {
+       _impacted.insert( op.owner_account );
+   }
    void operator()( const son_delete_operation& op ) {
       _impacted.insert( op.owner_account );
    }
@@ -363,10 +366,10 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
         } case balance_object_type:{
            /** these are free from any accounts */
            break;
-        } case son_member_object_type:{
-           const auto& son_object = dynamic_cast<const son_member_object*>(obj);
-           assert( son_object != nullptr );
-           accounts.insert( son_object->son_member_account );
+        } case son_object_type:{
+           const auto& aobj = dynamic_cast<const son_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->son_member_account );
            break;
         }
       }

@@ -2031,7 +2031,7 @@ public:
    { try {
       account_object voting_account_object = get_account(voting_account);
       account_id_type son_member_owner_account_id = get_account_id(son_member);
-      fc::optional<son_member_object> son_member_obj = _remote_db->get_son_member_by_account(son_member_owner_account_id);
+      fc::optional<son_object> son_member_obj = _remote_db->get_son_member_by_account(son_member_owner_account_id);
       if (!son_member_obj)
          FC_THROW("Account ${son_member} is not registered as a son_member", ("son_member", son_member));
       if (approve)

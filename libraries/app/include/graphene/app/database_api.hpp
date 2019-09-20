@@ -556,7 +556,7 @@ class database_api
        * @param account The ID of the account whose son_member should be retrieved
        * @return The son_member object, or null if the account does not have a son_member
        */
-      fc::optional<son_member_object> get_son_member_by_account(account_id_type account)const;
+      fc::optional<son_object> get_son_member_by_account(account_id_type account)const;
 
 
       /// WORKERS

@@ -18,12 +18,25 @@ object_id_type create_son_evaluator::do_apply(const son_create_operation& op)
         vote_id = get_next_vote_id(p, vote_id_type::son);
     });
 
-    const auto& new_son_object = db().create<son_member_object>( [&]( son_member_object& obj ){
+    const auto& new_son_object = db().create<son_object>( [&]( son_object& obj ){
         obj.son_member_account = op.owner_account;
         obj.vote_id            = vote_id;
         obj.url                = op.url;
     });
     return new_son_object.id;
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result update_son_evaluator::do_evaluate(const son_update_operation& op)
+{ try{
+
+    return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type update_son_evaluator::do_apply(const son_update_operation& op)
+{ try {
+
+
+    return son_id_type(0);
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 void_result delete_son_evaluator::do_evaluate(const son_delete_operation& op)

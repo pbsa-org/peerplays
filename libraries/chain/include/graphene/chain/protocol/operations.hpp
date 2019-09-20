@@ -132,6 +132,7 @@ namespace graphene { namespace chain {
             affiliate_payout_operation, // VIRTUAL
             affiliate_referral_payout_operation, // VIRTUAL
             son_create_operation,
+            son_update_operation,
             son_delete_operation
          > operation;
 
