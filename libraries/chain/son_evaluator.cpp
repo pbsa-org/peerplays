@@ -65,4 +65,3 @@ void_result delete_son_evaluator::do_apply(const son_delete_operation& op)
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 } } // namespace graphene::chain
- 
