@@ -27,30 +27,36 @@ object_id_type create_son_evaluator::do_apply(const son_create_operation& op)
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 void_result update_son_evaluator::do_evaluate(const son_update_operation& op)
-{ try{
-
+{ try {
+    const auto& idx = db().get_index_type<son_member_index>().indices().get<by_id>();
+    FC_ASSERT( idx.find(op.son_id) != idx.end() );
     return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 object_id_type update_son_evaluator::do_apply(const son_update_operation& op)
 { try {
-
-
-    return son_id_type(0);
+   const auto& idx = db().get_index_type<son_member_index>().indices().get<by_id>();
+   auto itr = idx.find(op.son_id);
+   if(itr != idx.end())
+   {
+       db().modify(*itr, [&op](son_object &so) {
+           so.url = op.new_url;
+       });
+   }
+   return op.son_id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 void_result delete_son_evaluator::do_evaluate(const son_delete_operation& op)
 { try {
-    database& d = db();
-    const auto& idx = d.get_index_type<son_member_index>().indices().get<by_account>();
-    FC_ASSERT( idx.find(op.owner_account) != idx.end() );    
+    const auto& idx = db().get_index_type<son_member_index>().indices().get<by_id>();
+    FC_ASSERT( idx.find(op.son_id) != idx.end() );
     return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 void_result delete_son_evaluator::do_apply(const son_delete_operation& op)
 { try {
-    const auto& idx = db().get_index_type<son_member_index>().indices().get<by_account>();
-    db().remove(*idx.find(op.owner_account));
+    const auto& idx = db().get_index_type<son_member_index>().indices().get<by_id>();
+    db().remove(*idx.find(op.son_id));
     return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
