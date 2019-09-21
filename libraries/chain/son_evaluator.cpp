@@ -2,12 +2,14 @@
 
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/son_object.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 namespace graphene { namespace chain {
 
 void_result create_son_evaluator::do_evaluate(const son_create_operation& op)
 { try{
-    FC_ASSERT(db().get(op.owner_account).is_lifetime_member(), "Only Lifetime members may register a SON.");
+   FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
+   FC_ASSERT(db().get(op.owner_account).is_lifetime_member(), "Only Lifetime members may register a SON.");
     return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -28,6 +30,7 @@ object_id_type create_son_evaluator::do_apply(const son_create_operation& op)
 
 void_result update_son_evaluator::do_evaluate(const son_update_operation& op)
 { try {
+    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK"); // can be removed after HF date pass
     const auto& idx = db().get_index_type<son_member_index>().indices().get<by_id>();
     FC_ASSERT( idx.find(op.son_id) != idx.end() );
     return void_result();
@@ -48,6 +51,7 @@ object_id_type update_son_evaluator::do_apply(const son_update_operation& op)
 
 void_result delete_son_evaluator::do_evaluate(const son_delete_operation& op)
 { try {
+    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON_HARDFORK"); // can be removed after HF date pass
     const auto& idx = db().get_index_type<son_member_index>().indices().get<by_id>();
     FC_ASSERT( idx.find(op.son_id) != idx.end() );
     return void_result();

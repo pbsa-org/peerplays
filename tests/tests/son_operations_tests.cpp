@@ -41,6 +41,11 @@ public:
 BOOST_FIXTURE_TEST_SUITE( son_operation_tests, database_fixture )
 
 BOOST_AUTO_TEST_CASE( create_son_test ) {
+   generate_blocks( HARDFORK_SON_TIME );
+   while( db.head_block_time() <= HARDFORK_SON_TIME )
+   {
+       generate_block();
+   }
    std::string test_url = "https://create_son_test";
    test_create_son_member_evaluator test_eval( db );
    son_create_operation op;
@@ -60,9 +65,7 @@ BOOST_AUTO_TEST_CASE( create_son_test ) {
 }
 
 BOOST_AUTO_TEST_CASE( update_son_test ){
-
    INVOKE(create_son_test);
-
    std::string new_url = "https://anewurl.com";
    test_update_son_member_evaluator test_eval( db );
    son_update_operation op;
