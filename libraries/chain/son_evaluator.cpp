@@ -22,8 +22,11 @@ object_id_type create_son_evaluator::do_apply(const son_create_operation& op)
 
     const auto& new_son_object = db().create<son_object>( [&]( son_object& obj ){
         obj.son_member_account = op.owner_account;
-        obj.vote_id            = vote_id;
-        obj.url                = op.url;
+        obj.vote_id = vote_id;
+        obj.url = op.url;
+        obj.deposit = op.deposit;
+        obj.signing_key = op.signing_key;
+        obj.pay_vb = op.pay_vb;
     });
     return new_son_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -44,7 +47,10 @@ object_id_type update_son_evaluator::do_apply(const son_update_operation& op)
    if(itr != idx.end())
    {
        db().modify(*itr, [&op](son_object &so) {
-           so.url = op.new_url;
+           if(op.new_url.valid()) so.url = *op.new_url;
+           if(op.new_deposit.valid()) so.deposit = *op.new_deposit;
+           if(op.new_signing_key.valid()) so.signing_key = *op.new_signing_key;
+           if(op.new_pay_vb.valid()) so.pay_vb = *op.new_pay_vb;
        });
    }
    return op.son_id;

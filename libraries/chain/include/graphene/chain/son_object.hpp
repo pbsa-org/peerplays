@@ -17,10 +17,13 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = son_object_type;
 
-         account_id_type  son_member_account;
-         vote_id_type     vote_id;
-         uint64_t         total_votes = 0;
-         string           url;
+         account_id_type son_member_account;
+         vote_id_type vote_id;
+         uint64_t total_votes = 0;
+         string url;
+         vesting_balance_id_type deposit;
+         public_key_type signing_key;
+         vesting_balance_id_type pay_vb;
    };
 
    struct by_account;
@@ -43,4 +46,4 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::son_object, (graphene::db::object),
-                    (son_member_account)(vote_id)(total_votes)(url) )
+                    (son_member_account)(vote_id)(total_votes)(url)(deposit)(signing_key)(pay_vb) )
