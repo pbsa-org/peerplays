@@ -1720,6 +1720,41 @@ public:
       FC_CAPTURE_AND_RETHROW( (owner_account) )
    }
 
+   son_object get_son(string owner_account)
+   {
+      try
+      {
+         fc::optional<son_id_type> son_id = maybe_id<son_id_type>(owner_account);
+         if (son_id)
+         {
+            std::vector<son_id_type> ids_to_get;
+            ids_to_get.push_back(*son_id);
+            std::vector<fc::optional<son_object>> son_objects = _remote_db->get_sons(ids_to_get);
+            if (son_objects.front())
+               return *son_objects.front();
+            FC_THROW("No SON is registered for id ${id}", ("id", owner_account));
+         }
+         else
+         {
+            // then maybe it's the owner account
+            try
+            {
+               account_id_type owner_account_id = get_account_id(owner_account);
+               fc::optional<son_object> son = _remote_db->get_son_by_account(owner_account_id);
+               if (son)
+                  return *son;
+               else
+                  FC_THROW("No SON is registered for account ${account}", ("account", owner_account));
+            }
+            catch (const fc::exception&)
+            {
+               FC_THROW("No account or SON named ${account}", ("account", owner_account));
+            }
+         }
+      }
+      FC_CAPTURE_AND_RETHROW( (owner_account) )
+   }
+
    committee_member_object get_committee_member(string owner_account)
    {
       try
@@ -1754,6 +1789,84 @@ public:
       }
       FC_CAPTURE_AND_RETHROW( (owner_account) )
    }
+
+   signed_transaction create_son(string owner_account,
+                                 string url,
+                                 bool broadcast /* = false */)
+   { try {
+      account_object son_account = get_account(owner_account);
+      fc::ecc::private_key active_private_key = get_private_key_for_account(son_account);
+      int son_key_index = find_first_unused_derived_key_index(active_private_key);
+      fc::ecc::private_key son_private_key = derive_private_key(key_to_wif(active_private_key), son_key_index);
+      graphene::chain::public_key_type son_public_key = son_private_key.get_public_key();
+
+      son_create_operation son_create_op;
+      son_create_op.owner_account = son_account.id;
+      son_create_op.signing_key = son_public_key;
+      son_create_op.url = url;
+      secret_hash_type::encoder enc;
+      fc::raw::pack(enc, son_private_key);
+      fc::raw::pack(enc, secret_hash_type());
+      //son_create_op.initial_secret = secret_hash_type::hash(enc.result());
+
+
+      if (_remote_db->get_son_by_account(son_create_op.owner_account))
+         FC_THROW("Account ${owner_account} is already a SON", ("owner_account", owner_account));
+
+      signed_transaction tx;
+      tx.operations.push_back( son_create_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      //_wallet.pending_witness_registrations[owner_account] = key_to_wif(son_private_key);
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+
+   signed_transaction update_son(string owner_account,
+                                 string url,
+                                 string block_signing_key,
+                                 bool broadcast /* = false */)
+   { try {
+      son_object son = get_son(owner_account);
+      account_object son_account = get_account( son.son_member_account );
+      fc::ecc::private_key active_private_key = get_private_key_for_account(son_account);
+
+      son_update_operation son_update_op;
+      son_update_op.son_id = son.id;
+      son_update_op.owner_account = son_account.id;
+      if( url != "" )
+         son_update_op.new_url = url;
+      if( block_signing_key != "" ) {
+         son_update_op.new_signing_key = public_key_type( block_signing_key );
+      }
+
+      signed_transaction tx;
+      tx.operations.push_back( son_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(url)(block_signing_key)(broadcast) ) }
+
+   signed_transaction delete_son(string owner_account,
+                                 bool broadcast /* = false */)
+   { try {
+      son_object son = get_son(owner_account);
+      account_object son_account = get_account( son.son_member_account );
+      fc::ecc::private_key active_private_key = get_private_key_for_account(son_account);
+
+      son_delete_operation son_delete_op;
+      son_delete_op.son_id = son.id;
+      son_delete_op.owner_account = son_account.id;
+
+      signed_transaction tx;
+      tx.operations.push_back( son_delete_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
 
    signed_transaction create_witness(string owner_account,
                                      string url,
@@ -2031,7 +2144,7 @@ public:
    { try {
       account_object voting_account_object = get_account(voting_account);
       account_id_type son_member_owner_account_id = get_account_id(son_member);
-      fc::optional<son_object> son_member_obj = _remote_db->get_son_member_by_account(son_member_owner_account_id);
+      fc::optional<son_object> son_member_obj = _remote_db->get_son_by_account(son_member_owner_account_id);
       if (!son_member_obj)
          FC_THROW("Account ${son_member} is not registered as a son_member", ("son_member", son_member));
       if (approve)
@@ -4016,6 +4129,32 @@ witness_object wallet_api::get_witness(string owner_account)
 committee_member_object wallet_api::get_committee_member(string owner_account)
 {
    return my->get_committee_member(owner_account);
+}
+
+signed_transaction wallet_api::create_son(string owner_account,
+                                          string url,
+                                          bool broadcast /* = false */)
+{
+   return my->create_son(owner_account, url, broadcast);
+}
+
+signed_transaction wallet_api::update_son(string owner_account,
+                                          string url,
+                                          string block_signing_key,
+                                          bool broadcast /* = false */)
+{
+   return my->update_son(owner_account, url, block_signing_key, broadcast);
+}
+
+signed_transaction wallet_api::delete_son(string owner_account,
+                                          bool broadcast /* = false */)
+{
+   my->delete_son(owner_account, broadcast);
+}
+
+map<string, son_id_type> wallet_api::list_sons(const string& lowerbound, uint32_t limit)
+{
+   my->_remote_db->lookup_son_accounts(lowerbound, limit);
 }
 
 signed_transaction wallet_api::create_witness(string owner_account,

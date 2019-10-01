@@ -1271,6 +1271,63 @@ class wallet_api
        */
       committee_member_object get_committee_member(string owner_account);
 
+
+      /** Creates a SON object owned by the given account.
+       *
+       * An account can have at most one SON object.
+       *
+       * @param owner_account the name or id of the account which is creating the SON
+       * @param url a URL to include in the SON record in the blockchain.  Clients may
+       *            display this when showing a list of SONs.  May be blank.
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction registering a SON
+       */
+      signed_transaction create_son(string owner_account,
+                                    string url,
+                                    bool broadcast = false);
+
+      /**
+       * Update a SON object owned by the given account.
+       *
+       * @param witness The name of the SON's owner account.  Also accepts the ID of the owner account or the ID of the SON.
+       * @param url Same as for create_son.  The empty string makes it remain the same.
+       * @param block_signing_key The new block signing public key.  The empty string makes it remain the same.
+       * @param broadcast true if you wish to broadcast the transaction.
+       */
+      signed_transaction update_son(string owner_account,
+                                    string url,
+                                    string block_signing_key,
+                                    bool broadcast = false);
+
+
+      /** Deletes a SON object owned by the given account.
+       *
+       * An account can have at most one witness object.
+       *
+       * @param owner_account the name or id of the account which is creating the witness
+       * @param url a URL to include in the witness record in the blockchain.  Clients may
+       *            display this when showing a list of witnesses.  May be blank.
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction registering a witness
+       */
+      signed_transaction delete_son(string owner_account,
+                                    bool broadcast = false);
+
+      /** Lists all SONs in the blockchain.
+       * This returns a list of all account names that own SON, and the associated SON id,
+       * sorted by name.  This lists SONs whether they are currently voted in or not.
+       *
+       * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all SONs,
+       * start by setting \c lowerbound to the empty string \c "", and then each iteration, pass
+       * the last SON name returned as the \c lowerbound for the next \c list_sons() call.
+       *
+       * @param lowerbound the name of the first SON to return.  If the named SON does not exist, 
+       *                   the list will start at the SON that comes after \c lowerbound
+       * @param limit the maximum number of SON to return (max: 1000)
+       * @returns a list of SON mapping SON names to SON ids
+       */
+      map<string, son_id_type> list_sons(const string& lowerbound, uint32_t limit);
+
       /** Creates a witness object owned by the given account.
        *
        * An account can have at most one witness object.
@@ -1980,6 +2037,10 @@ FC_API( graphene::wallet::wallet_api,
         (get_committee_member)
         (list_witnesses)
         (list_committee_members)
+        (create_son)
+        (update_son)
+        (delete_son)
+        (list_sons)
         (create_witness)
         (update_witness)
         (create_worker)
