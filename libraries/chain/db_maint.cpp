@@ -1491,7 +1491,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
          d._vote_tally_buffer.resize(props.next_available_vote_id);
          d._witness_count_histogram_buffer.resize(props.parameters.maximum_witness_count / 2 + 1);
          d._committee_count_histogram_buffer.resize(props.parameters.maximum_committee_count / 2 + 1);
-         d._son_count_histogram_buffer.resize(props.parameters.maximum_son / 2 + 1);
+         d._son_count_histogram_buffer.resize(props.parameters.maximum_son_count / 2 + 1);
          d._total_voting_stake = 0;
 
          auto balance_type = vesting_balance_type::unspecified;
