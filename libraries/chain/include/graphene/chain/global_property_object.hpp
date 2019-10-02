@@ -53,7 +53,7 @@ namespace graphene { namespace chain {
          flat_set<witness_id_type>          active_witnesses; // updated once per maintenance interval
          // n.b. witness scheduling is done by witness_schedule object
 
-         flat_set<son_id_type>              active_son_members; // updated once per maintenance interval
+         flat_set<son_id_type>              active_sons; // updated once per maintenance interval
    };
 
    /**

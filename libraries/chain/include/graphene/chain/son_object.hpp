@@ -42,7 +42,7 @@ namespace graphene { namespace chain {
          >
       >
    >;
-   using son_member_index = generic_index<son_object, son_member_multi_index_type>;
+   using son_index = generic_index<son_object, son_member_multi_index_type>;
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::son_object, (graphene::db::object),

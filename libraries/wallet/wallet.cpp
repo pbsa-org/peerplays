@@ -292,6 +292,23 @@ private:
       _wallet.pending_account_registrations.erase( it );
    }
 
+   // after a son registration succeeds, this saves the private key in the wallet permanently
+   //
+   void claim_registered_son(const std::string& son_name)
+   {
+      auto iter = _wallet.pending_son_registrations.find(son_name);
+      FC_ASSERT(iter != _wallet.pending_son_registrations.end());
+      std::string wif_key = iter->second;
+
+      // get the list key id this key is registered with in the chain
+      fc::optional<fc::ecc::private_key> son_private_key = wif_to_key(wif_key);
+      FC_ASSERT(son_private_key);
+
+      auto pub_key = son_private_key->get_public_key();
+      _keys[pub_key] = wif_key;
+      _wallet.pending_son_registrations.erase(iter);
+   }
+
    // after a witness registration succeeds, this saves the private key in the wallet permanently
    //
    void claim_registered_witness(const std::string& witness_name)
@@ -351,6 +368,24 @@ private:
                fc::optional<witness_object> witness_obj = _remote_db->get_witness_by_account(optional_account->id);
                if (witness_obj)
                   claim_registered_witness(optional_account->name);
+            }
+      }
+
+      if (!_wallet.pending_son_registrations.empty())
+      {
+         // make a vector of the owner accounts for sons pending registration
+         std::vector<string> pending_son_names = boost::copy_range<std::vector<string> >(boost::adaptors::keys(_wallet.pending_son_registrations));
+
+         // look up the owners on the blockchain
+         std::vector<fc::optional<graphene::chain::account_object>> owner_account_objects = _remote_db->lookup_account_names(pending_son_names);
+
+         // if any of them have registered sons, claim them
+         for( const fc::optional<graphene::chain::account_object>& optional_account : owner_account_objects )
+            if (optional_account)
+            {
+               fc::optional<son_object> son_obj = _remote_db->get_son_by_account(optional_account->id);
+               if (son_obj)
+                  claim_registered_son(optional_account->name);
             }
       }
    }
@@ -665,6 +700,7 @@ public:
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
       result["active_witnesses"] = global_props.active_witnesses;
       result["active_committee_members"] = global_props.active_committee_members;
+      result["active_sons"] = global_props.active_sons;
       result["entropy"] = dynamic_props.random;
       return result;
    }
@@ -1807,8 +1843,6 @@ public:
       secret_hash_type::encoder enc;
       fc::raw::pack(enc, son_private_key);
       fc::raw::pack(enc, secret_hash_type());
-      //son_create_op.initial_secret = secret_hash_type::hash(enc.result());
-
 
       if (_remote_db->get_son_by_account(son_create_op.owner_account))
          FC_THROW("Account ${owner_account} is already a SON", ("owner_account", owner_account));
@@ -1818,7 +1852,7 @@ public:
       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
       tx.validate();
 
-      //_wallet.pending_witness_registrations[owner_account] = key_to_wif(son_private_key);
+      _wallet.pending_son_registrations[owner_account] = key_to_wif(son_private_key);
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }

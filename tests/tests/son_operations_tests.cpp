@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( create_son_test ) {
    }
    generate_block();
 
-   const auto& idx = db.get_index_type<son_member_index>().indices().get<by_account>();
+   const auto& idx = db.get_index_type<son_index>().indices().get<by_account>();
    BOOST_REQUIRE( idx.size() == 1 );
    auto obj = idx.find( alice_id );
    BOOST_REQUIRE( obj != idx.end() );
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( update_son_test ) {
    }
    generate_block();
 
-   const auto& idx = db.get_index_type<son_member_index>().indices().get<by_account>();
+   const auto& idx = db.get_index_type<son_index>().indices().get<by_account>();
    BOOST_REQUIRE( idx.size() == 1 );
    auto obj = idx.find( alice_id );
    BOOST_REQUIRE( obj != idx.end() );
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE( delete_son_test ) {
    }
    generate_block();
 
-   const auto& idx = db.get_index_type<son_member_index>().indices().get<by_account>();
+   const auto& idx = db.get_index_type<son_index>().indices().get<by_account>();
    BOOST_REQUIRE( idx.empty() );
 }
 
@@ -153,7 +153,7 @@ try {
    set_expiration(db, trx);
    trx.clear();
 
-   const auto& idx = db.get_index_type<son_member_index>().indices().get<by_account>();
+   const auto& idx = db.get_index_type<son_index>().indices().get<by_account>();
    auto obj = idx.find( alice_id );
    BOOST_REQUIRE( obj != idx.end() );
    // not changing

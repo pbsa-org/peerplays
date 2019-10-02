@@ -1613,7 +1613,7 @@ fc::optional<son_object> database_api::get_son_by_account(account_id_type accoun
 
 fc::optional<son_object> database_api_impl::get_son_by_account(account_id_type account) const
 {
-   const auto& idx = _db.get_index_type<son_member_index>().indices().get<by_account>();
+   const auto& idx = _db.get_index_type<son_index>().indices().get<by_account>();
    auto itr = idx.find(account);
    if( itr != idx.end() )
       return *itr;
@@ -1628,7 +1628,7 @@ map<string, son_id_type> database_api::lookup_son_accounts(const string& lower_b
 map<string, son_id_type> database_api_impl::lookup_son_accounts(const string& lower_bound_name, uint32_t limit)const
 {
    FC_ASSERT( limit <= 1000 );
-   const auto& sons_by_id = _db.get_index_type<son_member_index>().indices().get<by_id>();
+   const auto& sons_by_id = _db.get_index_type<son_index>().indices().get<by_id>();
 
    // we want to order sons by account name, but that name is in the account object
    // so the son_member_index doesn't have a quick way to access it.
@@ -1655,7 +1655,7 @@ uint64_t database_api::get_son_count()const
 
 uint64_t database_api_impl::get_son_count()const
 {
-   return _db.get_index_type<son_member_index>().indices().size();
+   return _db.get_index_type<son_index>().indices().size();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1677,7 +1677,7 @@ vector<variant> database_api_impl::lookup_vote_ids( const vector<vote_id_type>& 
    const auto& committee_idx = _db.get_index_type<committee_member_index>().indices().get<by_vote_id>();
    const auto& for_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_for>();
    const auto& against_worker_idx = _db.get_index_type<worker_index>().indices().get<by_vote_against>();
-   const auto& son_idx = _db.get_index_type<son_member_index>().indices().get<by_vote_id>();
+   const auto& son_idx = _db.get_index_type<son_index>().indices().get<by_vote_id>();
 
    vector<variant> result;
    result.reserve( votes.size() );
