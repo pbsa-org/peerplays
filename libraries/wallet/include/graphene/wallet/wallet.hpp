@@ -1260,6 +1260,12 @@ class wallet_api
        */
       map<string, committee_member_id_type>       list_committee_members(const string& lowerbound, uint32_t limit);
 
+      /** Returns information about the given son.
+       * @param owner_account the name or id of the SON account owner, or the id of the SON
+       * @returns the information about the SON stored in the block chain
+       */
+      son_object get_son(string owner_account);
+
       /** Returns information about the given witness.
        * @param owner_account the name or id of the witness account owner, or the id of the witness
        * @returns the information about the witness stored in the block chain
