@@ -2040,6 +2040,7 @@ FC_API( graphene::wallet::wallet_api,
         (settle_asset)
         (whitelist_account)
         (create_committee_member)
+        (get_son)
         (get_witness)
         (get_committee_member)
         (list_witnesses)
