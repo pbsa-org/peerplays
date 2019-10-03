@@ -2205,6 +2205,47 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (voting_account)(son_member)(approve)(broadcast) ) }
 
+   signed_transaction update_son_votes(string voting_account,
+                                           std::vector<std::string> sons_to_approve,
+                                           std::vector<std::string> sons_to_reject,
+                                           uint16_t desired_number_of_sons,
+                                           bool broadcast /* = false */)
+   { try {
+      account_object voting_account_object = get_account(voting_account);
+      for (const std::string& son : sons_to_approve)
+      {
+         account_id_type son_owner_account_id = get_account_id(son);
+         fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
+         if (!son_obj)
+            FC_THROW("Account ${son} is not registered as a witness", ("son", son));
+         auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
+         if (!insert_result.second)
+            FC_THROW("Account ${account} was already voting for son ${son}", ("account", voting_account)("son", son));
+      }
+      for (const std::string& son : sons_to_reject)
+      {
+         account_id_type son_owner_account_id = get_account_id(son);
+         fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
+         if (!son_obj)
+            FC_THROW("Account ${son} is not registered as a son", ("son", son));
+         unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
+         if (!votes_removed)
+            FC_THROW("Account ${account} is already not voting for son ${son}", ("account", voting_account)("son", son));
+      }
+      voting_account_object.options.num_son = desired_number_of_sons;
+
+      account_update_operation account_update_op;
+      account_update_op.account = voting_account_object.id;
+      account_update_op.new_options = voting_account_object.options;
+
+      signed_transaction tx;
+      tx.operations.push_back( account_update_op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(sons_to_approve)(sons_to_reject)(desired_number_of_sons)(broadcast) ) }
+
    signed_transaction vote_for_witness(string voting_account,
                                        string witness,
                                        bool approve,
@@ -4262,6 +4303,15 @@ signed_transaction wallet_api::vote_for_son_member(string voting_account,
                                                    bool broadcast /* = false */)
 {
    return my->vote_for_son_member(voting_account, son_member, approve, broadcast);
+}
+
+signed_transaction wallet_api::update_son_votes(string voting_account,
+                                                    std::vector<std::string> sons_to_approve,
+                                                    std::vector<std::string> sons_to_reject,
+                                                    uint16_t desired_number_of_sons,
+                                                    bool broadcast /* = false */)
+{
+   return my->update_son_votes(voting_account, sons_to_approve, sons_to_reject, desired_number_of_sons, broadcast);
 }
 
 signed_transaction wallet_api::vote_for_witness(string voting_account,
