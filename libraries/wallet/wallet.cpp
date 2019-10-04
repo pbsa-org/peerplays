@@ -2171,7 +2171,7 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (voting_account)(committee_member)(approve)(broadcast) ) }
 
-   signed_transaction vote_for_son_member(string voting_account,
+   signed_transaction vote_for_son(string voting_account,
                                         string son_member,
                                         bool approve,
                                         bool broadcast /* = false */)
@@ -4297,12 +4297,12 @@ signed_transaction wallet_api::vote_for_committee_member(string voting_account,
    return my->vote_for_committee_member(voting_account, witness, approve, broadcast);
 }
 
-signed_transaction wallet_api::vote_for_son_member(string voting_account,
+signed_transaction wallet_api::vote_for_son(string voting_account,
                                                    string son_member,
                                                    bool approve,
                                                    bool broadcast /* = false */)
 {
-   return my->vote_for_son_member(voting_account, son_member, approve, broadcast);
+   return my->vote_for_son(voting_account, son_member, approve, broadcast);
 }
 
 signed_transaction wallet_api::update_son_votes(string voting_account,

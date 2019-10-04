@@ -1459,7 +1459,7 @@ class wallet_api
        * @param broadcast true if you wish to broadcast the transaction
        * @return the signed transaction changing your vote for the given son_member
        */
-      signed_transaction vote_for_son_member(string voting_account,
+      signed_transaction vote_for_son(string voting_account,
                                              string son_member,
                                              bool approve,
                                              bool broadcast = false);
@@ -2089,7 +2089,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_vesting_balances)
         (withdraw_vesting)
         (vote_for_committee_member)
-        (vote_for_son_member)
+        (vote_for_son)
         (update_son_votes)
         (vote_for_witness)
         (update_witness_votes)
