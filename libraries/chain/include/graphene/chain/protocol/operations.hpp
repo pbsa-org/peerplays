@@ -136,7 +136,7 @@ namespace graphene { namespace chain {
             ticket_purchase_operation,
             lottery_reward_operation,
             lottery_end_operation,
-            sweeps_vesting_claim_operation
+            sweeps_vesting_claim_operation,
             son_create_operation,
             son_update_operation,
             son_delete_operation
