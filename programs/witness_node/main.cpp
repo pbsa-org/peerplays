@@ -50,14 +50,14 @@
 #include <iostream>
 
 #ifdef WIN32
-# include <signal.h> 
+# include <signal.h>
 #else
 # include <csignal>
 #endif
 
 using namespace graphene;
 namespace bpo = boost::program_options;
-         
+
 int main(int argc, char** argv) {
    app::application* node = new app::application();
    fc::oexception unhandled_exception;
@@ -193,4 +193,3 @@ int main(int argc, char** argv) {
       return EXIT_FAILURE;
    }
 }
-
