@@ -297,6 +297,7 @@ struct get_impacted_account_visitor
    }
    void operator()( const sweeps_vesting_claim_operation& op ) { 
       _impacted.insert( op.account );
+   }
    void operator()( const son_create_operation& op ){
         _impacted.insert( op.owner_account );
    }
