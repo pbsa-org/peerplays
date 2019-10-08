@@ -27,8 +27,10 @@
 
 #include <graphene/utilities/tempdir.hpp>
 #include <graphene/bookie/bookie_plugin.hpp>
+#include <graphene/account_history/account_history_plugin.hpp>
 #include <graphene/egenesis/egenesis.hpp>
 #include <graphene/wallet/wallet.hpp>
+#include <graphene/chain/config.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/network/http/websocket.hpp>
@@ -117,6 +119,7 @@ std::shared_ptr<graphene::app::application> start_application(fc::temp_directory
    std::shared_ptr<graphene::app::application> app1(new graphene::app::application{});
 
    app1->register_plugin< graphene::bookie::bookie_plugin>();
+   app1->register_plugin<graphene::account_history::account_history_plugin>();
    app1->startup_plugins();
    boost::program_options::variables_map cfg;
 #ifdef _WIN32
@@ -211,7 +214,7 @@ public:
       wallet_data.ws_password = "";
       websocket_connection  = websocket_client.connect( wallet_data.ws_server );
 
-      api_connection = std::make_shared<fc::rpc::websocket_api_connection>(websocket_connection);
+      api_connection = std::make_shared<fc::rpc::websocket_api_connection>(websocket_connection, GRAPHENE_MAX_NESTED_OBJECTS);
 
       remote_login_api = api_connection->get_remote_api< graphene::app::login_api >(1);
       BOOST_CHECK(remote_login_api->login( wallet_data.ws_user, wallet_data.ws_password ) );
@@ -222,7 +225,7 @@ public:
 
       wallet_api = fc::api<graphene::wallet::wallet_api>(wallet_api_ptr);
 
-      wallet_cli = std::make_shared<fc::rpc::cli>();
+      wallet_cli = std::make_shared<fc::rpc::cli>(GRAPHENE_MAX_NESTED_OBJECTS);
       for( auto& name_formatter : wallet_api_ptr->get_result_formatters() )
          wallet_cli->format_result( name_formatter.first, name_formatter.second );
 
@@ -433,6 +436,45 @@ BOOST_FIXTURE_TEST_CASE( cli_vote_for_2_witnesses, cli_fixture )
       BOOST_CHECK(init2_middle_votes > init2_start_votes);
       int init1_last_votes = init1_obj.total_votes;
       BOOST_CHECK(init1_last_votes > init1_start_votes);
+   } catch( fc::exception& e ) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
+
+///////////////////////
+// Check account history pagination
+///////////////////////
+BOOST_FIXTURE_TEST_CASE( account_history_pagination, cli_fixture )
+{
+   try
+   {
+      INVOKE(create_new_account);
+
+      // attempt to give jmjatlanta some peerplay
+      BOOST_TEST_MESSAGE("Transferring peerplay from Nathan to jmjatlanta");
+      for(int i = 1; i <= 199; i++)
+      {
+         signed_transaction transfer_tx = con.wallet_api_ptr->transfer("nathan", "jmjatlanta", std::to_string(i),
+                                                "1.3.0", "Here are some CORE token for your new account", true);
+      }
+
+      BOOST_CHECK(generate_block(app1));
+
+      // now get account history and make sure everything is there (and no duplicates)
+      std::vector<graphene::wallet::operation_detail> history = con.wallet_api_ptr->get_account_history("jmjatlanta", 300);
+      BOOST_CHECK_EQUAL(201u, history.size() );
+
+      std::set<object_id_type> operation_ids;
+
+      for(auto& op : history)
+      {
+         if( operation_ids.find(op.op.id) != operation_ids.end() )
+         {
+            BOOST_FAIL("Duplicate found");
+         }
+         operation_ids.insert(op.op.id);
+      }
    } catch( fc::exception& e ) {
       edump((e.to_detail_string()));
       throw;

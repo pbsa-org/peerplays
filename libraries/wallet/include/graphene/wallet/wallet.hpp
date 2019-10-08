@@ -34,8 +34,8 @@ using namespace std;
 
 namespace fc
 {
-   void to_variant(const account_multi_index_type& accts, variant& vo);
-   void from_variant(const variant &var, account_multi_index_type &vo);
+   void to_variant( const account_multi_index_type& accts, variant& vo, uint32_t max_depth );
+   void from_variant( const variant &var, account_multi_index_type &vo, uint32_t max_depth );
 }
 
 namespace graphene { namespace wallet {
@@ -348,6 +348,12 @@ class wallet_api
        * @returns the list of asset objects, ordered by symbol
        */
       vector<asset_object>              list_assets(const string& lowerbound, uint32_t limit)const;
+
+      /** Returns assets count registered on the blockchain.
+       * 
+       * @returns assets count
+       */
+      uint64_t get_asset_count()const;
    
    
       vector<asset_object>              get_lotteries( asset_id_type stop = asset_id_type(),
@@ -1925,6 +1931,7 @@ FC_API( graphene::wallet::wallet_api,
         (list_accounts)
         (list_account_balances)
         (list_assets)
+        (get_asset_count)
         (import_key)
         (import_accounts)
         (import_account_keys)
