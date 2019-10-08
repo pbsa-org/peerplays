@@ -172,7 +172,7 @@ static fc::optional<fc::logging_config> load_logging_config_from_ini_file(const 
             file_appender_config.rotate = true;
             file_appender_config.rotation_interval = fc::minutes(interval);
             file_appender_config.rotation_limit = fc::days(limit);
-            logging_config.appenders.push_back(fc::appender_config(file_appender_name, "file", fc::variant(file_appender_config)));
+            logging_config.appenders.push_back(fc::appender_config(file_appender_name, "file", fc::variant(file_appender_config, GRAPHENE_MAX_NESTED_OBJECTS)));
             found_logging_config = true;
          }
          else if (boost::starts_with(section_name, logger_section_prefix))
