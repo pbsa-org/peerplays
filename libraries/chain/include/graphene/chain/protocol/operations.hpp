@@ -27,6 +27,7 @@
 #include <graphene/chain/protocol/affiliate.hpp>
 #include <graphene/chain/protocol/assert.hpp>
 #include <graphene/chain/protocol/asset_ops.hpp>
+#include <graphene/chain/protocol/lottery_ops.hpp>
 #include <graphene/chain/protocol/balance.hpp>
 #include <graphene/chain/protocol/custom.hpp>
 #include <graphene/chain/protocol/committee_member.hpp>
@@ -131,6 +132,11 @@ namespace graphene { namespace chain {
             event_group_delete_operation,
             affiliate_payout_operation, // VIRTUAL
             affiliate_referral_payout_operation, // VIRTUAL
+            lottery_asset_create_operation,
+            ticket_purchase_operation,
+            lottery_reward_operation,
+            lottery_end_operation,
+            sweeps_vesting_claim_operation
             son_create_operation,
             son_update_operation,
             son_delete_operation
