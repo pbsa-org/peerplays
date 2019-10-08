@@ -175,7 +175,7 @@ try {
    obj = idx.find( alice_id );
    // not deleting
    BOOST_REQUIRE( obj != idx.end() );
-   BOOST_CHECK( obj->son_member_account.instance ==  alice_id.instance);
+   BOOST_CHECK( obj->son_account.instance ==  alice_id.instance);
 }
 catch (fc::exception &e) {
    edump((e.to_detail_string()));

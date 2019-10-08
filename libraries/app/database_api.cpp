@@ -1736,13 +1736,13 @@ map<string, son_id_type> database_api_impl::lookup_son_accounts(const string& lo
    const auto& sons_by_id = _db.get_index_type<son_index>().indices().get<by_id>();
 
    // we want to order sons by account name, but that name is in the account object
-   // so the son_member_index doesn't have a quick way to access it.
+   // so the son_index doesn't have a quick way to access it.
    // get all the names and look them all up, sort them, then figure out what
    // records to return.  This could be optimized, but we expect the
    // number of witnesses to be few and the frequency of calls to be rare
    std::map<std::string, son_id_type> sons_by_account_name;
    for (const son_object& son : sons_by_id)
-       if (auto account_iter = _db.find(son.son_member_account))
+       if (auto account_iter = _db.find(son.son_account))
            if (account_iter->name >= lower_bound_name) // we can ignore anything below lower_bound_name
                sons_by_account_name.insert(std::make_pair(account_iter->name, son.id));
 

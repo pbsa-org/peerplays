@@ -701,11 +701,8 @@ public:
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
       result["active_witnesses"] = fc::variant(global_props.active_witnesses, GRAPHENE_MAX_NESTED_OBJECTS);
       result["active_committee_members"] = fc::variant(global_props.active_committee_members, GRAPHENE_MAX_NESTED_OBJECTS);
+      result["active_sons"] = fc::variant(global_props.active_sons, GRAPHENE_MAX_NESTED_OBJECTS);
       result["entropy"] = fc::variant(dynamic_props.random, GRAPHENE_MAX_NESTED_OBJECTS);
-      result["active_witnesses"] = global_props.active_witnesses;
-      result["active_committee_members"] = global_props.active_committee_members;
-      result["active_sons"] = global_props.active_sons;
-      result["entropy"] = dynamic_props.random;
       return result;
    }
 
@@ -1898,7 +1895,7 @@ public:
                                  bool broadcast /* = false */)
    { try {
       son_object son = get_son(owner_account);
-      account_object son_account = get_account( son.son_member_account );
+      account_object son_account = get_account( son.son_account );
       fc::ecc::private_key active_private_key = get_private_key_for_account(son_account);
 
       son_update_operation son_update_op;
@@ -1922,7 +1919,7 @@ public:
                                  bool broadcast /* = false */)
    { try {
       son_object son = get_son(owner_account);
-      account_object son_account = get_account( son.son_member_account );
+      account_object son_account = get_account( son.son_account );
       fc::ecc::private_key active_private_key = get_private_key_for_account(son_account);
 
       son_delete_operation son_delete_op;
@@ -2206,26 +2203,26 @@ public:
    } FC_CAPTURE_AND_RETHROW( (voting_account)(committee_member)(approve)(broadcast) ) }
 
    signed_transaction vote_for_son(string voting_account,
-                                        string son_member,
+                                        string son,
                                         bool approve,
                                         bool broadcast /* = false */)
    { try {
       account_object voting_account_object = get_account(voting_account);
-      account_id_type son_member_owner_account_id = get_account_id(son_member);
-      fc::optional<son_object> son_member_obj = _remote_db->get_son_by_account(son_member_owner_account_id);
-      if (!son_member_obj)
-         FC_THROW("Account ${son_member} is not registered as a son_member", ("son_member", son_member));
+      account_id_type son_account_id = get_account_id(son);
+      fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_account_id);
+      if (!son_obj)
+         FC_THROW("Account ${son} is not registered as a son", ("son", son));
       if (approve)
       {
-         auto insert_result = voting_account_object.options.votes.insert(son_member_obj->vote_id);
+         auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
          if (!insert_result.second)
-            FC_THROW("Account ${account} was already voting for son_member ${son_member}", ("account", voting_account)("son_member", son_member));
+            FC_THROW("Account ${account} was already voting for son ${son}", ("account", voting_account)("son", son));
       }
       else
       {
-         unsigned votes_removed = voting_account_object.options.votes.erase(son_member_obj->vote_id);
+         unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
          if (!votes_removed)
-            FC_THROW("Account ${account} is already not voting for son_member ${son_member}", ("account", voting_account)("son_member", son_member));
+            FC_THROW("Account ${account} is already not voting for son ${son}", ("account", voting_account)("son", son));
       }
       account_update_operation account_update_op;
       account_update_op.account = voting_account_object.id;
@@ -2237,7 +2234,7 @@ public:
       tx.validate();
 
       return sign_transaction( tx, broadcast );
-   } FC_CAPTURE_AND_RETHROW( (voting_account)(son_member)(approve)(broadcast) ) }
+   } FC_CAPTURE_AND_RETHROW( (voting_account)(son)(approve)(broadcast) ) }
 
    signed_transaction update_son_votes(string voting_account,
                                            std::vector<std::string> sons_to_approve,
@@ -4331,11 +4328,11 @@ signed_transaction wallet_api::vote_for_committee_member(string voting_account,
 }
 
 signed_transaction wallet_api::vote_for_son(string voting_account,
-                                                   string son_member,
+                                                   string son,
                                                    bool approve,
                                                    bool broadcast /* = false */)
 {
-   return my->vote_for_son(voting_account, son_member, approve, broadcast);
+   return my->vote_for_son(voting_account, son, approve, broadcast);
 }
 
 signed_transaction wallet_api::update_son_votes(string voting_account,

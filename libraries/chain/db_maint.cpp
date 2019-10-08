@@ -253,7 +253,7 @@ void database::update_active_witnesses()
 void database::update_active_committee_members()
 { try {
    assert( _committee_count_histogram_buffer.size() > 0 );
-   share_type stake_target = (_total_voting_stake-_witness_count_histogram_buffer[0]) / 2;
+   share_type stake_target = (_total_voting_stake-_committee_count_histogram_buffer[0]) / 2;
 
    /// accounts that vote for 0 or 1 witness do not get to express an opinion on
    /// the number of witnesses to have (they abstain and are non-voting accounts)
@@ -329,7 +329,7 @@ void database::update_active_committee_members()
 void database::update_active_sons()
 { try {
    assert( _son_count_histogram_buffer.size() > 0 );
-   share_type stake_target = (_total_voting_stake-_witness_count_histogram_buffer[0]) / 2;
+   share_type stake_target = (_total_voting_stake-_son_count_histogram_buffer[0]) / 2;
 
    /// accounts that vote for 0 or 1 son do not get to express an opinion on
    /// the number of sons to have (they abstain and are non-voting accounts)
@@ -372,7 +372,7 @@ void database::update_active_sons()
 
          for( const son_object& son : sons )
          {
-            weights.emplace(son.son_member_account, _vote_tally_buffer[son.vote_id]);
+            weights.emplace(son.son_account, _vote_tally_buffer[son.vote_id]);
             total_votes += _vote_tally_buffer[son.vote_id];
          }
 
@@ -394,7 +394,7 @@ void database::update_active_sons()
       {
          vote_counter vc;
          for( const son_object& son : sons )
-            vc.add( son.son_member_account, std::max(_vote_tally_buffer[son.vote_id], UINT64_C(1)) );
+            vc.add( son.son_account, std::max(_vote_tally_buffer[son.vote_id], UINT64_C(1)) );
          vc.finish( a.active );
       }
    } );

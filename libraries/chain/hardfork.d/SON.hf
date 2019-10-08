@@ -1,4 +1,5 @@
 // SON HARDFORK Monday, September 21, 2020 1:43:11 PM
 #ifndef HARDFORK_SON_TIME
-#define HARDFORK_SON_TIME (fc::time_point_sec( 1000000000 ))
+#include <ctime>
+#define HARDFORK_SON_TIME (fc::time_point_sec( time(NULL) - (60 * 60) ))
 #endif

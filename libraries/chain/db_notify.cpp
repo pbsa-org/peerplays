@@ -384,7 +384,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
         } case son_object_type:{
            const auto& aobj = dynamic_cast<const son_object*>(obj);
            assert( aobj != nullptr );
-           accounts.insert( aobj->son_member_account );
+           accounts.insert( aobj->son_account );
            break;
         }
       }
