@@ -37,10 +37,6 @@ namespace graphene { namespace chain {
       optional< uint16_t >            betting_rake_fee_percentage;
       optional< flat_map<bet_multiplier_type, bet_multiplier_type> > permitted_betting_odds_increments;
       optional< uint16_t >            live_betting_delay_time;
-      /* gpos parameters */
-      optional < uint32_t >           gpos_period;
-      optional < uint32_t >           gpos_subperiod;
-      optional < uint32_t >           gpos_period_start;
       optional < uint16_t >           son_count;
       optional< uint16_t >            sweeps_distribution_percentage;
       optional< asset_id_type >       sweeps_distribution_asset;
@@ -138,9 +134,6 @@ FC_REFLECT( graphene::chain::parameter_extension,
    (betting_rake_fee_percentage)
    (permitted_betting_odds_increments)
    (live_betting_delay_time)
-   (gpos_period)
-   (gpos_subperiod)
-   (gpos_period_start)
    (son_count)
    (sweeps_distribution_percentage)
    (sweeps_distribution_asset)

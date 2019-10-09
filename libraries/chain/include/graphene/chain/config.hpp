@@ -231,8 +231,6 @@
 #define TOURNAMENT_MAX_WHITELIST_LENGTH                     1000
 #define TOURNAMENT_MAX_START_TIME_IN_FUTURE                 (60*60*24*7*4) // 1 month
 #define TOURNAMENT_MAX_START_DELAY                          (60*60*24*7) // 1 week
-#define GPOS_PERIOD                                         (60*60*24*30*6) // 6 months
-#define GPOS_SUBPERIOD                                      (60*60*24*30) // 1 month
 #define MIN_SON_MEMBER_COUNT                                15
 
 #define SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE              (2*GRAPHENE_1_PERCENT)
