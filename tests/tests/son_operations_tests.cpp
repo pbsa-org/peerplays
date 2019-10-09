@@ -2,6 +2,7 @@
 
 #include "../common/database_fixture.hpp"
 
+#include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/son_object.hpp>
 #include <graphene/chain/son_evaluator.hpp>
 
