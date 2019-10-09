@@ -228,3 +228,6 @@
 #define TOURNAMENT_MAX_START_DELAY                          (60*60*24*7) // 1 week
 #define GPOS_PERIOD                                         (60*60*24*30*6) // 6 months
 #define GPOS_SUBPERIOD                                      (60*60*24*30) // 1 month
+#define SON_VESTING_AMOUNT                                  50 // 50 PPY
+#define SON_VESTING_PERIOD                                  (60*60*24*30) // 2 days
+
