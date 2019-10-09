@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE( create_son_test ) {
       op.creator = alice_id;
       op.owner = alice_id;
       op.amount = asset(10);
-      op.balance_type = vesting_balance_type::unspecified;
+      //op.balance_type = vesting_balance_type::unspecified;
 
       trx.operations.push_back(op);
       set_expiration(db, trx);
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE( create_son_test ) {
       op.creator = alice_id;
       op.owner = alice_id;
       op.amount = asset(10);
-      op.balance_type = vesting_balance_type::unspecified;
+      //op.balance_type = vesting_balance_type::unspecified;
 
       trx.operations.push_back(op);
       set_expiration(db, trx);
