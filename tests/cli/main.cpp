@@ -473,8 +473,8 @@ BOOST_FIXTURE_TEST_CASE( create_son, cli_fixture )
       BOOST_CHECK(con.wallet_api_ptr->import_key("son1account", bki.wif_priv_key));
       con.wallet_api_ptr->save_wallet_file(con.wallet_filename);
 
-      // attempt to give son1account some CORE
-      BOOST_TEST_MESSAGE("Transferring CORE from Nathan to son1account");
+      // attempt to give son1account some CORE tokens
+      BOOST_TEST_MESSAGE("Transferring CORE tokens from Nathan to son1account");
       transfer_tx = con.wallet_api_ptr->transfer(
             "nathan", "son1account", "15000", "1.3.0", "Here are some CORE token for your new account", true
       );
@@ -509,8 +509,8 @@ BOOST_FIXTURE_TEST_CASE( create_son, cli_fixture )
       BOOST_CHECK(con.wallet_api_ptr->import_key("son2account", bki.wif_priv_key));
       con.wallet_api_ptr->save_wallet_file(con.wallet_filename);
 
-      // attempt to give son1account some CORE
-      BOOST_TEST_MESSAGE("Transferring CORE from Nathan to son2account");
+      // attempt to give son1account some CORE tokens
+      BOOST_TEST_MESSAGE("Transferring CORE tokens from Nathan to son2account");
       transfer_tx = con.wallet_api_ptr->transfer(
             "nathan", "son2account", "15000", "1.3.0", "Here are some CORE token for your new account", true
       );
