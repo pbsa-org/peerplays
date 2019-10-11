@@ -45,7 +45,11 @@ void_result vesting_balance_create_evaluator::do_evaluate( const vesting_balance
    if(d.head_block_time() < HARDFORK_GPOS_TIME) // Todo: can be removed after gpos hf time pass
       FC_ASSERT( op.balance_type == vesting_balance_type::unspecified);
 
+   if(d.head_block_time() >= HARDFORK_SON_TIME && op.balance_type == vesting_balance_type::son) // Todo: hf check can be removed after pass
+      FC_ASSERT( op.amount.amount >= d.get_global_properties().parameters.son_vesting_amount() );
+
    return void_result();
+
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 struct init_policy_visitor
@@ -79,6 +83,17 @@ struct init_policy_visitor
       policy.coin_seconds_earned_last_update = now;
       p = policy;
    }
+
+   void operator()( const dormant_vesting_policy_initializer& i )const
+   {
+      dormant_vesting_policy policy;
+      policy.dormant_mode = i.dormant;
+      policy.begin_timestamp = i.begin_timestamp;
+      policy.vesting_cliff_seconds = i.vesting_cliff_seconds;
+      policy.vesting_duration_seconds = i.vesting_duration_seconds;
+      policy.begin_balance = init_balance;
+      p = policy;
+   }
 };
 
 object_id_type vesting_balance_create_evaluator::do_apply( const vesting_balance_create_operation& op )
@@ -103,6 +118,14 @@ object_id_type vesting_balance_create_evaluator::do_apply( const vesting_balance
          p.begin_timestamp = now;
          p.vesting_cliff_seconds = gpo.parameters.gpos_subperiod();
          p.vesting_duration_seconds = gpo.parameters.gpos_subperiod();
+         obj.policy = p;
+      }
+      if(op.balance_type == vesting_balance_type::son)
+      {
+         const auto &gpo = d.get_global_properties();
+         // forcing son dormant policy
+         dormant_vesting_policy p;
+         p.dormant_mode = true;
          obj.policy = p;
       }
       else {
