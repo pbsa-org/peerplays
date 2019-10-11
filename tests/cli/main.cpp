@@ -451,6 +451,7 @@ BOOST_FIXTURE_TEST_CASE( cli_vote_for_2_witnesses, cli_fixture )
 ///////////////////////
 BOOST_FIXTURE_TEST_CASE( create_son, cli_fixture )
 {
+   BOOST_TEST_MESSAGE("SON cli wallet tests begin");
    try
    {
       INVOKE(upgrade_nathan_account);
@@ -547,9 +548,11 @@ BOOST_FIXTURE_TEST_CASE( create_son, cli_fixture )
       BOOST_CHECK_EQUAL(son2_obj.url, "http://son2");
 
    } catch( fc::exception& e ) {
+      BOOST_TEST_MESSAGE("SON cli wallet tests exception");
       edump((e.to_detail_string()));
       throw;
    }
+   BOOST_TEST_MESSAGE("SON cli wallet tests end");
 }
 
 ///////////////////////
