@@ -624,7 +624,7 @@ BOOST_FIXTURE_TEST_CASE( create_son, cli_fixture )
    BOOST_TEST_MESSAGE("SON cli wallet tests end");
 }
 
-BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
+BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
 {
    BOOST_TEST_MESSAGE("SON cli wallet tests begin");
    try
@@ -638,6 +638,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       signed_transaction vote_tx;
       account_object acc_before_upgrade, acc_after_upgrade;
       son_object son_obj;
+      global_property_object gpo;
 
       // create sonaccount01
       bki = con.wallet_api_ptr->suggest_brain_key();
@@ -658,7 +659,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount01");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount01
       BOOST_TEST_MESSAGE("Upgrading sonaccount01 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount01", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount01");
@@ -694,7 +695,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount02");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount02
       BOOST_TEST_MESSAGE("Upgrading sonaccount02 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount02", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount02");
@@ -730,7 +731,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount03");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount03
       BOOST_TEST_MESSAGE("Upgrading sonaccount03 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount03", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount03");
@@ -766,7 +767,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount04");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount04
       BOOST_TEST_MESSAGE("Upgrading sonaccount04 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount04", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount04");
@@ -802,7 +803,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount05");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount05
       BOOST_TEST_MESSAGE("Upgrading sonaccount05 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount05", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount05");
@@ -838,7 +839,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount06");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount06
       BOOST_TEST_MESSAGE("Upgrading sonaccount06 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount06", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount06");
@@ -874,7 +875,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount07");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount07
       BOOST_TEST_MESSAGE("Upgrading sonaccount07 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount07", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount07");
@@ -910,7 +911,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount08");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount08
       BOOST_TEST_MESSAGE("Upgrading sonaccount08 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount08", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount08");
@@ -946,7 +947,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount09");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount09
       BOOST_TEST_MESSAGE("Upgrading sonaccount09 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount09", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount09");
@@ -982,7 +983,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount10");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount10
       BOOST_TEST_MESSAGE("Upgrading sonaccount10 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount10", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount10");
@@ -1018,7 +1019,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount11");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount11
       BOOST_TEST_MESSAGE("Upgrading sonaccount11 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount11", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount11");
@@ -1054,7 +1055,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount12");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount12
       BOOST_TEST_MESSAGE("Upgrading sonaccount12 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount12", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount12");
@@ -1090,7 +1091,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount13");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount13
       BOOST_TEST_MESSAGE("Upgrading sonaccount13 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount13", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount13");
@@ -1126,7 +1127,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount14");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount14
       BOOST_TEST_MESSAGE("Upgrading sonaccount14 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount14", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount14");
@@ -1162,7 +1163,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount15");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount15
       BOOST_TEST_MESSAGE("Upgrading sonaccount15 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount15", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount15");
@@ -1198,7 +1199,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       acc_before_upgrade = con.wallet_api_ptr->get_account("sonaccount16");
       BOOST_CHECK(generate_block(app1));
 
-      // upgrade son1account
+      // upgrade sonaccount16
       BOOST_TEST_MESSAGE("Upgrading sonaccount16 to LTM");
       upgrade_tx = con.wallet_api_ptr->upgrade_account("sonaccount16", true);
       acc_after_upgrade = con.wallet_api_ptr->get_account("sonaccount16");
@@ -1286,11 +1287,6 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
 
 
 
-      global_property_object gpo = con.wallet_api_ptr->get_global_properties();
-      for( auto son : gpo.active_sons ) {
-          BOOST_TEST_MESSAGE("gpo: " << son().url);
-      }
-
       BOOST_TEST_MESSAGE("Voting for SONs");
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount01", "sonaccount01", true, true);
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount02", "sonaccount02", true, true);
@@ -1308,15 +1304,7 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount14", "sonaccount14", true, true);
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount15", "sonaccount15", true, true);
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount16", "sonaccount16", true, true);
-      gpo = con.wallet_api_ptr->get_global_properties();
-      for( auto son : gpo.active_sons ) {
-          BOOST_TEST_MESSAGE("gpo: " << son().url);
-      }
       BOOST_CHECK(generate_maintenance_block(app1));
-      gpo = con.wallet_api_ptr->get_global_properties();
-      for( auto son : gpo.active_sons ) {
-          BOOST_TEST_MESSAGE("gpo: " << son.url);
-      }
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount01", "sonaccount02", true, true);
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount02", "sonaccount03", true, true);
       vote_tx = con.wallet_api_ptr->vote_for_son("sonaccount03", "sonaccount04", true, true);
@@ -1372,11 +1360,6 @@ BOOST_FIXTURE_TEST_CASE( seletct_top_fifteen_sons, cli_fixture )
       gpo = con.wallet_api_ptr->get_global_properties();
       BOOST_TEST_MESSAGE("gpo: " << gpo.active_sons.size());
       BOOST_CHECK(generate_maintenance_block(app1));
-
-      gpo = con.wallet_api_ptr->get_global_properties();
-      for( auto son : gpo.active_sons ) {
-          BOOST_TEST_MESSAGE("gpo: " << son->url);
-      }
 
       BOOST_CHECK(gpo.active_sons.size() == 16);
       BOOST_CHECK(gpo.active_sons.size() == 15);
