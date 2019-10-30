@@ -59,7 +59,16 @@ public:
    sidechain_net_handler_bitcoin(const boost::program_options::variables_map& options);
    virtual ~sidechain_net_handler_bitcoin();
 
-   void handle_block( const std::string& block_hash );
+   void update_tx_infos( const std::string& block_hash );
+
+   void update_tx_approvals();
+
+   void update_estimated_fee();
+
+   //void send_btc_tx( const sidechain::bitcoin_transaction& trx );
+
+   bool connection_is_not_defined() const;
+
 private:
    std::string ip;
    uint32_t zmq_port;
@@ -70,6 +79,16 @@ private:
    std::unique_ptr<zmq_listener> listener;
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    graphene::chain::database* db;
+
+   void handle_block( const std::string& block_hash );
+
+   //std::vector<info_for_vin> extract_info_from_block( const std::string& _block );
+
+   void update_transaction_status( std::vector<fc::sha256> trx_for_check );
+
+   std::set<fc::sha256> get_valid_vins( const std::string tx_hash );
+
+   inline uint64_t parse_amount(std::string raw);
 
 };
 
