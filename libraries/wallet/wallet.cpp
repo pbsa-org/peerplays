@@ -2110,7 +2110,7 @@ public:
    signed_transaction create_vesting_balance(string owner_account,
                                      string amount,
                                      string asset_symbol,
-                                     string vesting_type,
+                                     vesting_balance_type vesting_type,
                                      bool broadcast /* = false */)
    { try {
       account_object son_account = get_account(owner_account);
@@ -2121,16 +2121,7 @@ public:
       op.creator = son_account.get_id();
       op.owner = son_account.get_id();
       op.amount = asset_obj->amount_from_string(amount);
-      if (vesting_type == "normal")
-          op.balance_type = vesting_balance_type::normal;
-      else if (vesting_type == "gpos")
-          op.balance_type = vesting_balance_type::gpos;
-      else if (vesting_type == "son")
-          op.balance_type = vesting_balance_type::son;
-      else
-      {
-          FC_ASSERT( false, "unknown vesting type value ${vt}", ("vt", vesting_type) );
-      }
+      op.balance_type = vesting_type;
       if (op.balance_type == vesting_balance_type::son)
           op.policy = dormant_vesting_policy_initializer {};
 
@@ -4277,7 +4268,7 @@ committee_member_object wallet_api::get_committee_member(string owner_account)
 signed_transaction wallet_api::create_vesting_balance(string owner_account,
                                               string amount,
                                               string asset_symbol,
-                                              string vesting_type,
+                                              vesting_balance_type vesting_type,
                                               bool broadcast /* = false */)
 {
    return my->create_vesting_balance(owner_account, amount, asset_symbol, vesting_type, broadcast);

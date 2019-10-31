@@ -1439,7 +1439,7 @@ class wallet_api
       signed_transaction create_vesting_balance(string owner_account,
                                         string amount,
                                         string asset_symbol,
-                                        string vesting_type,
+                                        vesting_balance_type vesting_type,
                                         bool broadcast = false);
 
       /**
