@@ -334,10 +334,26 @@ processed_transaction database::validate_transaction( const signed_transaction& 
    return _apply_transaction( trx );
 }
 
+class push_proposal_nesting_guard {
+public:
+   push_proposal_nesting_guard( uint32_t& nesting_counter, const database& db )
+      : orig_value(nesting_counter), counter(nesting_counter)
+   {
+      FC_ASSERT( counter < db.get_global_properties().active_witnesses.size() * 2, "Max proposal nesting depth exceeded!" );
+      counter++;
+   }
+   ~push_proposal_nesting_guard()
+   {
+      if( --counter != orig_value )
+         elog( "Unexpected proposal nesting count value: ${n} != ${o}", ("n",counter)("o",orig_value) );
+   }
+private:
+    const uint32_t  orig_value;
+    uint32_t& counter;
+};
+
 processed_transaction database::push_proposal(const proposal_object& proposal)
 { try {
-   FC_ASSERT( _undo_db.size() < _undo_db.max_size(), "Undo database is full!" );
-
    transaction_evaluation_state eval_state(this);
    eval_state._is_proposed_trx = true;
 
@@ -347,10 +363,12 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
    size_t old_applied_ops_size = _applied_ops.size();
 
    try {
+      push_proposal_nesting_guard guard( _push_proposal_nesting_depth, *this );
+      if( _undo_db.size() >= _undo_db.max_size() )
+         _undo_db.set_max_size( _undo_db.size() + 1 );
       auto session = _undo_db.start_undo_session(true);
       for( auto& op : proposal.proposed_transaction.operations )
          eval_state.operation_results.emplace_back(apply_operation(eval_state, op));
-      remove_son_proposal(proposal);
       remove(proposal);
       session.merge();
    } catch ( const fc::exception& e ) {
@@ -366,13 +384,13 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
       {
          _applied_ops.resize( old_applied_ops_size );
       }
-      edump((e));
+      wlog( "${e}", ("e",e.to_detail_string() ) );
       throw;
    }
 
    ptrx.operation_results = std::move(eval_state.operation_results);
    return ptrx;
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (proposal) ) }
 
 signed_block database::generate_block(
    fc::time_point_sec when,
