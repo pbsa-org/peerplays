@@ -481,6 +481,23 @@ BOOST_AUTO_TEST_CASE( update_son_votes_test )
        BOOST_CHECK(son2_end_votes == son2_start_votes);
        son2_start_votes = son2_end_votes;
 
+       // Try to accept and reject empty lists
+       accepted.clear();
+       rejected.clear();
+       BOOST_REQUIRE_THROW(update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
+                                                              rejected, 15, true), fc::exception);
+       BOOST_CHECK(generate_maintenance_block());
+
+       // Verify the votes
+       son1_obj = con.wallet_api_ptr->get_son("son1account");
+       son1_end_votes = son1_obj.total_votes;
+       BOOST_CHECK(son1_end_votes == son1_start_votes);
+       son1_start_votes = son1_end_votes;
+       son2_obj = con.wallet_api_ptr->get_son("son2account");
+       son2_end_votes = son2_obj.total_votes;
+       BOOST_CHECK(son2_end_votes == son2_start_votes);
+       son2_start_votes = son2_end_votes;
+
     } catch( fc::exception& e ) {
        BOOST_TEST_MESSAGE("SON cli wallet tests exception");
        edump((e.to_detail_string()));

@@ -2272,6 +2272,7 @@ public:
                                            uint16_t desired_number_of_sons,
                                            bool broadcast /* = false */)
    { try {
+      FC_ASSERT(sons_to_approve.size() || sons_to_reject.size(), "Both accepted and rejected lists can't be empty simultaneously");
       account_object voting_account_object = get_account(voting_account);
       for (const std::string& son : sons_to_approve)
       {
