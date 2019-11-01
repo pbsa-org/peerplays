@@ -184,7 +184,7 @@ void account_options::validate() const
    FC_ASSERT( needed_witnesses == 0,
               "May not specify fewer witnesses than the number voted for.");
    FC_ASSERT( needed_committee == 0,
-              "May not specify committee members than the number voted for.");
+              "May not specify fewer committee members than the number voted for.");
    FC_ASSERT( needed_sons == 0,
               "May not specify fewer SONs than the number voted for.");
 }
