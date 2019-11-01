@@ -2279,20 +2279,20 @@ public:
          account_id_type son_owner_account_id = get_account_id(son);
          fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
          if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a witness", ("son", son));
+            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
          if (!insert_result.second)
-            FC_THROW("Account ${account} was already voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} was already voting for SON ${son}", ("account", voting_account)("son", son));
       }
       for (const std::string& son : sons_to_reject)
       {
          account_id_type son_owner_account_id = get_account_id(son);
          fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
          if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a son", ("son", son));
+            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
          if (!votes_removed)
-            FC_THROW("Account ${account} is already not voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} is already not voting for SON ${son}", ("account", voting_account)("son", son));
       }
       voting_account_object.options.num_son = desired_number_of_sons;
 
