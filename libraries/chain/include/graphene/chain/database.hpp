@@ -527,8 +527,8 @@ namespace graphene { namespace chain {
          public:
             double calculate_vesting_factor(const account_object& stake_account);
 
-         template<class... Types>
-         void perform_account_maintenance(std::tuple<Types...> helpers);
+         template<class Type>
+         void perform_account_maintenance(Type tally_helper);
          ///@}
          ///@}
 
