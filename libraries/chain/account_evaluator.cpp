@@ -166,35 +166,35 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
 
    const auto& new_acnt_object = d.create<account_object>( [&o,&d,&global_properties,referrer_percent]( account_object& obj )
    {
-         obj.registrar = o.registrar;
-         obj.referrer = o.referrer;
-         obj.lifetime_referrer = o.referrer(d).lifetime_referrer;
+      obj.registrar = o.registrar;
+      obj.referrer = o.referrer;
+      obj.lifetime_referrer = o.referrer(d).lifetime_referrer;
 
-         const auto& params = global_properties.parameters;;
-         obj.network_fee_percentage = params.network_percent_of_fee;
-         obj.lifetime_referrer_fee_percentage = params.lifetime_referrer_percent_of_fee;
-         obj.referrer_rewards_percentage = referrer_percent;
+      const auto& params = global_properties.parameters;
+      obj.network_fee_percentage = params.network_percent_of_fee;
+      obj.lifetime_referrer_fee_percentage = params.lifetime_referrer_percent_of_fee;
+      obj.referrer_rewards_percentage = referrer_percent;
 
-         obj.name             = o.name;
-         obj.owner            = o.owner;
-         obj.active           = o.active;
-         obj.options          = o.options;
-         obj.statistics = d.create<account_statistics_object>([&obj](account_statistics_object& s){
-                             s.owner = obj.id;
-                             s.name = obj.name;
-                             s.is_voting = obj.options.is_voting();
-                          }).id;
+      obj.name             = o.name;
+      obj.owner            = o.owner;
+      obj.active           = o.active;
+      obj.options          = o.options;
+      obj.statistics = d.create<account_statistics_object>([&obj](account_statistics_object& s){
+                           s.owner = obj.id;
+                           s.name = obj.name;
+                           s.is_voting = obj.options.is_voting();
+                        }).id;
 
-         if( o.extensions.value.owner_special_authority.valid() )
-            obj.owner_special_authority = *(o.extensions.value.owner_special_authority);
-         if( o.extensions.value.active_special_authority.valid() )
-            obj.active_special_authority = *(o.extensions.value.active_special_authority);
-         if( o.extensions.value.buyback_options.valid() )
-         {
-            obj.allowed_assets = o.extensions.value.buyback_options->markets;
-            obj.allowed_assets->emplace( o.extensions.value.buyback_options->asset_to_buy );
-         }
-         obj.affiliate_distributions = o.extensions.value.affiliate_distributions;
+      if( o.extensions.value.owner_special_authority.valid() )
+         obj.owner_special_authority = *(o.extensions.value.owner_special_authority);
+      if( o.extensions.value.active_special_authority.valid() )
+         obj.active_special_authority = *(o.extensions.value.active_special_authority);
+      if( o.extensions.value.buyback_options.valid() )
+      {
+         obj.allowed_assets = o.extensions.value.buyback_options->markets;
+         obj.allowed_assets->emplace( o.extensions.value.buyback_options->asset_to_buy );
+      }
+      obj.affiliate_distributions = o.extensions.value.affiliate_distributions;
    });
 
    if( has_small_percent )
