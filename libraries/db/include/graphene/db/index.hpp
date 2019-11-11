@@ -402,18 +402,6 @@ namespace graphene { namespace db {
             DerivedIndex::remove(obj);
          }
 
-         // Note: Implementing insert function here will break the
-         // bookie_plugin functionality as it was implemented assuming no undo required.
-         // virtual const object& insert( object&& obj )override
-         // {
-         //     const auto& res = DerivedIndex::insert(std::move(obj));
-         //     if (object_type_id() != graphene::)
-         //     for( const auto& item : _sindex )
-         //        item->object_inserted( res );
-         //     on_add(res);
-         //     return res;
-         // }
-
          virtual void modify( const object& obj, const std::function<void(object&)>& m )override
          {
             save_undo( obj );
