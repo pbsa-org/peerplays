@@ -32,6 +32,15 @@ test:
   tags:
     - builder
 
+fc-test:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - ./libraries/fc/tests/all_tests
+  tags:
+    - builder
+
 code_quality:
   stage: test
   image: docker:stable
