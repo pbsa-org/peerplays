@@ -40,9 +40,10 @@ namespace graphene { namespace chain {
 
         asset fee;
         son_id_type son_id;
+        account_id_type payer;
         account_id_type owner_account;
 
-        account_id_type fee_payer()const { return owner_account; }
+        account_id_type fee_payer()const { return payer; }
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
     };
 
@@ -57,4 +58,4 @@ FC_REFLECT(graphene::chain::son_update_operation, (fee)(son_id)(owner_account)(n
            (new_signing_key)(new_pay_vb) )
 
 FC_REFLECT(graphene::chain::son_delete_operation::fee_parameters_type, (fee) )
-FC_REFLECT(graphene::chain::son_delete_operation, (fee)(son_id)(owner_account) )
+FC_REFLECT(graphene::chain::son_delete_operation, (fee)(son_id)(payer)(owner_account) )

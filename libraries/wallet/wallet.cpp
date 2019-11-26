@@ -1922,6 +1922,7 @@ public:
       son_delete_operation son_delete_op;
       son_delete_op.son_id = son.id;
       son_delete_op.owner_account = son.son_account;
+      son_delete_op.payer = son.son_account;
 
       signed_transaction tx;
       tx.operations.push_back( son_delete_op );
@@ -1930,6 +1931,28 @@ public:
 
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+
+   map<string, son_id_type> list_active_sons()
+   { try {
+      global_property_object gpo = get_global_properties();
+      std::vector<fc::optional<son_object>> son_objects = _remote_db->get_sons(gpo.active_sons);
+      vector<account_id_type> owners;
+      owners.resize(son_objects.size());
+      std::transform(son_objects.begin(), son_objects.end(), owners.begin(),
+                     [](const fc::optional<son_object>& obj) {
+                        FC_ASSERT(obj, "Invalid active SONs list in global properties.");
+                        return obj->son_account;
+                     });
+      vector<fc::optional<account_object>> accs = _remote_db->get_accounts(owners);
+      map<string, son_id_type> result;
+      std::transform(accs.begin(), accs.end(), gpo.active_sons.begin(),
+                     std::inserter(result, result.end()),
+                     [](fc::optional<account_object>& acct, son_id_type& sid) {
+                        FC_ASSERT(acct, "Invalid active SONs list in global properties.");
+                        return std::make_pair<string, son_id_type>(string(acct->name), std::move(sid));
+                     });
+      return result;
+   } FC_CAPTURE_AND_RETHROW() }
 
    signed_transaction create_witness(string owner_account,
                                      string url,
@@ -2106,27 +2129,21 @@ public:
       return sign_transaction( tx, broadcast );
    }
 
-   signed_transaction create_vesting(string owner_account,
+   signed_transaction create_vesting_balance(string owner_account,
                                      string amount,
-                                     string vesting_type,
+                                     string asset_symbol,
+                                     vesting_balance_type vesting_type,
                                      bool broadcast /* = false */)
    { try {
       account_object son_account = get_account(owner_account);
+      fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
+      FC_ASSERT(asset_obj, "Invalid asset symbol {asst}", ("asst", asset_symbol));
 
       vesting_balance_create_operation op;
       op.creator = son_account.get_id();
       op.owner = son_account.get_id();
-      op.amount = asset_object().amount_from_string(amount);
-      if (vesting_type == "normal")
-          op.balance_type = vesting_balance_type::normal;
-      else if (vesting_type == "gpos")
-          op.balance_type = vesting_balance_type::gpos;
-      else if (vesting_type == "son")
-          op.balance_type = vesting_balance_type::son;
-      else
-      {
-          FC_ASSERT( false, "unknown vesting type value ${vt}", ("vt", vesting_type) );
-      }
+      op.amount = asset_obj->amount_from_string(amount);
+      op.balance_type = vesting_type;
       if (op.balance_type == vesting_balance_type::son)
           op.policy = dormant_vesting_policy_initializer {};
 
@@ -2271,26 +2288,27 @@ public:
                                            uint16_t desired_number_of_sons,
                                            bool broadcast /* = false */)
    { try {
+      FC_ASSERT(sons_to_approve.size() || sons_to_reject.size(), "Both accepted and rejected lists can't be empty simultaneously");
       account_object voting_account_object = get_account(voting_account);
       for (const std::string& son : sons_to_approve)
       {
          account_id_type son_owner_account_id = get_account_id(son);
          fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
          if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a witness", ("son", son));
+            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
          if (!insert_result.second)
-            FC_THROW("Account ${account} was already voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} was already voting for SON ${son}", ("account", voting_account)("son", son));
       }
       for (const std::string& son : sons_to_reject)
       {
          account_id_type son_owner_account_id = get_account_id(son);
          fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
          if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a son", ("son", son));
+            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
          if (!votes_removed)
-            FC_THROW("Account ${account} is already not voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} is already not voting for SON ${son}", ("account", voting_account)("son", son));
       }
       voting_account_object.options.num_son = desired_number_of_sons;
 
@@ -4270,12 +4288,13 @@ committee_member_object wallet_api::get_committee_member(string owner_account)
    return my->get_committee_member(owner_account);
 }
 
-signed_transaction wallet_api::create_vesting(string owner_account,
+signed_transaction wallet_api::create_vesting_balance(string owner_account,
                                               string amount,
-                                              string vesting_type,
+                                              string asset_symbol,
+                                              vesting_balance_type vesting_type,
                                               bool broadcast /* = false */)
 {
-   return my->create_vesting(owner_account, amount, vesting_type, broadcast);
+   return my->create_vesting_balance(owner_account, amount, asset_symbol, vesting_type, broadcast);
 }
 
 signed_transaction wallet_api::create_son(string owner_account,
@@ -4304,6 +4323,11 @@ signed_transaction wallet_api::delete_son(string owner_account,
 map<string, son_id_type> wallet_api::list_sons(const string& lowerbound, uint32_t limit)
 {
    return my->_remote_db->lookup_son_accounts(lowerbound, limit);
+}
+
+map<string, son_id_type> wallet_api::list_active_sons()
+{
+    return my->list_active_sons();
 }
 
 signed_transaction wallet_api::create_witness(string owner_account,

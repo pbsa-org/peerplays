@@ -78,11 +78,12 @@ public:
         BOOST_CHECK(fixture_.generate_block());
 
         // create deposit vesting
-        fixture_.con.wallet_api_ptr->create_vesting(account_name, "50000000", "son", true);
+        fixture_.con.wallet_api_ptr->create_vesting_balance(account_name,
+                                                            "50", "1.3.0", vesting_balance_type::son, true);
         BOOST_CHECK(fixture_.generate_block());
 
         // create pay_vb vesting
-        fixture_.con.wallet_api_ptr->create_vesting(account_name, "1000000", "normal", true);
+        fixture_.con.wallet_api_ptr->create_vesting_balance(account_name, "1", "1.3.0", vesting_balance_type::normal, true);
         BOOST_CHECK(fixture_.generate_block());
 
         // check deposits are here
@@ -392,7 +393,7 @@ BOOST_AUTO_TEST_CASE( update_son_votes_test )
        accepted.push_back("son1account");
        accepted.push_back("son2account");
        update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
-                                                              rejected, 15, true);
+                                                              rejected, 2, true);
        BOOST_CHECK(generate_block());
        BOOST_CHECK(generate_maintenance_block());
 
@@ -412,7 +413,7 @@ BOOST_AUTO_TEST_CASE( update_son_votes_test )
        rejected.clear();
        rejected.push_back("son1account");
        update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
-                                                              rejected, 15, true);
+                                                              rejected, 1, true);
        BOOST_CHECK(generate_maintenance_block());
 
        // Verify the votes
@@ -431,7 +432,7 @@ BOOST_AUTO_TEST_CASE( update_son_votes_test )
        rejected.clear();
        rejected.push_back("son1accnt");
        BOOST_CHECK_THROW(update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
-                                                              rejected, 15, true), fc::exception);
+                                                              rejected, 1, true), fc::exception);
        BOOST_CHECK(generate_block());
 
        // Verify the votes
@@ -449,7 +450,7 @@ BOOST_AUTO_TEST_CASE( update_son_votes_test )
        rejected.clear();
        rejected.push_back("son2account");
        update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
-                                                              rejected, 15, true);
+                                                              rejected, 0, true);
        BOOST_CHECK(generate_maintenance_block());
 
        // Verify the votes
@@ -468,7 +469,24 @@ BOOST_AUTO_TEST_CASE( update_son_votes_test )
        rejected.push_back("son1accnt");
        accepted.push_back("son1accnt");
        BOOST_REQUIRE_THROW(update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
-                                                              rejected, 15, true), fc::exception);
+                                                              rejected, 1, true), fc::exception);
+       BOOST_CHECK(generate_maintenance_block());
+
+       // Verify the votes
+       son1_obj = con.wallet_api_ptr->get_son("son1account");
+       son1_end_votes = son1_obj.total_votes;
+       BOOST_CHECK(son1_end_votes == son1_start_votes);
+       son1_start_votes = son1_end_votes;
+       son2_obj = con.wallet_api_ptr->get_son("son2account");
+       son2_end_votes = son2_obj.total_votes;
+       BOOST_CHECK(son2_end_votes == son2_start_votes);
+       son2_start_votes = son2_end_votes;
+
+       // Try to accept and reject empty lists
+       accepted.clear();
+       rejected.clear();
+       BOOST_REQUIRE_THROW(update_votes_tx = con.wallet_api_ptr->update_son_votes("nathan", accepted,
+                                                              rejected, 1, true), fc::exception);
        BOOST_CHECK(generate_maintenance_block());
 
        // Verify the votes
@@ -512,6 +530,62 @@ BOOST_AUTO_TEST_CASE( related_functions )
    BOOST_TEST_MESSAGE("SON-related functions cli wallet tests end");
 }
 
+BOOST_FIXTURE_TEST_CASE( cli_list_active_sons, cli_fixture )
+{
+   BOOST_TEST_MESSAGE("SON cli wallet tests for list_active_sons begin");
+   try
+   {
+      son_test_helper sth(*this);
+
+      signed_transaction vote_tx;
+      global_property_object gpo;
+
+      gpo = con.wallet_api_ptr->get_global_properties();
+      unsigned int son_number = gpo.parameters.maximum_son_count;
+
+      // create son accounts
+      for(unsigned int i = 0; i < son_number + 1; i++)
+      {
+          sth.create_son("sonaccount" + fc::to_pretty_string(i),
+                         "http://son" + fc::to_pretty_string(i), false);
+      }
+      BOOST_CHECK(generate_maintenance_block());
+
+      BOOST_TEST_MESSAGE("Voting for SONs");
+      for(unsigned int i = 1; i < son_number + 1; i++)
+      {
+          std::string name = "sonaccount" + fc::to_pretty_string(i);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name, name, true, true);
+      }
+      BOOST_CHECK(generate_maintenance_block());
+
+      for(unsigned int i = 1; i < son_number; i++)
+      {
+          std::string name1 = "sonaccount" + fc::to_pretty_string(i);
+          std::string name2 = "sonaccount" + fc::to_pretty_string(i + 1);
+          vote_tx = con.wallet_api_ptr->vote_for_son(name1, name2, true, true);
+      }
+      BOOST_CHECK(generate_maintenance_block());
+      gpo = con.wallet_api_ptr->get_global_properties();
+      BOOST_TEST_MESSAGE("gpo: " << gpo.active_sons.size());
+
+      BOOST_CHECK(gpo.active_sons.size() == son_number);
+
+      map<string, son_id_type> active_sons = con.wallet_api_ptr->list_active_sons();
+      BOOST_CHECK(active_sons.size() == son_number);
+      for(unsigned int i = 1; i < son_number + 1; i++)
+      {
+          std::string name = "sonaccount" + fc::to_pretty_string(i);
+          BOOST_CHECK(active_sons.find(name) != active_sons.end());
+      }
+
+   } catch( fc::exception& e ) {
+      BOOST_TEST_MESSAGE("SON cli wallet tests exception");
+      edump((e.to_detail_string()));
+      throw;
+   }
+   BOOST_TEST_MESSAGE("SON cli wallet tests for list_active_sons end");
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

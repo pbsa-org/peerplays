@@ -1340,8 +1340,6 @@ class wallet_api
        * An account can have at most one witness object.
        *
        * @param owner_account the name or id of the account which is creating the witness
-       * @param url a URL to include in the witness record in the blockchain.  Clients may
-       *            display this when showing a list of witnesses.  May be blank.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a witness
        */
@@ -1362,6 +1360,13 @@ class wallet_api
        * @returns a list of SON mapping SON names to SON ids
        */
       map<string, son_id_type> list_sons(const string& lowerbound, uint32_t limit);
+
+      /** Lists active at the moment SONs.
+       * This returns a list of all account names that own active SON, and the associated SON id,
+       * sorted by name.
+       * @returns a list of active SONs mapping SON names to SON ids
+       */
+      map<string, son_id_type> list_active_sons();
 
       /** Creates a witness object owned by the given account.
        *
@@ -1429,15 +1434,17 @@ class wallet_api
 
       /** Creates a vesting deposit owned by the given account.
        *
-       * @param owner_account the name or id of the account
-       * @param amount the amount to deposit
+       * @param owner_account vesting balance owner and creator (the name or id)
+       * @param amount amount to vest
+       * @param asset_symbol the symbol of the asset to vest
        * @param vesting_type "normal", "gpos" or "son"
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a vesting object
        */
-      signed_transaction create_vesting(string owner_account,
+      signed_transaction create_vesting_balance(string owner_account,
                                         string amount,
-                                        string vesting_type,
+                                        string asset_symbol,
+                                        vesting_balance_type vesting_type,
                                         bool broadcast = false);
 
       /**
@@ -2118,7 +2125,7 @@ FC_API( graphene::wallet::wallet_api,
         (update_witness)
         (create_worker)
         (update_worker_votes)
-        (create_vesting)
+        (create_vesting_balance)
         (get_vesting_balances)
         (withdraw_vesting)
         (vote_for_committee_member)

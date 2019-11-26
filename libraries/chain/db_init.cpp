@@ -55,6 +55,7 @@
 #include <graphene/chain/betting_market_object.hpp>
 #include <graphene/chain/global_betting_statistics_object.hpp>
 #include <graphene/chain/son_object.hpp>
+#include <graphene/chain/son_proposal_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -262,7 +263,7 @@ void database::initialize_indexes()
    acnt_index->add_secondary_index<account_referrer_index>();
 
    add_index< primary_index<committee_member_index, 8> >(); // 256 members per chunk
-   add_index< primary_index<son_index, 8> >(); // 256 sons per chunk
+   add_index< primary_index<son_index> >();
    add_index< primary_index<witness_index, 10> >(); // 1024 witnesses per chunk
    add_index< primary_index<limit_order_index > >();
    add_index< primary_index<call_order_index > >();
@@ -288,6 +289,7 @@ void database::initialize_indexes()
    tournament_details_idx->add_secondary_index<tournament_players_index>();
    add_index< primary_index<match_index> >();
    add_index< primary_index<game_index> >();
+   add_index< primary_index<son_proposal_index> >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();
