@@ -59,11 +59,11 @@ public:
    sidechain_net_handler_bitcoin(const boost::program_options::variables_map& options);
    virtual ~sidechain_net_handler_bitcoin();
 
-   void update_tx_infos( const std::string& block_hash );
+   //void update_tx_infos( const std::string& block_hash );
 
-   void update_tx_approvals();
+   //void update_tx_approvals();
 
-   void update_estimated_fee();
+   //void update_estimated_fee();
 
    //void send_btc_tx( const sidechain::bitcoin_transaction& trx );
 

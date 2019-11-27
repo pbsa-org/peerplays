@@ -36,29 +36,29 @@ std::string bitcoin_rpc_client::receive_full_block( const std::string& block_has
    return std::string( reply.body.begin(), reply.body.end() );
 }
 
-int32_t bitcoin_rpc_client::receive_confirmations_tx( const std::string& tx_hash )
-{
-   const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"getrawtransaction\", \"params\": [") +
-                      std::string("\"") + tx_hash + std::string("\"") + ", " + "true" + std::string("] }");
-
-   const auto reply = send_post_request( body );
-
-   if ( reply.status != 200 )
-      return 0;
-
-   const auto result = std::string( reply.body.begin(), reply.body.end() );
-
-   std::stringstream ss( result );
-   boost::property_tree::ptree tx;
-   boost::property_tree::read_json( ss, tx );
-
-   if( tx.count( "result" ) ) {
-      if( tx.get_child( "result" ).count( "confirmations" ) ) {
-         return tx.get_child( "result" ).get_child( "confirmations" ).get_value<int64_t>();
-      }
-   }
-   return 0;
-}
+//int32_t bitcoin_rpc_client::receive_confirmations_tx( const std::string& tx_hash )
+//{
+//   const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"getrawtransaction\", \"params\": [") +
+//                      std::string("\"") + tx_hash + std::string("\"") + ", " + "true" + std::string("] }");
+//
+//   const auto reply = send_post_request( body );
+//
+//   if ( reply.status != 200 )
+//      return 0;
+//
+//   const auto result = std::string( reply.body.begin(), reply.body.end() );
+//
+//   std::stringstream ss( result );
+//   boost::property_tree::ptree tx;
+//   boost::property_tree::read_json( ss, tx );
+//
+//   if( tx.count( "result" ) ) {
+//      if( tx.get_child( "result" ).count( "confirmations" ) ) {
+//         return tx.get_child( "result" ).get_child( "confirmations" ).get_value<int64_t>();
+//      }
+//   }
+//   return 0;
+//}
 
 bool bitcoin_rpc_client::receive_mempool_entry_tx( const std::string& tx_hash )
 {
@@ -212,45 +212,45 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(const boost::progra
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
-void sidechain_net_handler_bitcoin::update_tx_infos( const std::string& block_hash )
-{
-   std::string block = bitcoin_client->receive_full_block( block_hash );
-   if( block != "" ) {
-      const auto& vins = extract_info_from_block( block );
-      const auto& addr_idx = db->get_index_type<bitcoin_address_index>().indices().get<by_address>();
-      for( const auto& v : vins ) {
-         const auto& addr_itr = addr_idx.find( v.address );
-         FC_ASSERT( addr_itr != addr_idx.end() );
-         db->i_w_info.insert_info_for_vin( prev_out{ v.out.hash_tx, v.out.n_vout, v.out.amount }, v.address, addr_itr->address.get_witness_script() );
-      }
-   }
-}
+//void sidechain_net_handler_bitcoin::update_tx_infos( const std::string& block_hash )
+//{
+//   std::string block = bitcoin_client->receive_full_block( block_hash );
+//   if( block != "" ) {
+//      const auto& vins = extract_info_from_block( block );
+//      const auto& addr_idx = db->get_index_type<bitcoin_address_index>().indices().get<by_address>();
+//      for( const auto& v : vins ) {
+//         const auto& addr_itr = addr_idx.find( v.address );
+//         FC_ASSERT( addr_itr != addr_idx.end() );
+//         db->i_w_info.insert_info_for_vin( prev_out{ v.out.hash_tx, v.out.n_vout, v.out.amount }, v.address, addr_itr->address.get_witness_script() );
+//      }
+//   }
+//}
 
-void sidechain_net_handler_bitcoin::update_tx_approvals()
-{
-   std::vector<fc::sha256> trx_for_check;
-   const auto& confirmations_num = db->get_sidechain_params().confirmations_num;
+//void sidechain_net_handler_bitcoin::update_tx_approvals()
+//{
+//   std::vector<fc::sha256> trx_for_check;
+//   const auto& confirmations_num = db->get_sidechain_params().confirmations_num;
+//
+//   db->bitcoin_confirmations.safe_for<by_hash>([&]( btc_tx_confirmations_index::iterator itr_b, btc_tx_confirmations_index::iterator itr_e ){
+//      for(auto iter = itr_b; iter != itr_e; iter++) {
+//         db->bitcoin_confirmations.modify<by_hash>( iter->transaction_id, [&]( bitcoin_transaction_confirmations& obj ) {
+//            obj.count_block++;
+//         });
+//
+//         if( iter->count_block == confirmations_num ) {
+//            trx_for_check.push_back( iter->transaction_id );
+//         }
+//      }
+//   });
+//
+//   update_transaction_status( trx_for_check );
+//
+//}
 
-   db->bitcoin_confirmations.safe_for<by_hash>([&]( btc_tx_confirmations_index::iterator itr_b, btc_tx_confirmations_index::iterator itr_e ){
-      for(auto iter = itr_b; iter != itr_e; iter++) {
-         db->bitcoin_confirmations.modify<by_hash>( iter->transaction_id, [&]( bitcoin_transaction_confirmations& obj ) {
-            obj.count_block++;
-         });
-
-         if( iter->count_block == confirmations_num ) {
-            trx_for_check.push_back( iter->transaction_id );
-         }
-      }
-   });
-
-   update_transaction_status( trx_for_check );
-
-}
-
-void sidechain_net_handler_bitcoin::update_estimated_fee()
-{
-   db->estimated_feerate = bitcoin_client->receive_estimated_fee();
-}
+//void sidechain_net_handler_bitcoin::update_estimated_fee()
+//{
+//   db->estimated_feerate = bitcoin_client->receive_estimated_fee();
+//}
 
 //void sidechain_net_handler_bitcoin::send_btc_tx( const sidechain::bitcoin_transaction& trx )
 //{
@@ -274,9 +274,9 @@ bool sidechain_net_handler_bitcoin::connection_is_not_defined() const
 void sidechain_net_handler_bitcoin::handle_block( const std::string& block_hash ) {
    ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_block");
    ilog("                             block_hash: ${block_hash}", ("block_hash", block_hash));
-   update_tx_approvals();
-   update_estimated_fee();
-   update_tx_infos( block_hash );
+   //update_tx_approvals();
+   //update_estimated_fee();
+   //update_tx_infos( block_hash );
 }
 
 //std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block( const std::string& _block )
@@ -315,52 +315,52 @@ void sidechain_net_handler_bitcoin::handle_block( const std::string& block_hash 
 //   return result;
 //}
 
-void sidechain_net_handler_bitcoin::update_transaction_status( std::vector<fc::sha256> trx_for_check )
-{
-   const auto& confirmations_num = db->get_sidechain_params().confirmations_num;
+//void sidechain_net_handler_bitcoin::update_transaction_status( std::vector<fc::sha256> trx_for_check )
+//{
+//   const auto& confirmations_num = db->get_sidechain_params().confirmations_num;
+//
+//   for( const auto& trx : trx_for_check ) {
+//      auto confirmations = bitcoin_client->receive_confirmations_tx( trx.str() );
+//      db->bitcoin_confirmations.modify<by_hash>( trx, [&]( bitcoin_transaction_confirmations& obj ) {
+//         obj.count_block = confirmations;
+//      });
+//
+//      if( confirmations >= confirmations_num ) {
+//         db->bitcoin_confirmations.modify<by_hash>( trx, [&]( bitcoin_transaction_confirmations& obj ) {
+//            obj.confirmed = true;
+//         });
+//
+//      } else if( confirmations == 0 ) {
+//         auto is_in_mempool =  bitcoin_client->receive_mempool_entry_tx( trx.str() );
+//
+//         std::set<fc::sha256> valid_vins;
+//         if( !is_in_mempool ) {
+//            valid_vins = get_valid_vins( trx.str() );
+//         }
+//
+//         db->bitcoin_confirmations.modify<by_hash>( trx, [&]( bitcoin_transaction_confirmations& obj ) {
+//            obj.missing = !is_in_mempool;
+//            obj.valid_vins = valid_vins;
+//         });
+//      }
+//   }
+//}
 
-   for( const auto& trx : trx_for_check ) {
-      auto confirmations = bitcoin_client->receive_confirmations_tx( trx.str() );
-      db->bitcoin_confirmations.modify<by_hash>( trx, [&]( bitcoin_transaction_confirmations& obj ) {
-         obj.count_block = confirmations;
-      });
-
-      if( confirmations >= confirmations_num ) {
-         db->bitcoin_confirmations.modify<by_hash>( trx, [&]( bitcoin_transaction_confirmations& obj ) {
-            obj.confirmed = true;
-         });
-
-      } else if( confirmations == 0 ) {
-         auto is_in_mempool =  bitcoin_client->receive_mempool_entry_tx( trx.str() );
-
-         std::set<fc::sha256> valid_vins;
-         if( !is_in_mempool ) {
-            valid_vins = get_valid_vins( trx.str() );
-         }
-
-         db->bitcoin_confirmations.modify<by_hash>( trx, [&]( bitcoin_transaction_confirmations& obj ) {
-            obj.missing = !is_in_mempool;
-            obj.valid_vins = valid_vins;
-         });
-      }
-   }
-}
-
-std::set<fc::sha256> sidechain_net_handler_bitcoin::get_valid_vins( const std::string tx_hash )
-{
-   const auto& confirmations_obj = db->bitcoin_confirmations.find<sidechain::by_hash>( fc::sha256( tx_hash ) );
-   FC_ASSERT( confirmations_obj.valid() );
-
-   std::set<fc::sha256> valid_vins;
-   for( const auto& v : confirmations_obj->valid_vins ) {
-      auto confirmations = bitcoin_client->receive_confirmations_tx( v.str() );
-      if( confirmations == 0 ) {
-         continue;
-      }
-      valid_vins.insert( v );
-   }
-   return valid_vins;
-}
+//std::set<fc::sha256> sidechain_net_handler_bitcoin::get_valid_vins( const std::string tx_hash )
+//{
+//   const auto& confirmations_obj = db->bitcoin_confirmations.find<sidechain::by_hash>( fc::sha256( tx_hash ) );
+//   FC_ASSERT( confirmations_obj.valid() );
+//
+//   std::set<fc::sha256> valid_vins;
+//   for( const auto& v : confirmations_obj->valid_vins ) {
+//      auto confirmations = bitcoin_client->receive_confirmations_tx( v.str() );
+//      if( confirmations == 0 ) {
+//         continue;
+//      }
+//      valid_vins.insert( v );
+//   }
+//   return valid_vins;
+//}
 
 // Removes dot from amount output: "50.00000000"
 inline uint64_t sidechain_net_handler_bitcoin::parse_amount(std::string raw) {
