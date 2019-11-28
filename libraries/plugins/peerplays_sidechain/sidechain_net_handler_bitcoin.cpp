@@ -167,6 +167,7 @@ std::vector<zmq::message_t> zmq_listener::receive_multipart() {
 
 void zmq_listener::handle_zmq() {
    socket.setsockopt( ZMQ_SUBSCRIBE, "hashblock", 0 );
+   //socket.setsockopt( ZMQ_SUBSCRIBE, "hashtx", 0 );
    socket.connect( "tcp://" + ip + ":" + std::to_string( zmq_port ) );
 
    while ( true ) {
@@ -174,7 +175,7 @@ void zmq_listener::handle_zmq() {
       const auto header = std::string( static_cast<char*>( msg[0].data() ), msg[0].size() );
       const auto hash = boost::algorithm::hex( std::string( static_cast<char*>( msg[1].data() ), msg[1].size() ) );
 
-      block_received( hash );
+      event_received( hash );
    }
 }
 
@@ -200,8 +201,8 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(const boost::progra
    bitcoin_client = std::unique_ptr<bitcoin_rpc_client>( new bitcoin_rpc_client( ip, rpc_port, rpc_user, rpc_password ) );
    //db = _db;
 
-   listener->block_received.connect([this]( const std::string& block_hash ) {
-      std::thread( &sidechain_net_handler_bitcoin::handle_block, this, block_hash ).detach();
+   listener->event_received.connect([this]( const std::string& event_data ) {
+      std::thread( &sidechain_net_handler_bitcoin::handle_event, this, event_data ).detach();
    } );
 
    //db->send_btc_tx.connect([this]( const sidechain::bitcoin_transaction& trx ) {
@@ -271,9 +272,29 @@ bool sidechain_net_handler_bitcoin::connection_is_not_defined() const
    return listener->connection_is_not_defined() && bitcoin_client->connection_is_not_defined();
 }
 
-void sidechain_net_handler_bitcoin::handle_block( const std::string& block_hash ) {
-   ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_block");
-   ilog("                             block_hash: ${block_hash}", ("block_hash", block_hash));
+std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys )
+{
+   return "";
+}
+
+std::string sidechain_net_handler_bitcoin::transfer( const std::string& from, const std::string& to, const uint64_t amount )
+{
+   return "";
+}
+
+std::string sidechain_net_handler_bitcoin::sign_transaction( const std::string& transaction )
+{
+   return "";
+}
+
+std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& transaction )
+{
+   return "";
+}
+
+void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data ) {
+   ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_event");
+   ilog("                             event_data: ${event_data}", ("event_data", event_data));
    //update_tx_approvals();
    //update_estimated_fee();
    //update_tx_infos( block_hash );

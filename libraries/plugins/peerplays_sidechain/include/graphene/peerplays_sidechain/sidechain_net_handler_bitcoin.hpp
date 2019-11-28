@@ -40,7 +40,7 @@ public:
    zmq_listener( std::string _ip, uint32_t _zmq );
    bool connection_is_not_defined() const { return zmq_port == 0; }
 
-   fc::signal<void( const std::string& )> block_received;
+   fc::signal<void( const std::string& )> event_received;
 private:
    void handle_zmq();
    std::vector<zmq::message_t> receive_multipart();
@@ -69,6 +69,11 @@ public:
 
    bool connection_is_not_defined() const;
 
+   std::string create_multisignature_wallet( const std::vector<std::string> public_keys );
+   std::string transfer( const std::string& from, const std::string& to, const uint64_t amount );
+   std::string sign_transaction( const std::string& transaction );
+   std::string send_transaction( const std::string& transaction );
+
 private:
    std::string ip;
    uint32_t zmq_port;
@@ -80,7 +85,7 @@ private:
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    graphene::chain::database* db;
 
-   void handle_block( const std::string& block_hash );
+   void handle_event( const std::string& event_data);
 
    //std::vector<info_for_vin> extract_info_from_block( const std::string& _block );
 
