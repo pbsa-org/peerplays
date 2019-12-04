@@ -1,5 +1,6 @@
 #include <graphene/peerplays_sidechain/sidechain_net_handler_bitcoin.hpp>
 
+#include <algorithm>
 #include <thread>
 
 #include <boost/algorithm/hex.hpp>
@@ -9,6 +10,8 @@
 #include <fc/crypto/base64.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
+
+#include "graphene/peerplays_sidechain/sidechain_net_manager.hpp"
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -166,8 +169,10 @@ std::vector<zmq::message_t> zmq_listener::receive_multipart() {
 }
 
 void zmq_listener::handle_zmq() {
-   socket.setsockopt( ZMQ_SUBSCRIBE, "hashblock", 0 );
-   //socket.setsockopt( ZMQ_SUBSCRIBE, "hashtx", 0 );
+   socket.setsockopt( ZMQ_SUBSCRIBE, "hashblock", 9 );
+   //socket.setsockopt( ZMQ_SUBSCRIBE, "hashtx", 6 );
+   //socket.setsockopt( ZMQ_SUBSCRIBE, "rawblock", 8 );
+   //socket.setsockopt( ZMQ_SUBSCRIBE, "rawtx", 5 );
    socket.connect( "tcp://" + ip + ":" + std::to_string( zmq_port ) );
 
    while ( true ) {
@@ -183,6 +188,8 @@ void zmq_listener::handle_zmq() {
 
 sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(const boost::program_options::variables_map& options) :
       sidechain_net_handler(options) {
+    network = peerplays_sidechain::network::bitcoin;
+
    ip = options.at("bitcoin-node-ip").as<std::string>();
    zmq_port = options.at("bitcoin-node-zmq-port").as<uint32_t>();
    rpc_port = options.at("bitcoin-node-rpc-port").as<uint32_t>();
@@ -213,19 +220,19 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(const boost::progra
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
-//void sidechain_net_handler_bitcoin::update_tx_infos( const std::string& block_hash )
-//{
-//   std::string block = bitcoin_client->receive_full_block( block_hash );
-//   if( block != "" ) {
-//      const auto& vins = extract_info_from_block( block );
+void sidechain_net_handler_bitcoin::update_tx_infos( const std::string& block_hash )
+{
+   std::string block = bitcoin_client->receive_full_block( block_hash );
+   if( block != "" ) {
+      const auto& vins = extract_info_from_block( block );
 //      const auto& addr_idx = db->get_index_type<bitcoin_address_index>().indices().get<by_address>();
 //      for( const auto& v : vins ) {
 //         const auto& addr_itr = addr_idx.find( v.address );
 //         FC_ASSERT( addr_itr != addr_idx.end() );
 //         db->i_w_info.insert_info_for_vin( prev_out{ v.out.hash_tx, v.out.n_vout, v.out.amount }, v.address, addr_itr->address.get_witness_script() );
 //      }
-//   }
-//}
+   }
+}
 
 //void sidechain_net_handler_bitcoin::update_tx_approvals()
 //{
@@ -300,41 +307,42 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
    //update_tx_infos( block_hash );
 }
 
-//std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block( const std::string& _block )
-//{
-//   std::stringstream ss( _block );
-//   boost::property_tree::ptree block;
-//   boost::property_tree::read_json( ss, block );
-//
-//   std::vector<info_for_vin> result;
-//
-//   const auto& addr_idx = db->get_index_type<bitcoin_address_index>().indices().get<by_address>();
-//
-//   for (const auto& tx_child : block.get_child("tx")) {
-//      const auto& tx = tx_child.second;
-//
-//      for ( const auto& o : tx.get_child("vout") ) {
-//         const auto script = o.second.get_child("scriptPubKey");
-//
-//         if( !script.count("addresses") ) continue;
-//
-//         for (const auto& addr : script.get_child("addresses")) { // in which cases there can be more addresses?
-//            const auto address_base58 = addr.second.get_value<std::string>();
-//
-//            if( !addr_idx.count( address_base58 ) ) continue;
-//
-//            info_for_vin vin;
-//            vin.out.hash_tx = tx.get_child("txid").get_value<std::string>();
-//            vin.out.amount = parse_amount( o.second.get_child( "value" ).get_value<std::string>() );
-//            vin.out.n_vout = o.second.get_child( "n" ).get_value<uint32_t>();
-//            vin.address = address_base58;
-//            result.push_back( vin );
-//         }
-//      }
-//   }
-//
-//   return result;
-//}
+std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block( const std::string& _block )
+{
+   std::stringstream ss( _block );
+   boost::property_tree::ptree block;
+   boost::property_tree::read_json( ss, block );
+
+   std::vector<info_for_vin> result;
+
+   const auto& addr_idx = get_user_sidechain_address_mapping();// db->get_index_type<bitcoin_address_index>().indices().get<by_address>();
+
+   for (const auto& tx_child : block.get_child("tx")) {
+      const auto& tx = tx_child.second;
+
+      for ( const auto& o : tx.get_child("vout") ) {
+         const auto script = o.second.get_child("scriptPubKey");
+
+         if( !script.count("addresses") ) continue;
+
+         for (const auto& addr : script.get_child("addresses")) { // in which cases there can be more addresses?
+            const auto address_base58 = addr.second.get_value<std::string>();
+
+            auto it = find(addr_idx.begin(), addr_idx.end(), address_base58);
+            if (it == addr_idx.end()) continue;
+
+            info_for_vin vin;
+            vin.out.hash_tx = tx.get_child("txid").get_value<std::string>();
+            vin.out.amount = parse_amount( o.second.get_child( "value" ).get_value<std::string>() );
+            vin.out.n_vout = o.second.get_child( "n" ).get_value<uint32_t>();
+            vin.address = address_base58;
+            result.push_back( vin );
+         }
+      }
+   }
+
+   return result;
+}
 
 //void sidechain_net_handler_bitcoin::update_transaction_status( std::vector<fc::sha256> trx_for_check )
 //{
