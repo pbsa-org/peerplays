@@ -48,7 +48,6 @@
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
-#include <graphene/chain/bitcoin_address_object.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 
@@ -707,8 +706,6 @@ class database_api
        */
       vector<tournament_id_type> get_registered_tournaments(account_id_type account_filter, uint32_t limit) const;
 
-      vector<bitcoin_address_object> get_bitcoin_addresses(const account_id_type& acc_id) const;
-
    private:
       std::shared_ptr< database_api_impl > my;
 };
@@ -843,6 +840,4 @@ FC_API(graphene::app::database_api,
    (get_tournaments_by_state)
    (get_tournaments )
    (get_registered_tournaments)
-
-   (get_bitcoin_addresses)
 )
