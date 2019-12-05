@@ -240,3 +240,17 @@
 #define SWEEPS_DEFAULT_DISTRIBUTION_ASSET                   (graphene::chain::asset_id_type(0))
 #define SWEEPS_VESTING_BALANCE_MULTIPLIER                   100000000
 #define SWEEPS_ACCUMULATOR_ACCOUNT                          (graphene::chain::account_id_type(0))
+
+////////////////////////////////////////////////////////////////////// SideChain
+#define SIDECHAIN_SYMBOL                                 "pBTC"
+#define SIDECHAIN_PRECISION_DIGITS                       8
+#define SIDECHAIN_MAX_SHARE_SUPPLY                       int64_t(21000000ll * 100000000ll)
+#define SIDECHAIN_NUMBER_INVALID_KEYS                    5
+#define SIDECHAIN_DEFAULT_NUMBER_SIG_MULTISIG            5
+#define SIDECHAIN_DEFAULT_NUMBER_OF_CONFIRMATIONS        6
+#define SIDECHAIN_DEFAULT_MAX_UNCONFIRMED_VOUTS          25
+#define SIDECHAIN_DEFAULT_MAX_CONDENSING_TX_VINS         5
+#define SIDECHAIN_DEFAULT_MAX_CONDENSING_TX_VOUTS        5
+#define SIDECHAIN_DEFAULT_PERCENT_PAYMENT_TO_WITNESSES   (GRAPHENE_1_PERCENT/10)
+#define SIDECHAIN_NULL_VIN_IDENTIFIER                    "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b4" // fc::sha256::hash( "" + std::to_string( 0 ) ) - ( 8 bytes )
+//////////////////////////////////////////////////////////////////////
