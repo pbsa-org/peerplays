@@ -139,9 +139,9 @@ namespace graphene { namespace app {
           * @return A list of operations performed by account, ordered from most recent to oldest.
           */
          vector<operation_history_object> get_relative_account_history( const std::string account_id_or_name,
-                                                                        uint32_t stop = 0,
+                                                                        uint64_t stop = 0,
                                                                         unsigned limit = 100,
-                                                                        uint32_t start = 0) const;
+                                                                        uint64_t start = 0) const;
 
          vector<order_history_object> get_fill_order_history( std::string asset_a, std::string asset_b, uint32_t limit )const;
          vector<bucket_object> get_market_history( std::string asset_a, std::string asset_b, uint32_t bucket_seconds,
