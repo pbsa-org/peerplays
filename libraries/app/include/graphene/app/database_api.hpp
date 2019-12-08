@@ -44,6 +44,7 @@
 #include <graphene/chain/betting_market_object.hpp>
 #include <graphene/chain/global_betting_statistics_object.hpp>
 #include <graphene/chain/son_object.hpp>
+#include <graphene/chain/sidechain_address_object.hpp>
 
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/witness_object.hpp>
@@ -601,6 +602,39 @@ class database_api
        * @brief Get the total number of SONs registered with the blockchain
        */
       uint64_t get_son_count()const;
+
+      /////////////////////////
+      // Sidechain Addresses //
+      /////////////////////////
+
+      /**
+       * @brief Get a list of sidechain addresses
+       * @param sidechain_address_ids IDs of the sidechain accounts to retrieve
+       * @return The sidechain accounts corresponding to the provided IDs
+       *
+       * This function has semantics identical to @ref get_objects
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses(const vector<sidechain_address_id_type>& sidechain_address_ids)const;
+
+      /**
+       * @brief Get the sidechain addresses for a given account
+       * @param account The ID of the account whose sidechain addresses should be retrieved
+       * @return The sidechain addresses objects, or null if the account does not have a sidechain addresses
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses_by_account(account_id_type account)const;
+
+      /**
+       * @brief Get the sidechain addresses for a given account and sidechain
+       * @param account The ID of the account whose sidechain addresses should be retrieved
+       * @param sidechain Sidechain for which address should be retrieved
+       * @return The sidechain addresses objects, or null if the account does not have a sidechain addresses for a given network
+       */
+      fc::optional<sidechain_address_object> get_sidechain_addresses_by_account_and_sidechain(account_id_type account, peerplays_sidechain::sidechain_type sidechain)const;
+
+      /**
+       * @brief Get the total number of sidechain addresses registered with the blockchain
+       */
+      uint64_t get_sidechain_addresses_count()const;
 
       /// WORKERS
 

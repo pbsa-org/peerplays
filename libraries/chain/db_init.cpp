@@ -56,6 +56,7 @@
 #include <graphene/chain/global_betting_statistics_object.hpp>
 #include <graphene/chain/son_object.hpp>
 #include <graphene/chain/son_proposal_object.hpp>
+#include <graphene/chain/sidechain_address_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -78,6 +79,7 @@
 #include <graphene/chain/betting_market_evaluator.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
 #include <graphene/chain/son_evaluator.hpp>
+#include <graphene/chain/sidechain_address_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -247,6 +249,9 @@ void database::initialize_evaluators()
    register_evaluator<create_son_evaluator>();
    register_evaluator<update_son_evaluator>();
    register_evaluator<delete_son_evaluator>();
+   register_evaluator<add_sidechain_address_evaluator>();
+   register_evaluator<update_sidechain_address_evaluator>();
+   register_evaluator<delete_sidechain_address_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -290,6 +295,8 @@ void database::initialize_indexes()
    add_index< primary_index<match_index> >();
    add_index< primary_index<game_index> >();
    add_index< primary_index<son_proposal_index> >();
+
+   add_index< primary_index<sidechain_address_index> >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();

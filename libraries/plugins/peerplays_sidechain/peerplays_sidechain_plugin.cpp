@@ -80,7 +80,7 @@ void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options:
       && options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" )
       && options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" ) )
    {
-      my->_net_manager.create_handler(network::bitcoin, options);
+      my->_net_manager.create_handler(sidechain_type::bitcoin, options);
    } else {
       wlog("Haven't set up bitcoin sidechain parameters");
    }

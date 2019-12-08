@@ -14,7 +14,7 @@ public:
    sidechain_net_manager();
    virtual ~sidechain_net_manager();
 
-   bool create_handler(peerplays_sidechain::network network, const boost::program_options::variables_map& options);
+   bool create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options);
 private:
 
    std::vector<std::unique_ptr<sidechain_net_handler>> net_handlers;

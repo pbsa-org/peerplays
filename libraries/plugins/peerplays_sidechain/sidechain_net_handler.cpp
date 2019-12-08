@@ -11,8 +11,8 @@ sidechain_net_handler::~sidechain_net_handler() {
 std::vector<std::string> sidechain_net_handler::get_user_sidechain_address_mapping() {
    std::vector<std::string> result;
 
-   switch (network) {
-      case network::bitcoin:
+   switch (sidechain) {
+      case sidechain_type::bitcoin:
          result.push_back("2N5aFW5WFaYZLuJWx9RGziHBdEMj9Zf8s3J");
          result.push_back("2MxAnE469fhhdvUqUB7daU997VSearb2mn7");
          result.push_back("2NAYptFvTU8vJ1pC7CxvVA9R7D3NdBJHpwL");

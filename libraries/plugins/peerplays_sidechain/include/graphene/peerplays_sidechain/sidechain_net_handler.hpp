@@ -16,7 +16,7 @@ public:
     std::vector<std::string> get_user_sidechain_address_mapping();
 
 protected:
-    graphene::peerplays_sidechain::network network;
+    graphene::peerplays_sidechain::sidechain_type sidechain;
 
     virtual std::string create_multisignature_wallet( const std::vector<std::string> public_keys ) = 0;
     virtual std::string transfer( const std::string& from, const std::string& to, const uint64_t amount ) = 0;
