@@ -396,11 +396,11 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            assert( aobj != nullptr );
            accounts.insert( aobj->son_account );
            break;
-        /*} case sidechain_address_object_type:{
+        } case sidechain_address_object_type:{
            const auto& aobj = dynamic_cast<const sidechain_address_object*>(obj);
            assert( aobj != nullptr );
            accounts.insert( aobj->sidechain_address_account );
-           break;*/
+           break;
         }
       }
    }

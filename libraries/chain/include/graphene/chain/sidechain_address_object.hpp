@@ -45,7 +45,7 @@ namespace graphene { namespace chain {
             member<sidechain_address_object, account_id_type, &sidechain_address_object::sidechain_address_account>
          >,
          ordered_unique< tag<by_network>,
-            member<sidechain_address_object, const peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>
+            member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>
          >,
          ordered_unique< tag<by_account_and_network>,
             composite_key<sidechain_address_object,
@@ -60,4 +60,4 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::sidechain_address_object, (graphene::db::object),
-                    (sidechain_address_account)/*(sidechain)*/(address)(private_key)(public_key) )
+                    (sidechain_address_account)(sidechain)(address)(private_key)(public_key) )

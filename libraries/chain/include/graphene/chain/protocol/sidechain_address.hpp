@@ -56,8 +56,8 @@ FC_REFLECT(graphene::chain::sidechain_address_add_operation, (fee)(sidechain_add
         (address)(private_key)(public_key) )
 
 FC_REFLECT(graphene::chain::sidechain_address_update_operation::fee_parameters_type, (fee) )
-//FC_REFLECT(graphene::chain::sidechain_address_update_operation, (fee)(sidechain_address_id)(sidechain_address_account)/*(sidechain)*/
-//        (address)(private_key)(public_key) )
+FC_REFLECT(graphene::chain::sidechain_address_update_operation, (fee)(sidechain_address_id)(sidechain_address_account)(sidechain)
+        /*(address)(private_key)(public_key)*/ )
 
 FC_REFLECT(graphene::chain::sidechain_address_delete_operation::fee_parameters_type, (fee) )
-//FC_REFLECT(graphene::chain::sidechain_address_delete_operation, (fee)(sidechain_address_id)(sidechain_address_account)/*(sidechain)*/ )
+FC_REFLECT(graphene::chain::sidechain_address_delete_operation, (fee)(sidechain_address_id)(sidechain_address_account)(sidechain) )
