@@ -10,7 +10,8 @@ namespace graphene { namespace chain {
    {
       inactive,
       active,
-      in_maintenance
+      in_maintenance,
+      deregistered
    };
    /**
     * @class son_statistics_object
@@ -31,8 +32,12 @@ namespace graphene { namespace chain {
          uint64_t txs_signed = 0;
          // Total Downtime barring the current down time in seconds, used for stats to present to user
          uint64_t total_downtime = 0;
+         // Current Interval Downtime since last maintenance
+         uint64_t current_interval_downtime = 0;
          // Down timestamp, if son status is in_maintenance use this
          fc::time_point_sec last_down_timestamp;
+         // Last Active heartbeat timestamp
+         fc::time_point_sec last_active_timestamp;
    };
 
    /**
