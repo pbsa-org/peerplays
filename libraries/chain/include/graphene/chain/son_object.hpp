@@ -92,7 +92,7 @@ namespace graphene { namespace chain {
    using son_stats_index = generic_index<son_statistics_object, son_stats_multi_index_type>;
 } } // graphene::chain
 
-FC_REFLECT_ENUM(graphene::chain::son_status, (inactive)(active)(in_maintenance) )
+FC_REFLECT_ENUM(graphene::chain::son_status, (inactive)(active)(in_maintenance)(deregistered) )
 
 FC_REFLECT_DERIVED( graphene::chain::son_object, (graphene::db::object),
                     (son_account)(vote_id)(total_votes)(url)(deposit)(signing_key)(pay_vb) )
