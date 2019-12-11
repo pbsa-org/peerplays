@@ -9,7 +9,7 @@ namespace graphene { namespace chain {
 void_result add_sidechain_address_evaluator::do_evaluate(const sidechain_address_add_operation& op)
 { try{
 
-   const auto& idx = db().get_index_type<sidechain_address_index>().indices().get<by_account_and_network>();
+   const auto& idx = db().get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
    FC_ASSERT( idx.find(boost::make_tuple(op.sidechain_address_account, op.sidechain)) == idx.end(), "Duplicated item" );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_add_test ) {
 
    BOOST_TEST_MESSAGE("Check sidechain_address_add_operation results");
 
-   const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_network>();
+   const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
    BOOST_REQUIRE( idx.size() == 1 );
    auto obj = idx.find( boost::make_tuple( alice_id, graphene::peerplays_sidechain::sidechain_type::bitcoin ) );
    BOOST_REQUIRE( obj != idx.end() );
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
 
    GET_ACTOR(alice);
 
-   const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_network>();
+   const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
    BOOST_REQUIRE( idx.size() == 1 );
    auto obj = idx.find( boost::make_tuple( alice_id, graphene::peerplays_sidechain::sidechain_type::bitcoin ) );
    BOOST_REQUIRE( obj != idx.end() );
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
    {
       BOOST_TEST_MESSAGE("Check sidechain_address_update_operation results");
 
-      const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_network>();
+      const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       BOOST_REQUIRE( idx.size() == 1 );
       auto obj = idx.find( boost::make_tuple( alice_id, graphene::peerplays_sidechain::sidechain_type::bitcoin ) );
       BOOST_REQUIRE( obj != idx.end() );
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_delete_test ) {
 
    GET_ACTOR(alice);
 
-   const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_network>();
+   const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
    BOOST_REQUIRE( idx.size() == 1 );
    auto obj = idx.find( boost::make_tuple( alice_id, graphene::peerplays_sidechain::sidechain_type::bitcoin ) );
    BOOST_REQUIRE( obj != idx.end() );
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_delete_test ) {
    {
       BOOST_TEST_MESSAGE("Check sidechain_address_delete_operation results");
 
-      const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_network>();
+      const auto& idx = db.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       BOOST_REQUIRE( idx.size() == 0 );
       auto obj = idx.find( boost::make_tuple( alice_id, graphene::peerplays_sidechain::sidechain_type::bitcoin ) );
       BOOST_REQUIRE( obj == idx.end() );

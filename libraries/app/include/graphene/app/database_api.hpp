@@ -624,10 +624,17 @@ class database_api
       vector<optional<sidechain_address_object>> get_sidechain_addresses_by_account(account_id_type account)const;
 
       /**
+       * @brief Get the sidechain addresses for a given sidechain
+       * @param sidechain Sidechain for which addresses should be retrieved
+       * @return The sidechain addresses objects, or null if the sidechain does not have any addresses
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses_by_sidechain(peerplays_sidechain::sidechain_type sidechain)const;
+
+      /**
        * @brief Get the sidechain addresses for a given account and sidechain
        * @param account The ID of the account whose sidechain addresses should be retrieved
        * @param sidechain Sidechain for which address should be retrieved
-       * @return The sidechain addresses objects, or null if the account does not have a sidechain addresses for a given network
+       * @return The sidechain addresses objects, or null if the account does not have a sidechain addresses for a given sidechain
        */
       fc::optional<sidechain_address_object> get_sidechain_addresses_by_account_and_sidechain(account_id_type account, peerplays_sidechain::sidechain_type sidechain)const;
 
@@ -847,6 +854,13 @@ FC_API(graphene::app::database_api,
    (get_son_by_account)
    (lookup_son_accounts)
    (get_son_count)
+
+   // Sidechain addresses
+   (get_sidechain_addresses)
+   (get_sidechain_addresses_by_account)
+   (get_sidechain_addresses_by_sidechain)
+   (get_sidechain_addresses_by_account_and_sidechain)
+   (get_sidechain_addresses_count)
 
    // workers
    (get_workers_by_account)

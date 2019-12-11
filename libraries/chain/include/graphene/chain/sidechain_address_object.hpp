@@ -33,8 +33,8 @@ namespace graphene { namespace chain {
    };
 
    struct by_account;
-   struct by_network;
-   struct by_account_and_network;
+   struct by_sidechain;
+   struct by_account_and_sidechain;
    using sidechain_address_multi_index_type = multi_index_container<
       sidechain_address_object,
       indexed_by<
@@ -44,10 +44,10 @@ namespace graphene { namespace chain {
          ordered_unique< tag<by_account>,
             member<sidechain_address_object, account_id_type, &sidechain_address_object::sidechain_address_account>
          >,
-         ordered_unique< tag<by_network>,
+         ordered_unique< tag<by_sidechain>,
             member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>
          >,
-         ordered_unique< tag<by_account_and_network>,
+         ordered_unique< tag<by_account_and_sidechain>,
             composite_key<sidechain_address_object,
                member<sidechain_address_object, account_id_type, &sidechain_address_object::sidechain_address_account>,
                member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>

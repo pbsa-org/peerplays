@@ -23,6 +23,7 @@ bool sidechain_net_manager::create_handler(peerplays_sidechain::sidechain_type s
           std::unique_ptr<sidechain_net_handler> h = std::unique_ptr<sidechain_net_handler>(new sidechain_net_handler_bitcoin(options));
           net_handlers.push_back(std::move(h));
           ret_val = true;
+          break;
       }
       default:
          assert(false);
