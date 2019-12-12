@@ -140,7 +140,8 @@ namespace graphene { namespace chain {
             son_create_operation,
             son_update_operation,
             son_delete_operation,
-            son_heartbeat_operation
+            son_heartbeat_operation,
+            son_report_down_operation
          > operation;
 
    /// @} // operations group
