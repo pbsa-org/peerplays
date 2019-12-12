@@ -141,6 +141,7 @@ namespace graphene { namespace chain {
             son_create_operation,
             son_update_operation,
             son_delete_operation,
+            son_heartbeat_operation
             sidechain_address_add_operation,
             sidechain_address_update_operation,
             sidechain_address_delete_operation
