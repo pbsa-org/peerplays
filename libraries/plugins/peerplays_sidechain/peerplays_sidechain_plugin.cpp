@@ -14,8 +14,9 @@ namespace detail
 class peerplays_sidechain_plugin_impl
 {
    public:
-      peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin)
-         : _self( _plugin )
+      peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin) :
+         _self( _plugin ),
+         _net_manager( _plugin )
       { }
       virtual ~peerplays_sidechain_plugin_impl();
 
@@ -77,9 +78,10 @@ void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options:
 {
    ilog("peerplays sidechain plugin:  plugin_initialize()");
 
-   if( options.count( "bitcoin-node-ip" ) && options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" )
-      && options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" )
-      && options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" ) )
+   if ( options.count( "son-id" ) && options.count( "peerplays-private-key" )
+     && options.count( "bitcoin-node-ip" ) && options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" )
+     && options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" )
+     && options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" ) )
    {
       my->_net_manager.create_handler(sidechain_type::bitcoin, options);
    } else {

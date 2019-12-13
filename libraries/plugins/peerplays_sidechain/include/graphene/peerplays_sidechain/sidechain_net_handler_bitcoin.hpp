@@ -56,7 +56,7 @@ private:
 
 class sidechain_net_handler_bitcoin : public sidechain_net_handler {
 public:
-   sidechain_net_handler_bitcoin(const boost::program_options::variables_map& options);
+   sidechain_net_handler_bitcoin(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map& options);
    virtual ~sidechain_net_handler_bitcoin();
 
    void update_tx_infos( const std::string& block_hash );

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <graphene/peerplays_sidechain/defs.hpp>
+#include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
 
 #include <vector>
 
@@ -10,12 +11,13 @@ namespace graphene { namespace peerplays_sidechain {
 
 class sidechain_net_handler {
 public:
-    sidechain_net_handler(const boost::program_options::variables_map& options);
+    sidechain_net_handler(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map& options);
     virtual ~sidechain_net_handler();
 
-    std::vector<std::string> get_user_sidechain_address_mapping();
+    std::vector<std::string> get_sidechain_addresses();
 
 protected:
+    peerplays_sidechain_plugin &plugin;
     graphene::peerplays_sidechain::sidechain_type sidechain;
 
     virtual std::string create_multisignature_wallet( const std::vector<std::string> public_keys ) = 0;
