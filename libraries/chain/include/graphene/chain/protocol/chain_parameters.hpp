@@ -46,7 +46,7 @@ namespace graphene { namespace chain {
       optional < uint32_t >           son_vesting_amount;
       optional < uint32_t >           son_vesting_period;
       optional < uint32_t >           son_pay_daily_max;
-      optional < graphene::chain::account_id_type > son_btc_account;
+      optional < account_id_type >    son_btc_account;
    };
 
    struct chain_parameters
@@ -139,7 +139,7 @@ namespace graphene { namespace chain {
       inline uint16_t son_pay_daily_max()const {
          return extensions.value.son_pay_daily_max.valid() ? *extensions.value.son_pay_daily_max : MIN_SON_PAY_DAILY_MAX;
       }
-      inline const account_id_type& get_son_btc_account_id() const {
+      inline account_id_type get_son_btc_account_id() const {
          return extensions.value.son_btc_account.valid() ? *extensions.value.son_btc_account : GRAPHENE_NULL_ACCOUNT;
       }
    };
