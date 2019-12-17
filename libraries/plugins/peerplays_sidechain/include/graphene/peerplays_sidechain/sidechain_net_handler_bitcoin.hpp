@@ -83,7 +83,6 @@ private:
 
    std::unique_ptr<zmq_listener> listener;
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
-   graphene::chain::database* db;
 
    void handle_event( const std::string& event_data);
 

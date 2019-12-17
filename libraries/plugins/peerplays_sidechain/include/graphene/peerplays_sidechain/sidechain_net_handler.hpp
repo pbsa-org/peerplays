@@ -14,6 +14,8 @@ public:
     sidechain_net_handler(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map& options);
     virtual ~sidechain_net_handler();
 
+    graphene::chain::database& get_database();
+
     std::vector<std::string> get_sidechain_addresses();
 
 protected:
