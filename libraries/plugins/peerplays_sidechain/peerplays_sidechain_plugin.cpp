@@ -59,7 +59,7 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
    string son_id_example = fc::json::to_string(chain::son_id_type(5));
 
    cli.add_options()
-         ("son-id,w", bpo::value<vector<string>>(), ("ID of SON controlled by this node (e.g. " + son_id_example + ", quotes are required)").c_str())
+         ("son-id", bpo::value<vector<string>>(), ("ID of SON controlled by this node (e.g. " + son_id_example + ", quotes are required)").c_str())
          ("peerplays-private-key", bpo::value<vector<string>>()->composing()->multitoken()->
                DEFAULT_VALUE_VECTOR(std::make_pair(chain::public_key_type(default_priv_key.get_public_key()), graphene::utilities::key_to_wif(default_priv_key))),
                "Tuple of [PublicKey, WIF private key]")
