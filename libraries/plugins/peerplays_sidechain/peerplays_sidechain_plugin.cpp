@@ -154,7 +154,6 @@ void peerplays_sidechain_plugin::heartbeat_loop()
    auto it = std::find(gpo.active_sons.begin(), gpo.active_sons.end(), son_id);
    if(it != gpo.active_sons.end()) {
       chain::son_heartbeat_operation op;
-      //const chain::son_object& son_obj = son_id(d);
       const auto& idx = d.get_index_type<chain::son_index>().indices().get<by_id>();
       auto son_obj = idx.find( son_id );
       op.owner_account = son_obj->son_account;
