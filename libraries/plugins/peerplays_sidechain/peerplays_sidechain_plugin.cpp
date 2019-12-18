@@ -18,8 +18,6 @@ class peerplays_sidechain_plugin_impl
       peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin);
       virtual ~peerplays_sidechain_plugin_impl();
 
-      graphene::chain::database& get_database();
-
       void plugin_set_program_options(
          boost::program_options::options_description& cli,
          boost::program_options::options_description& cfg);
@@ -27,28 +25,24 @@ class peerplays_sidechain_plugin_impl
       void plugin_startup();
 
 private:
-      peerplays_sidechain_plugin& _self;
-      peerplays_sidechain::sidechain_net_manager _net_manager;
+      peerplays_sidechain_plugin& plugin;
 
       bool config_ready_son;
       bool config_ready_bitcoin;
+
+      std::unique_ptr<peerplays_sidechain::sidechain_net_manager> net_manager;
 };
 
 peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin) :
-      _self( _plugin ),
-      _net_manager( _plugin ),
+      plugin( _plugin ),
       config_ready_son(false),
-      config_ready_bitcoin(false)
+      config_ready_bitcoin(false),
+      net_manager(nullptr)
 {
 }
 
 peerplays_sidechain_plugin_impl::~peerplays_sidechain_plugin_impl()
 {
-}
-
-graphene::chain::database& peerplays_sidechain_plugin_impl::get_database()
-{
-   return _self.database();
 }
 
 void peerplays_sidechain_plugin_impl::plugin_set_program_options(
@@ -84,16 +78,27 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       wlog("Haven't set up SON parameters");
    }
 
+   net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin.app().chain_database()));
+
    config_ready_bitcoin = options.count( "bitcoin-node-ip" ) &&
            options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" ) &&
            options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" ) &&
            options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" );
    if (config_ready_bitcoin) {
-      _net_manager.create_handler(sidechain_type::bitcoin, options);
+      net_manager->create_handler(sidechain_type::bitcoin, options);
       ilog("Bitcoin sidechain handler created");
    } else {
-      wlog("Haven't set up bitcoin sidechain parameters");
+      wlog("Haven't set up Bitcoin sidechain parameters");
    }
+
+   //config_ready_ethereum = options.count( "ethereum-node-ip" ) &&
+   //        options.count( "ethereum-address" ) && options.count( "ethereum-public-key" ) && options.count( "ethereum-private-key" );
+   //if (config_ready_ethereum) {
+   //   net_manager->create_handler(sidechain_type::ethereum, options);
+   //   ilog("Ethereum sidechain handler created");
+   //} else {
+   //   wlog("Haven't set up Ethereum sidechain parameters");
+   //}
 }
 
 void peerplays_sidechain_plugin_impl::plugin_startup()
@@ -105,6 +110,10 @@ void peerplays_sidechain_plugin_impl::plugin_startup()
    if (config_ready_bitcoin) {
       ilog("Bitcoin sidechain handler running");
    }
+
+   //if (config_ready_ethereum) {
+   //   ilog("Ethereum sidechain handler running");
+   //}
 }
 
 } // end namespace detail
