@@ -39,6 +39,14 @@ peerplays_sidechain_plugin::peerplays_sidechain_plugin() :
 
 peerplays_sidechain_plugin::~peerplays_sidechain_plugin()
 {
+   try {
+      if( _heartbeat_task.valid() )
+         _heartbeat_task.cancel_and_wait(__FUNCTION__);
+   } catch(fc::canceled_exception&) {
+      //Expected exception. Move along.
+   } catch(fc::exception& e) {
+      edump((e.to_detail_string()));
+   }
    return;
 }
 
@@ -85,11 +93,77 @@ void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options:
    } else {
       wlog("Haven't set up bitcoin sidechain parameters");
    }
+
+   LOAD_VALUE_SET(options, "son-id", _sons, chain::son_id_type)
+   if( options.count("peerplays-private-key") )
+   {
+      const std::vector<std::string> key_id_to_wif_pair_strings = options["peerplays-private-key"].as<std::vector<std::string>>();
+      for (const std::string& key_id_to_wif_pair_string : key_id_to_wif_pair_strings)
+      {
+         auto key_id_to_wif_pair = graphene::app::dejsonify<std::pair<chain::public_key_type, std::string> >(key_id_to_wif_pair_string, 5);
+         ilog("Public Key: ${public}", ("public", key_id_to_wif_pair.first));
+         fc::optional<fc::ecc::private_key> private_key = graphene::utilities::wif_to_key(key_id_to_wif_pair.second);
+         if (!private_key)
+         {
+            // the key isn't in WIF format; see if they are still passing the old native private key format.  This is
+            // just here to ease the transition, can be removed soon
+            try
+            {
+               private_key = fc::variant(key_id_to_wif_pair.second, 2).as<fc::ecc::private_key>(1);
+            }
+            catch (const fc::exception&)
+            {
+               FC_THROW("Invalid WIF-format private key ${key_string}", ("key_string", key_id_to_wif_pair.second));
+            }
+         }
+         _private_keys[key_id_to_wif_pair.first] = *private_key;
+      }
+   }
 }
 
 void peerplays_sidechain_plugin::plugin_startup()
 {
    ilog("peerplays sidechain plugin:  plugin_startup()");
+
+   if( !_sons.empty() && !_private_keys.empty() )
+   {
+      ilog("Starting heartbeats for ${n} sons.", ("n", _sons.size()));
+      schedule_heartbeat_loop();
+   } else
+      elog("No sons configured! Please add SON IDs and private keys to configuration.");
+   ilog("peerplays sidechain plugin:  plugin_startup() end");
+}
+
+void peerplays_sidechain_plugin::schedule_heartbeat_loop()
+{
+   fc::time_point now = fc::time_point::now();
+   int64_t time_to_next_heartbeat = 180000000;
+
+   fc::time_point next_wakeup( now + fc::microseconds( time_to_next_heartbeat ) );
+
+   _heartbeat_task = fc::schedule([this]{heartbeat_loop();},
+                                         next_wakeup, "SON Heartbeat Production");
+}
+
+void peerplays_sidechain_plugin::heartbeat_loop()
+{
+   ilog("peerplays_sidechain_plugin:  sending heartbeat");
+   chain::database& d = database();
+   chain::son_id_type son_id = *(_sons.begin());
+   const chain::global_property_object& gpo = d.get_global_properties();
+   auto it = std::find(gpo.active_sons.begin(), gpo.active_sons.end(), son_id);
+   if(it != gpo.active_sons.end()) {
+      chain::son_heartbeat_operation op;
+      //const chain::son_object& son_obj = son_id(d);
+      const auto& idx = d.get_index_type<chain::son_index>().indices().get<by_id>();
+      auto son_obj = idx.find( son_id );
+      op.owner_account = son_obj->son_account;
+      op.son_id = son_id;
+      op.ts = fc::time_point::now() + fc::seconds(0);
+      chain::signed_transaction trx = d.create_signed_transaction(_private_keys.begin()->second, op);
+      fc::async( [this,trx](){ p2p_node().broadcast(net::trx_message(trx)); } );
+   }
+   schedule_heartbeat_loop();
 }
 
 } } // graphene::peerplays_sidechain

@@ -3,6 +3,7 @@
 #include <graphene/app/plugin.hpp>
 
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/son_object.hpp>
 #include <graphene/chain/database.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
@@ -25,8 +26,13 @@ class peerplays_sidechain_plugin : public graphene::app::plugin
          boost::program_options::options_description& cfg) override;
       virtual void plugin_initialize(const boost::program_options::variables_map& options) override;
       virtual void plugin_startup() override;
+      void schedule_heartbeat_loop();
+      void heartbeat_loop();
 
       std::unique_ptr<detail::peerplays_sidechain_plugin_impl> my;
+      std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
+      std::set<chain::son_id_type> _sons;
+      fc::future<void> _heartbeat_task;
 };
 
 } } //graphene::peerplays_sidechain
