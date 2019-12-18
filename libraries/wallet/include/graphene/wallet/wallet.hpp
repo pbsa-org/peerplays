@@ -1417,12 +1417,6 @@ class wallet_api
                                           peerplays_sidechain::sidechain_type sidechain,
                                           bool broadcast = false);
 
-      /** Retrieves all sidechain addresses registered in the system.
-       *
-       * @returns the list of all sidechain addresses registered in the system
-       */
-      vector<optional<sidechain_address_object>> get_all_sidechain_addresses ();
-
       /** Retrieves all sidechain addresses owned by given account.
        *
        * @param account the name or id of the account who owns the address
@@ -2207,7 +2201,6 @@ FC_API( graphene::wallet::wallet_api,
         (add_sidechain_address)
         (update_sidechain_address)
         (delete_sidechain_address)
-        (get_all_sidechain_addresses)
         (get_sidechain_addresses_by_account)
         (get_sidechain_addresses_by_sidechain)
         (get_sidechain_address_by_account_and_sidechain)

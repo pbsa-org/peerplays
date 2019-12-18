@@ -153,7 +153,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       uint64_t get_son_count()const;
 
       // Sidechain addresses
-      vector<optional<sidechain_address_object>> get_all_sidechain_addresses()const;
       vector<optional<sidechain_address_object>> get_sidechain_addresses(const vector<sidechain_address_id_type>& sidechain_address_ids)const;
       vector<optional<sidechain_address_object>> get_sidechain_addresses_by_account(account_id_type account)const;
       vector<optional<sidechain_address_object>> get_sidechain_addresses_by_sidechain(peerplays_sidechain::sidechain_type sidechain)const;
@@ -1776,22 +1775,6 @@ uint64_t database_api_impl::get_son_count()const
 // Sidechain Accounts                                               //
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
-
-vector<optional<sidechain_address_object>> database_api::get_all_sidechain_addresses()const
-{
-   return my->get_all_sidechain_addresses();
-}
-
-vector<optional<sidechain_address_object>> database_api_impl::get_all_sidechain_addresses()const
-{
-   vector<optional<sidechain_address_object>> result;
-   const auto& idx = _db.get_index_type<sidechain_address_index>().indices().get<by_id>();
-   std::for_each(idx.begin(), idx.end(),
-         [&result] (const sidechain_address_object& sao) {
-         result.push_back(sao);
-   });
-   return result;
-}
 
 vector<optional<sidechain_address_object>> database_api::get_sidechain_addresses(const vector<sidechain_address_id_type>& sidechain_address_ids)const
 {

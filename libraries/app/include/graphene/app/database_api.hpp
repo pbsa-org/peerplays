@@ -608,14 +608,6 @@ class database_api
       /////////////////////////
 
       /**
-       * @brief Get a list of all sidechain addresses
-       * @return The list of all sidechain accounts
-       *
-       * This function has semantics identical to @ref get_objects
-       */
-      vector<optional<sidechain_address_object>> get_all_sidechain_addresses()const;
-
-      /**
        * @brief Get a list of sidechain addresses
        * @param sidechain_address_ids IDs of the sidechain addresses to retrieve
        * @return The sidechain accounts corresponding to the provided IDs
@@ -864,7 +856,6 @@ FC_API(graphene::app::database_api,
    (get_son_count)
 
    // Sidechain addresses
-   (get_all_sidechain_addresses)
    (get_sidechain_addresses)
    (get_sidechain_addresses_by_account)
    (get_sidechain_addresses_by_sidechain)

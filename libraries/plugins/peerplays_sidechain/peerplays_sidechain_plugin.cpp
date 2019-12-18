@@ -76,6 +76,7 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
    if (config_ready_son) {
    } else {
       wlog("Haven't set up SON parameters");
+      throw;
    }
 
    net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin.app().chain_database()));
@@ -99,6 +100,11 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
    //} else {
    //   wlog("Haven't set up Ethereum sidechain parameters");
    //}
+
+   if (!(config_ready_bitcoin /*&& config_ready_ethereum*/)) {
+      wlog("Haven't set up any sidechain parameters");
+      throw;
+   }
 }
 
 void peerplays_sidechain_plugin_impl::plugin_startup()

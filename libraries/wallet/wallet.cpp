@@ -4425,11 +4425,6 @@ signed_transaction wallet_api::delete_sidechain_address(string account,
    return my->delete_sidechain_address(account, sidechain, broadcast);
 }
 
-vector<optional<sidechain_address_object>> wallet_api::get_all_sidechain_addresses ()
-{
-   return my->_remote_db->get_all_sidechain_addresses();
-}
-
 vector<optional<sidechain_address_object>> wallet_api::get_sidechain_addresses_by_account(string account)
 {
    account_id_type account_id = get_account_id(account);
