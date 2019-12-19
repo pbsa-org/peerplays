@@ -167,7 +167,6 @@ void peerplays_sidechain_plugin::heartbeat_loop()
             return true;
          } catch(fc::exception e){
             ilog("peerplays_sidechain_plugin:  sending heartbeat failed with exception ${e}",("e", e.what()));
-            std::cout << e.what() << std::endl;
             return false;
          }
       });
