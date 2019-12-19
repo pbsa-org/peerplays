@@ -147,12 +147,12 @@ void peerplays_sidechain_plugin::schedule_heartbeat_loop()
 
 void peerplays_sidechain_plugin::heartbeat_loop()
 {
-   ilog("peerplays_sidechain_plugin:  sending heartbeat");
    chain::database& d = database();
    chain::son_id_type son_id = *(_sons.begin());
    const chain::global_property_object& gpo = d.get_global_properties();
    auto it = std::find(gpo.active_sons.begin(), gpo.active_sons.end(), son_id);
    if(it != gpo.active_sons.end()) {
+      ilog("peerplays_sidechain_plugin:  sending heartbeat");
       chain::son_heartbeat_operation op;
       const auto& idx = d.get_index_type<chain::son_index>().indices().get<by_id>();
       auto son_obj = idx.find( son_id );
@@ -160,10 +160,20 @@ void peerplays_sidechain_plugin::heartbeat_loop()
       op.son_id = son_id;
       op.ts = fc::time_point::now() + fc::seconds(0);
       chain::signed_transaction trx = d.create_signed_transaction(_private_keys.begin()->second, op);
-      fc::async( [this,trx](){ p2p_node().broadcast(net::trx_message(trx)); } );
+      fc::future<bool> fut = fc::async( [&](){
+         try {
+            d.push_transaction(trx);
+            p2p_node().broadcast(net::trx_message(trx));
+            return true;
+         } catch(fc::exception e){
+            ilog("peerplays_sidechain_plugin:  sending heartbeat failed with exception ${e}",("e", e.what()));
+            std::cout << e.what() << std::endl;
+            return false;
+         }
+      });
+      fut.wait(fc::seconds(10));
    }
    schedule_heartbeat_loop();
 }
-
 } } // graphene::peerplays_sidechain
 
