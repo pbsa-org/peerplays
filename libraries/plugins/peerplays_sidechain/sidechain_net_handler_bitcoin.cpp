@@ -173,6 +173,33 @@ bool bitcoin_rpc_client::connection_is_not_defined() const
    return ip.empty() || rpc_port == 0 || user.empty() || password.empty();
 }
 
+void bitcoin_rpc_client::import_address(const std::string &address_or_script)
+{
+   const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"init_wallet\", \"method\": \"importaddress\", \"params\": [") +
+                     std::string("\"") + address_or_script + std::string("\"") + std::string("] }");
+
+   const auto reply = send_post_request( body );
+
+   if( reply.body.empty() )
+   {
+      wlog("Failed to import address [${addr}]", ("addr", address_or_script));
+      return;
+   }
+
+   std::string reply_str( reply.body.begin(), reply.body.end() );
+
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   if( reply.status == 200 ) {
+      idump(( address_or_script ));
+      return;
+   } else if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
+      wlog( "Failed to import address [${addr}]! Reply: ${msg}", ("addr", address_or_script)("msg", reply_str) );
+   }
+}
+
 fc::http::reply bitcoin_rpc_client::send_post_request( std::string body )
 {
    fc::http::connection conn;

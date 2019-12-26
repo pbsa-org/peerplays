@@ -21,6 +21,7 @@ public:
    void send_btc_tx( const std::string& tx_hex );
    std::string add_multisig_address( const std::vector<std::string> public_keys );
    bool connection_is_not_defined() const;
+   void import_address( const std::string& address_or_script);
 
 private:
 
