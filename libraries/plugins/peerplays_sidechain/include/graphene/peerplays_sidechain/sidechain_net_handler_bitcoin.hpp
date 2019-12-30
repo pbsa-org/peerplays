@@ -31,6 +31,7 @@ public:
    bool connection_is_not_defined() const;
    void import_address( const std::string& address_or_script);
    std::vector<btc_txout> list_unspent();
+   std::string prepare_tx(const std::vector<btc_txout>& ins, const fc::flat_map<std::string, double> outs);
 
 private:
 

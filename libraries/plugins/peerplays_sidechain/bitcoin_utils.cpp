@@ -89,4 +89,9 @@ std::string p2sh_address_from_redeem_script(const bytes& script, bitcoin_network
    return fc::to_base58(reinterpret_cast<const char*>(&data[0]), data.size());
 }
 
+bytes sign_raw_transaction(const bytes& unsigned_tx, const fc::ecc::private_key& priv_key)
+{
+   return bytes();
+}
+
 }}
