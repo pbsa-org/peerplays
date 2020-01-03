@@ -1,6 +1,7 @@
 #include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
 
 #include <fc/log/logger.hpp>
+#include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
@@ -14,30 +15,37 @@ namespace detail
 class peerplays_sidechain_plugin_impl
 {
    public:
-      peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin)
-         : _self( _plugin )
-      { }
+      peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin);
       virtual ~peerplays_sidechain_plugin_impl();
 
-      peerplays_sidechain_plugin& _self;
+      void plugin_set_program_options(
+         boost::program_options::options_description& cli,
+         boost::program_options::options_description& cfg);
+      void plugin_initialize(const boost::program_options::variables_map& options);
+      void plugin_startup();
+      void schedule_heartbeat_loop();
+      void heartbeat_loop();
+   private:
+      peerplays_sidechain_plugin& plugin;
 
-      peerplays_sidechain::sidechain_net_manager _net_manager;
+      bool config_ready_son;
+      bool config_ready_bitcoin;
 
+      std::unique_ptr<peerplays_sidechain::sidechain_net_manager> net_manager;
+      std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
+      std::set<chain::son_id_type> _sons;
+      fc::future<void> _heartbeat_task;
 };
 
+peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin) :
+      plugin( _plugin ),
+      config_ready_son(false),
+      config_ready_bitcoin(false),
+      net_manager(nullptr)
+{
+}
+
 peerplays_sidechain_plugin_impl::~peerplays_sidechain_plugin_impl()
-{
-   return;
-}
-
-} // end namespace detail
-
-peerplays_sidechain_plugin::peerplays_sidechain_plugin() :
-   my( new detail::peerplays_sidechain_plugin_impl(*this) )
-{
-}
-
-peerplays_sidechain_plugin::~peerplays_sidechain_plugin()
 {
    try {
       if( _heartbeat_task.valid() )
@@ -47,24 +55,17 @@ peerplays_sidechain_plugin::~peerplays_sidechain_plugin()
    } catch(fc::exception& e) {
       edump((e.to_detail_string()));
    }
-   return;
 }
 
-std::string peerplays_sidechain_plugin::plugin_name()const
-{
-   return "peerplays_sidechain";
-}
-
-void peerplays_sidechain_plugin::plugin_set_program_options(
+void peerplays_sidechain_plugin_impl::plugin_set_program_options(
    boost::program_options::options_description& cli,
-   boost::program_options::options_description& cfg
-   )
+   boost::program_options::options_description& cfg)
 {
    auto default_priv_key = fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("nathan")));
    string son_id_example = fc::json::to_string(chain::son_id_type(5));
 
    cli.add_options()
-         ("son-id,w", bpo::value<vector<string>>(), ("ID of SON controlled by this node (e.g. " + son_id_example + ", quotes are required)").c_str())
+         ("son-id", bpo::value<vector<string>>(), ("ID of SON controlled by this node (e.g. " + son_id_example + ", quotes are required)").c_str())
          ("peerplays-private-key", bpo::value<vector<string>>()->composing()->multitoken()->
                DEFAULT_VALUE_VECTOR(std::make_pair(chain::public_key_type(default_priv_key.get_public_key()), graphene::utilities::key_to_wif(default_priv_key))),
                "Tuple of [PublicKey, WIF private key]")
@@ -81,49 +82,77 @@ void peerplays_sidechain_plugin::plugin_set_program_options(
    cfg.add(cli);
 }
 
-void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options::variables_map& options)
+void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_options::variables_map& options)
 {
-   ilog("peerplays sidechain plugin:  plugin_initialize()");
-
-   if( options.count( "bitcoin-node-ip" ) && options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" )
-      && options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" )
-      && options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" ) )
-   {
-      my->_net_manager.create_handler(network::bitcoin, options);
+   config_ready_son = options.count( "son-id" ) && options.count( "peerplays-private-key" );
+   if (config_ready_son) {
+      LOAD_VALUE_SET(options, "son-id", _sons, chain::son_id_type)
+      if( options.count("peerplays-private-key") )
+      {
+         const std::vector<std::string> key_id_to_wif_pair_strings = options["peerplays-private-key"].as<std::vector<std::string>>();
+         for (const std::string& key_id_to_wif_pair_string : key_id_to_wif_pair_strings)
+         {
+            auto key_id_to_wif_pair = graphene::app::dejsonify<std::pair<chain::public_key_type, std::string> >(key_id_to_wif_pair_string, 5);
+            ilog("Public Key: ${public}", ("public", key_id_to_wif_pair.first));
+            fc::optional<fc::ecc::private_key> private_key = graphene::utilities::wif_to_key(key_id_to_wif_pair.second);
+            if (!private_key)
+            {
+               // the key isn't in WIF format; see if they are still passing the old native private key format.  This is
+               // just here to ease the transition, can be removed soon
+               try
+               {
+                  private_key = fc::variant(key_id_to_wif_pair.second, 2).as<fc::ecc::private_key>(1);
+               }
+               catch (const fc::exception&)
+               {
+                  FC_THROW("Invalid WIF-format private key ${key_string}", ("key_string", key_id_to_wif_pair.second));
+               }
+            }
+            _private_keys[key_id_to_wif_pair.first] = *private_key;
+         }
+      }
    } else {
-      wlog("Haven't set up bitcoin sidechain parameters");
+      wlog("Haven't set up SON parameters");
+      throw;
    }
 
-   LOAD_VALUE_SET(options, "son-id", _sons, chain::son_id_type)
-   if( options.count("peerplays-private-key") )
-   {
-      const std::vector<std::string> key_id_to_wif_pair_strings = options["peerplays-private-key"].as<std::vector<std::string>>();
-      for (const std::string& key_id_to_wif_pair_string : key_id_to_wif_pair_strings)
-      {
-         auto key_id_to_wif_pair = graphene::app::dejsonify<std::pair<chain::public_key_type, std::string> >(key_id_to_wif_pair_string, 5);
-         ilog("Public Key: ${public}", ("public", key_id_to_wif_pair.first));
-         fc::optional<fc::ecc::private_key> private_key = graphene::utilities::wif_to_key(key_id_to_wif_pair.second);
-         if (!private_key)
-         {
-            // the key isn't in WIF format; see if they are still passing the old native private key format.  This is
-            // just here to ease the transition, can be removed soon
-            try
-            {
-               private_key = fc::variant(key_id_to_wif_pair.second, 2).as<fc::ecc::private_key>(1);
-            }
-            catch (const fc::exception&)
-            {
-               FC_THROW("Invalid WIF-format private key ${key_string}", ("key_string", key_id_to_wif_pair.second));
-            }
-         }
-         _private_keys[key_id_to_wif_pair.first] = *private_key;
-      }
+   net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin.app().chain_database()));
+
+   config_ready_bitcoin = options.count( "bitcoin-node-ip" ) &&
+           options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" ) &&
+           options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" ) &&
+           options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" );
+   if (config_ready_bitcoin) {
+      net_manager->create_handler(sidechain_type::bitcoin, options);
+      ilog("Bitcoin sidechain handler created");
+   } else {
+      wlog("Haven't set up Bitcoin sidechain parameters");
+   }
+
+   //config_ready_ethereum = options.count( "ethereum-node-ip" ) &&
+   //        options.count( "ethereum-address" ) && options.count( "ethereum-public-key" ) && options.count( "ethereum-private-key" );
+   //if (config_ready_ethereum) {
+   //   net_manager->create_handler(sidechain_type::ethereum, options);
+   //   ilog("Ethereum sidechain handler created");
+   //} else {
+   //   wlog("Haven't set up Ethereum sidechain parameters");
+   //}
+
+   if (!(config_ready_bitcoin /*&& config_ready_ethereum*/)) {
+      wlog("Haven't set up any sidechain parameters");
+      throw;
    }
 }
 
-void peerplays_sidechain_plugin::plugin_startup()
+void peerplays_sidechain_plugin_impl::plugin_startup()
 {
-   ilog("peerplays sidechain plugin:  plugin_startup()");
+   if (config_ready_son) {
+      ilog("SON running");
+   }
+
+   if (config_ready_bitcoin) {
+      ilog("Bitcoin sidechain handler running");
+   }
 
    if( !_sons.empty() && !_private_keys.empty() )
    {
@@ -131,10 +160,13 @@ void peerplays_sidechain_plugin::plugin_startup()
       schedule_heartbeat_loop();
    } else
       elog("No sons configured! Please add SON IDs and private keys to configuration.");
-   ilog("peerplays sidechain plugin:  plugin_startup() end");
+
+   //if (config_ready_ethereum) {
+   //   ilog("Ethereum sidechain handler running");
+   //}
 }
 
-void peerplays_sidechain_plugin::schedule_heartbeat_loop()
+void peerplays_sidechain_plugin_impl::schedule_heartbeat_loop()
 {
    fc::time_point now = fc::time_point::now();
    int64_t time_to_next_heartbeat = 180000000;
@@ -145,9 +177,9 @@ void peerplays_sidechain_plugin::schedule_heartbeat_loop()
                                          next_wakeup, "SON Heartbeat Production");
 }
 
-void peerplays_sidechain_plugin::heartbeat_loop()
+void peerplays_sidechain_plugin_impl::heartbeat_loop()
 {
-   chain::database& d = database();
+   chain::database& d = plugin.database();
    chain::son_id_type son_id = *(_sons.begin());
    const chain::global_property_object& gpo = d.get_global_properties();
    auto it = std::find(gpo.active_sons.begin(), gpo.active_sons.end(), son_id);
@@ -163,7 +195,7 @@ void peerplays_sidechain_plugin::heartbeat_loop()
       fc::future<bool> fut = fc::async( [&](){
          try {
             d.push_transaction(trx);
-            p2p_node().broadcast(net::trx_message(trx));
+            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             return true;
          } catch(fc::exception e){
             ilog("peerplays_sidechain_plugin:  sending heartbeat failed with exception ${e}",("e", e.what()));
@@ -174,5 +206,43 @@ void peerplays_sidechain_plugin::heartbeat_loop()
    }
    schedule_heartbeat_loop();
 }
+
+} // end namespace detail
+
+peerplays_sidechain_plugin::peerplays_sidechain_plugin() :
+   my( new detail::peerplays_sidechain_plugin_impl(*this) )
+{
+}
+
+peerplays_sidechain_plugin::~peerplays_sidechain_plugin()
+{
+   return;
+}
+
+std::string peerplays_sidechain_plugin::plugin_name()const
+{
+   return "peerplays_sidechain";
+}
+
+void peerplays_sidechain_plugin::plugin_set_program_options(
+   boost::program_options::options_description& cli,
+   boost::program_options::options_description& cfg)
+{
+   ilog("peerplays sidechain plugin:  plugin_set_program_options()");
+    my->plugin_set_program_options(cli, cfg);
+}
+
+void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options::variables_map& options)
+{
+   ilog("peerplays sidechain plugin:  plugin_initialize()");
+   my->plugin_initialize(options);
+}
+
+void peerplays_sidechain_plugin::plugin_startup()
+{
+   ilog("peerplays sidechain plugin:  plugin_startup()");
+   my->plugin_startup();
+}
+
 } } // graphene::peerplays_sidechain
 

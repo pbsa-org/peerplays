@@ -1312,6 +1312,7 @@ class wallet_api
        *            display this when showing a list of SONs.  May be blank.
        * @param deposit_id vesting balance id for SON deposit
        * @param pay_vb_id vesting balance id for SON pay_vb
+       * @param sidechain_public_keys The new set of sidechain public keys.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a SON
        */
@@ -1319,6 +1320,7 @@ class wallet_api
                                     string url,
                                     vesting_balance_id_type deposit_id,
                                     vesting_balance_id_type pay_vb_id,
+                                    flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
       /**
@@ -1327,11 +1329,13 @@ class wallet_api
        * @param witness The name of the SON's owner account.  Also accepts the ID of the owner account or the ID of the SON.
        * @param url Same as for create_son.  The empty string makes it remain the same.
        * @param block_signing_key The new block signing public key.  The empty string makes it remain the same.
+       * @param sidechain_public_keys The new set of sidechain public keys.  The empty string makes it remain the same.
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction update_son(string owner_account,
                                     string url,
                                     string block_signing_key,
+                                    flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
 
@@ -1367,6 +1371,83 @@ class wallet_api
        * @returns a list of active SONs mapping SON names to SON ids
        */
       map<string, son_id_type> list_active_sons();
+
+      /** Adds sidechain address owned by the given account for a given sidechain.
+       *
+       * An account can have at most one sidechain address for one sidechain.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain a sidechain to whom address belongs
+       * @param address sidechain address
+       * @param private_key private key for sidechain address
+       * @param public_key public key for sidechain address
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction adding sidechain address
+       */
+      signed_transaction add_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string address,
+                                          string private_key,
+                                          string public_key,
+                                          bool broadcast = false);
+
+      /** Updates existing sidechain address owned by the given account for a given sidechain.
+       *
+       * Only address, private key and public key might be updated.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain a sidechain to whom address belongs
+       * @param address sidechain address
+       * @param private_key private key for sidechain address
+       * @param public_key public key for sidechain address
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction updating sidechain address
+       */
+      signed_transaction update_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string address,
+                                          string private_key,
+                                          string public_key,
+                                          bool broadcast = false);
+
+      /** Deletes existing sidechain address owned by the given account for a given sidechain.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain a sidechain to whom address belongs
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction updating sidechain address
+       */
+      signed_transaction delete_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          bool broadcast = false);
+
+      /** Retrieves all sidechain addresses owned by given account.
+       *
+       * @param account the name or id of the account who owns the address
+       * @returns the list of all sidechain addresses owned by given account.
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses_by_account(string account);
+
+      /** Retrieves all sidechain addresses registered for a given sidechain.
+       *
+       * @param sidechain the name of the sidechain
+       * @returns the list of all sidechain addresses registered for a given sidechain.
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses_by_sidechain(peerplays_sidechain::sidechain_type sidechain);
+
+      /** Retrieves sidechain address owned by given account for a given sidechain.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain the name of the sidechain
+       * @returns the sidechain address owned by given account for a given sidechain.
+       */
+      fc::optional<sidechain_address_object> get_sidechain_address_by_account_and_sidechain(string account, peerplays_sidechain::sidechain_type sidechain);
+
+      /** Retrieves the total number of sidechain addresses registered in the system.
+       *
+       * @returns the total number of sidechain addresses registered in the system.
+       */
+      uint64_t get_sidechain_addresses_count();
 
       /** Creates a witness object owned by the given account.
        *
@@ -2121,6 +2202,13 @@ FC_API( graphene::wallet::wallet_api,
         (update_son)
         (delete_son)
         (list_sons)
+        (add_sidechain_address)
+        (update_sidechain_address)
+        (delete_sidechain_address)
+        (get_sidechain_addresses_by_account)
+        (get_sidechain_addresses_by_sidechain)
+        (get_sidechain_address_by_account_and_sidechain)
+        (get_sidechain_addresses_count)
         (create_witness)
         (update_witness)
         (create_worker)

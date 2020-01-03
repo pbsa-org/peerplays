@@ -147,6 +147,7 @@ namespace graphene { namespace chain {
       bet_object_type,
       son_object_type,
       son_proposal_object_type,
+      sidechain_address_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -176,7 +177,8 @@ namespace graphene { namespace chain {
       impl_global_betting_statistics_object_type,
       impl_lottery_balance_object_type,
       impl_sweeps_vesting_balance_object_type,
-      impl_son_statistics_object_type
+      impl_son_statistics_object_type,
+      impl_son_schedule_object_type
    };
 
    //typedef fc::unsigned_int            object_id_type;
@@ -209,6 +211,7 @@ namespace graphene { namespace chain {
    class bet_object;
    class son_object;
    class son_proposal_object;
+   class sidechain_address_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -237,6 +240,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, bet_object_type,                bet_object>                   bet_id_type;
    typedef object_id< protocol_ids, son_object_type,                son_object>                   son_id_type;
    typedef object_id< protocol_ids, son_proposal_object_type,       son_proposal_object>          son_proposal_id_type;
+   typedef object_id< protocol_ids, sidechain_address_object_type,  sidechain_address_object>     sidechain_address_id_type;
 
    // implementation types
    class global_property_object;
@@ -261,6 +265,7 @@ namespace graphene { namespace chain {
    class lottery_balance_object;
    class sweeps_vesting_balance_object;
    class son_statistics_object;
+   class son_schedule_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,            global_property_object>          global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,    dynamic_global_property_object>  dynamic_global_property_id_type;
@@ -290,6 +295,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_lottery_balance_object_type, lottery_balance_object >                    lottery_balance_id_type;
    typedef object_id< implementation_ids, impl_sweeps_vesting_balance_object_type, sweeps_vesting_balance_object>       sweeps_vesting_balance_id_type;
    typedef object_id< implementation_ids, impl_son_statistics_object_type, son_statistics_object >                      son_statistics_id_type;
+   typedef object_id< implementation_ids, impl_son_schedule_object_type, son_schedule_object>                           son_schedule_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -421,6 +427,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (bet_object_type)
                  (son_object_type)
                  (son_proposal_object_type)
+                 (sidechain_address_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
@@ -449,6 +456,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_lottery_balance_object_type)
                  (impl_sweeps_vesting_balance_object_type)
                  (impl_son_statistics_object_type)
+                 (impl_son_schedule_object_type)
                )
 
 FC_REFLECT_TYPENAME( graphene::chain::share_type )
@@ -493,6 +501,7 @@ FC_REFLECT_TYPENAME( graphene::chain::global_betting_statistics_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::tournament_details_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::son_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::son_proposal_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::sidechain_address_id_type )
 
 
 FC_REFLECT( graphene::chain::void_t, )

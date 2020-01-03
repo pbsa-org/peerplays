@@ -73,6 +73,7 @@
 #include <graphene/chain/rock_paper_scissors.hpp>
 
 #include <graphene/bookie/bookie_api.hpp>
+#include <graphene/peerplays_sidechain/defs.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/utilities/git_revision.hpp>
@@ -1862,6 +1863,7 @@ public:
                                  string url,
                                  vesting_balance_id_type deposit_id,
                                  vesting_balance_id_type pay_vb_id,
+                                 flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                  bool broadcast /* = false */)
    { try {
       account_object son_account = get_account(owner_account);
@@ -1876,6 +1878,7 @@ public:
       son_create_op.url = url;
       son_create_op.deposit = deposit_id;
       son_create_op.pay_vb = pay_vb_id;
+      son_create_op.sidechain_public_keys = sidechain_public_keys;
 
       if (_remote_db->get_son_by_account(son_create_op.owner_account))
          FC_THROW("Account ${owner_account} is already a SON", ("owner_account", owner_account));
@@ -1893,6 +1896,7 @@ public:
    signed_transaction update_son(string owner_account,
                                  string url,
                                  string block_signing_key,
+                                 flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                  bool broadcast /* = false */)
    { try {
       son_object son = get_son(owner_account);
@@ -1904,6 +1908,9 @@ public:
          son_update_op.new_url = url;
       if( block_signing_key != "" ) {
          son_update_op.new_signing_key = public_key_type( block_signing_key );
+      }
+      if( !sidechain_public_keys.empty() ) {
+         son_update_op.new_sidechain_public_keys = sidechain_public_keys;
       }
 
       signed_transaction tx;
@@ -1952,6 +1959,73 @@ public:
                         return std::make_pair<string, son_id_type>(string(acct->name), std::move(sid));
                      });
       return result;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   signed_transaction add_sidechain_address(string account,
+                                            peerplays_sidechain::sidechain_type sidechain,
+                                            string address,
+                                            string private_key,
+                                            string public_key,
+                                            bool broadcast /* = false */)
+   { try {
+      account_id_type sidechain_address_account_id = get_account_id(account);
+
+      sidechain_address_add_operation op;
+      op.sidechain_address_account = sidechain_address_account_id;
+      op.sidechain = sidechain;
+      op.address = address;
+      op.private_key = private_key;
+      op.public_key = public_key;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW() }
+
+   signed_transaction update_sidechain_address(string account,
+                                               peerplays_sidechain::sidechain_type sidechain,
+                                               string address,
+                                               string private_key,
+                                               string public_key,
+                                               bool broadcast /* = false */)
+   { try {
+      account_id_type sidechain_address_account_id = get_account_id(account);
+
+      sidechain_address_update_operation op;
+      op.sidechain_address_account = sidechain_address_account_id;
+      op.sidechain = sidechain;
+      op.address = address;
+      op.private_key = private_key;
+      op.public_key = public_key;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW() }
+
+   signed_transaction delete_sidechain_address(string account,
+                                               peerplays_sidechain::sidechain_type sidechain,
+                                               bool broadcast /* = false */)
+   { try {
+      account_id_type sidechain_address_account_id = get_account_id(account);
+
+      sidechain_address_delete_operation op;
+      op.sidechain_address_account = sidechain_address_account_id;
+      op.sidechain = sidechain;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+
    } FC_CAPTURE_AND_RETHROW() }
 
    signed_transaction create_witness(string owner_account,
@@ -4301,17 +4375,19 @@ signed_transaction wallet_api::create_son(string owner_account,
                                           string url,
                                           vesting_balance_id_type deposit_id,
                                           vesting_balance_id_type pay_vb_id,
+                                          flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                           bool broadcast /* = false */)
 {
-   return my->create_son(owner_account, url, deposit_id, pay_vb_id, broadcast);
+   return my->create_son(owner_account, url, deposit_id, pay_vb_id, sidechain_public_keys, broadcast);
 }
 
 signed_transaction wallet_api::update_son(string owner_account,
                                           string url,
                                           string block_signing_key,
+                                          flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                           bool broadcast /* = false */)
 {
-   return my->update_son(owner_account, url, block_signing_key, broadcast);
+   return my->update_son(owner_account, url, block_signing_key, sidechain_public_keys, broadcast);
 }
 
 signed_transaction wallet_api::delete_son(string owner_account,
@@ -4328,6 +4404,55 @@ map<string, son_id_type> wallet_api::list_sons(const string& lowerbound, uint32_
 map<string, son_id_type> wallet_api::list_active_sons()
 {
     return my->list_active_sons();
+}
+
+signed_transaction wallet_api::add_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string address,
+                                          string private_key,
+                                          string public_key,
+                                          bool broadcast /* = false */)
+{
+   return my->add_sidechain_address(account, sidechain, address, private_key, public_key, broadcast);
+}
+
+signed_transaction wallet_api::update_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string address,
+                                          string private_key,
+                                          string public_key,
+                                          bool broadcast /* = false */)
+{
+   return my->update_sidechain_address(account, sidechain, address, private_key, public_key, broadcast);
+}
+
+signed_transaction wallet_api::delete_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          bool broadcast /* = false */)
+{
+   return my->delete_sidechain_address(account, sidechain, broadcast);
+}
+
+vector<optional<sidechain_address_object>> wallet_api::get_sidechain_addresses_by_account(string account)
+{
+   account_id_type account_id = get_account_id(account);
+   return my->_remote_db->get_sidechain_addresses_by_account(account_id);
+}
+
+vector<optional<sidechain_address_object>> wallet_api::get_sidechain_addresses_by_sidechain(peerplays_sidechain::sidechain_type sidechain)
+{
+   return my->_remote_db->get_sidechain_addresses_by_sidechain(sidechain);
+}
+
+fc::optional<sidechain_address_object> wallet_api::get_sidechain_address_by_account_and_sidechain(string account, peerplays_sidechain::sidechain_type sidechain)
+{
+   account_id_type account_id = get_account_id(account);
+   return my->_remote_db->get_sidechain_address_by_account_and_sidechain(account_id, sidechain);
+}
+
+uint64_t wallet_api::get_sidechain_addresses_count()
+{
+   return my->_remote_db->get_sidechain_addresses_count();
 }
 
 signed_transaction wallet_api::create_witness(string owner_account,
