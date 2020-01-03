@@ -461,18 +461,8 @@ void database::update_active_sons()
 
    bool son_sets_equal = (cur_active_sons.size() == new_active_sons.size());
    if (son_sets_equal) {
-      for( size_t i = 0; i < cur_active_sons.size(); i++ )
-      {
-          son_sets_equal = son_sets_equal &&
-               cur_active_sons.at(i).son_id == new_active_sons.at(i).son_id &&
-               cur_active_sons.at(i).total_votes == new_active_sons.at(i).total_votes &&
-               cur_active_sons.at(i).signing_key == new_active_sons.at(i).signing_key;
-
-          if (cur_active_sons.at(i).sidechain_public_keys.size() == new_active_sons.at(i).sidechain_public_keys.size()) {
-
-          } else {
-             son_sets_equal = false;
-          }
+      for( size_t i = 0; i < cur_active_sons.size(); i++ ) {
+         son_sets_equal = son_sets_equal && cur_active_sons.at(i) == new_active_sons.at(i);
       }
    }
 
