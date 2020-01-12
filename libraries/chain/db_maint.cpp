@@ -471,6 +471,18 @@ void database::update_active_sons()
    } else {
       ilog( "Active SONs set CHANGED" );
       // Store new SON info, initiate wallet recreation and transfer of funds
+      for( const son_object& son : cur_active_sons )
+      {
+         modify( son, [&]( son_object& obj ){
+                 obj.status = son_status::inactive;
+                 });
+      }
+      for( const son_object& son : new_active_sons )
+      {
+         modify( son, [&]( son_object& obj ){
+                 obj.status = son_status::active;
+                 });
+      }
    }
 
    modify(gpo, [&]( global_property_object& gp ){
