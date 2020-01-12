@@ -1350,9 +1350,18 @@ class wallet_api
       signed_transaction delete_son(string owner_account,
                                     bool broadcast = false);
 
+      /** Modify status of the SON owned by the given account to maintenance.
+       *
+       * @param owner_account the name or id of the account which is owning the SON
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction
+       */
+      signed_transaction start_son_maintenance(string owner_account,
+                                              bool broadcast = false);
+
       /** Modify status of the SON owned by the given account back to active.
        *
-       * @param owner_account the name or id of the account which is creating the witness
+       * @param owner_account the name or id of the account which is owning the SON
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction
        */
