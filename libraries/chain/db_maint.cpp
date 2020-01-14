@@ -42,6 +42,7 @@
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/special_authority_object.hpp>
+#include <graphene/chain/son_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/vote_count.hpp>
 #include <graphene/chain/witness_object.hpp>
@@ -445,20 +446,49 @@ void database::update_active_sons()
       }
    } );
 
+   // Compare current and to-be lists of active sons
+   //const global_property_object& gpo = get_global_properties();
+   auto cur_active_sons = gpo.active_sons;
+   vector<son_info> new_active_sons;
+   for( const son_object& son : sons ) {
+      son_info swi;
+      swi.son_id = son.id;
+      swi.total_votes = son.total_votes;
+      swi.signing_key = son.signing_key;
+      swi.sidechain_public_keys = son.sidechain_public_keys;
+      new_active_sons.push_back(swi);
+   }
+
+   bool son_sets_equal = (cur_active_sons.size() == new_active_sons.size());
+   if (son_sets_equal) {
+      for( size_t i = 0; i < cur_active_sons.size(); i++ ) {
+         son_sets_equal = son_sets_equal && cur_active_sons.at(i) == new_active_sons.at(i);
+      }
+   }
+
+   if (son_sets_equal) {
+      ilog( "Active SONs set NOT CHANGED" );
+   } else {
+      ilog( "Active SONs set CHANGED" );
+      // Store new SON info, initiate wallet recreation and transfer of funds
+   }
+
    modify(gpo, [&]( global_property_object& gp ){
       gp.active_sons.clear();
-      gp.active_sons.reserve(sons.size());
-      std::transform(sons.begin(), sons.end(),
-                     std::inserter(gp.active_sons, gp.active_sons.end()),
-                     [](const son_object& s) {
-         return s.id;
-      });
+      gp.active_sons.reserve(new_active_sons.size());
+      gp.active_sons.insert(gp.active_sons.end(), new_active_sons.begin(), new_active_sons.end());
    });
 
    const son_schedule_object& sso = son_schedule_id_type()(*this);
    modify(sso, [&](son_schedule_object& _sso)
    {
-      flat_set<son_id_type> active_sons(gpo.active_sons.begin(), gpo.active_sons.end());
+      flat_set<son_id_type> active_sons;
+      active_sons.reserve(gpo.active_sons.size());
+      std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
+                     std::inserter(active_sons, active_sons.end()),
+                     [](const son_info& swi) {
+         return swi.son_id;
+      });
       _sso.scheduler.update(active_sons);
    });
 
@@ -472,19 +502,19 @@ void database::update_active_sons()
             obj.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
             obj.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
 
-            for( const auto& son_id : gpo.active_sons )
+            for( const auto& son_info : gpo.active_sons )
             {
-               const son_object& son = get(son_id);
+               const son_object& son = get(son_info.son_id);
                total_votes += _vote_tally_buffer[son.vote_id];
             }
             // total_votes is 64 bits. Subtract the number of leading low bits from 64 to get the number of useful bits,
             // then I want to keep the most significant 16 bits of what's left.
             int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
 
-            for( const auto& son_id : gpo.active_sons )
+            for( const auto& son_info : gpo.active_sons )
             {
                // Ensure that everyone has at least one vote. Zero weights aren't allowed.
-               const son_object& son = get(son_id);
+               const son_object& son = get(son_info.son_id);
                uint16_t votes = std::max((_vote_tally_buffer[son.vote_id] >> bits_to_drop), uint64_t(1) );
                obj.active.account_auths[son.son_account] += votes;
                obj.active.weight_threshold += votes;
@@ -503,18 +533,18 @@ void database::update_active_sons()
          modify( get(gpo.parameters.get_son_btc_account_id()), [&]( account_object& obj )
          {
             uint64_t total_votes = 0;
-            for( const auto& son_id : gpo.active_sons )
+            for( const auto& son_info : gpo.active_sons )
             {
-               const son_object& son = get(son_id);
+               const son_object& son = get(son_info.son_id);
                total_votes += _vote_tally_buffer[son.vote_id];
             }
             // total_votes is 64 bits. Subtract the number of leading low bits from 64 to get the number of useful bits,
             // then I want to keep the most significant 16 bits of what's left.
             int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
-            for( const auto& son_id : gpo.active_sons )
+            for( const auto& son_info : gpo.active_sons )
             {
                // Ensure that everyone has at least one vote. Zero weights aren't allowed.
-               const son_object& son = get(son_id);
+               const son_object& son = get(son_info.son_id);
                uint16_t votes = std::max((_vote_tally_buffer[son.vote_id] >> bits_to_drop), uint64_t(1) );
                obj.active.account_auths[son.son_account] += votes;
                obj.active.weight_threshold += votes;
