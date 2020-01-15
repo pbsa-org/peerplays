@@ -1,6 +1,7 @@
 #include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
 
 #include <fc/log/logger.hpp>
+#include <fc/smart_ref_impl.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
