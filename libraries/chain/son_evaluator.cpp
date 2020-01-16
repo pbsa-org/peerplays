@@ -146,7 +146,7 @@ object_id_type son_heartbeat_evaluator::do_apply(const son_heartbeat_operation& 
                 sso.last_active_timestamp = op.ts;
             } );
 
-            db().modify(*itr, [&](son_object &so) {
+            db().modify(*itr, [&is_son_active](son_object &so) {
                 if(is_son_active) {
                     so.status = son_status::active;
                 } else {
