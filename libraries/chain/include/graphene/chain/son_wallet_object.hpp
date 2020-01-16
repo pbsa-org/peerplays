@@ -16,6 +16,9 @@ namespace graphene { namespace chain {
          static const uint8_t space_id = protocol_ids;
          static const uint8_t type_id  = son_wallet_object_type;
 
+         time_point_sec valid_from;
+         time_point_sec expires;
+
          flat_map<peerplays_sidechain::sidechain_type, string> addresses;
    };
 
@@ -33,4 +36,4 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::son_wallet_object, (graphene::db::object),
-                    (addresses) )
+                    (valid_from) (expires) (addresses) )

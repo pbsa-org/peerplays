@@ -27,6 +27,8 @@ class peerplays_sidechain_plugin_impl
       void plugin_startup();
       void schedule_heartbeat_loop();
       void heartbeat_loop();
+      void schedule_son_event_processing_loop();
+      void son_event_processing_loop();
       chain::proposal_create_operation create_son_down_proposal(chain::son_id_type son_id, fc::time_point_sec last_active_ts);
       void on_block_applied( const signed_block& b );
       void on_objects_new(const vector<object_id_type>& new_object_ids);
@@ -40,6 +42,7 @@ class peerplays_sidechain_plugin_impl
       std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
       std::set<chain::son_id_type> _sons;
       fc::future<void> _heartbeat_task;
+      fc::future<void> _son_event_processing_task;
 };
 
 peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin) :
@@ -153,18 +156,19 @@ void peerplays_sidechain_plugin_impl::plugin_startup()
 {
    if (config_ready_son) {
       ilog("SON running");
+
+      ilog("Starting heartbeats for ${n} sons.", ("n", _sons.size()));
+      schedule_heartbeat_loop();
+
+      ilog("Starting event processing for ${n} sons.", ("n", _sons.size()));
+      schedule_son_event_processing_loop();
+   } else {
+      elog("No sons configured! Please add SON IDs and private keys to configuration.");
    }
 
    if (config_ready_bitcoin) {
       ilog("Bitcoin sidechain handler running");
    }
-
-   if( !_sons.empty() && !_private_keys.empty() )
-   {
-      ilog("Starting heartbeats for ${n} sons.", ("n", _sons.size()));
-      schedule_heartbeat_loop();
-   } else
-      elog("No sons configured! Please add SON IDs and private keys to configuration.");
 
    //if (config_ready_ethereum) {
    //   ilog("Ethereum sidechain handler running");
@@ -218,6 +222,25 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop()
       fut.wait(fc::seconds(10));
    }
    schedule_heartbeat_loop();
+}
+
+void peerplays_sidechain_plugin_impl::schedule_son_event_processing_loop()
+{
+   fc::time_point now = fc::time_point::now();
+   int64_t time_to_next_second = 1000000 - (now.time_since_epoch().count() % 1000000);
+   if( time_to_next_second < 50000 )      // we must sleep for at least 50ms
+       time_to_next_second += 1000000;
+
+   fc::time_point next_wakeup( now + fc::microseconds( time_to_next_second ) );
+
+   _son_event_processing_task = fc::schedule([this]{son_event_processing_loop();},
+                                         next_wakeup, "SON Event Processing");
+}
+
+void peerplays_sidechain_plugin_impl::son_event_processing_loop()
+{
+
+    schedule_son_event_processing_loop();
 }
 
 chain::proposal_create_operation peerplays_sidechain_plugin_impl::create_son_down_proposal(chain::son_id_type son_id, fc::time_point_sec last_active_ts)

@@ -119,6 +119,8 @@ add_library( graphene_chain
 
              sidechain_address_evaluator.cpp
 
+             son_wallet_evaluator.cpp
+
              ${HEADERS}
              ${PROTOCOL_HEADERS}
              "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"
