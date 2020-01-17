@@ -470,7 +470,22 @@ void database::update_active_sons()
       ilog( "Active SONs set NOT CHANGED" );
    } else {
       ilog( "Active SONs set CHANGED" );
-      // Store new SON info, initiate wallet recreation and transfer of funds
+
+      // Expire for current son_wallet_object wallet, if exists
+      const auto& idx = get_index_type<son_wallet_index>().indices().get<by_id>();
+      auto obj = idx.rbegin();
+      if (obj != idx.rend()) {
+         modify(*obj, [&, &obj](son_wallet_object &swo) {
+            swo.expires = head_block_time();
+         });
+      }
+
+      // Create new son_wallet_object, to initiate wallet recreation
+      const auto& new_son_wallet_object = create<son_wallet_object>( [&]( son_wallet_object& obj ){
+         obj.valid_from = head_block_time();
+         obj.expires = time_point_sec::maximum();
+         obj.sons.insert(obj.sons.end(), new_active_sons.begin(), new_active_sons.end());
+      });
    }
 
    modify(gpo, [&]( global_property_object& gp ){
