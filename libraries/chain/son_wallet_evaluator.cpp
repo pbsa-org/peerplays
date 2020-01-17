@@ -17,6 +17,41 @@ object_id_type create_son_wallet_evaluator::do_apply(const son_wallet_create_ope
     const auto& new_son_wallet_object = db().create<son_wallet_object>( [&]( son_wallet_object& obj ){
         obj.valid_from = db().head_block_time();
         obj.expires = time_point_sec::maximum();
+        obj.sons = db().get_global_properties().active_sons;
+    });
+    return new_son_wallet_object.id;
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result update_son_wallet_evaluator::do_evaluate(const son_wallet_update_operation& op)
+{ try{
+   FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
+   FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type update_son_wallet_evaluator::do_apply(const son_wallet_update_operation& op)
+{ try {
+    const auto& new_son_wallet_object = db().create<son_wallet_object>( [&]( son_wallet_object& obj ){
+        obj.valid_from = db().head_block_time();
+        obj.expires = time_point_sec::maximum();
+        obj.sons = db().get_global_properties().active_sons;
+    });
+    return new_son_wallet_object.id;
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result close_son_wallet_evaluator::do_evaluate(const son_wallet_close_operation& op)
+{ try{
+   FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
+   FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type close_son_wallet_evaluator::do_apply(const son_wallet_close_operation& op)
+{ try {
+    const auto& new_son_wallet_object = db().create<son_wallet_object>( [&]( son_wallet_object& obj ){
+        obj.valid_from = db().head_block_time();
+        obj.expires = time_point_sec::maximum();
+        obj.sons = db().get_global_properties().active_sons;
     });
     return new_son_wallet_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }

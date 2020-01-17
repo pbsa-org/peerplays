@@ -253,7 +253,9 @@ void database::initialize_evaluators()
    register_evaluator<delete_son_evaluator>();
    register_evaluator<son_heartbeat_evaluator>();
    register_evaluator<son_report_down_evaluator>();
-   register_evaluator<son_wallet_evaluator>();
+   register_evaluator<create_son_wallet_evaluator>();
+   register_evaluator<update_son_wallet_evaluator>();
+   register_evaluator<close_son_wallet_evaluator>();
    register_evaluator<add_sidechain_address_evaluator>();
    register_evaluator<update_sidechain_address_evaluator>();
    register_evaluator<delete_sidechain_address_evaluator>();
