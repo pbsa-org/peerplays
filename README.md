@@ -7,7 +7,7 @@ This is a quick introduction to get new developers and witnesses up to speed on 
  The following dependencies were necessary for a clean install of Ubuntu 18.04 LTS:
 
  ```
- sudo apt-get install gcc-5 g++-5 cmake make libbz2-dev\
+ sudo apt-get install gcc-7 g++-7 cmake make libbz2-dev\
      libdb++-dev libdb-dev libssl-dev openssl libreadline-dev\
       autoconf libtool git
 ```
