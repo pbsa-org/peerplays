@@ -701,6 +701,13 @@ BOOST_AUTO_TEST_CASE( maintenance_test )
 
       // check SON is in maintenance
       son_obj = con.wallet_api_ptr->get_son(name);
+      BOOST_CHECK(son_obj.status == son_status::request_maintenance);
+
+      // process maintenance
+      BOOST_CHECK(generate_maintenance_block());
+
+      // check SON is in maintenance
+      son_obj = con.wallet_api_ptr->get_son(name);
       BOOST_CHECK(son_obj.status == son_status::in_maintenance);
 
       // restore SON activity
