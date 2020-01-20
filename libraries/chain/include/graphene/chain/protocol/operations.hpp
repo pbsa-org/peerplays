@@ -144,6 +144,7 @@ namespace graphene { namespace chain {
             son_delete_operation,
             son_heartbeat_operation,
             son_report_down_operation,
+            son_maintenance_operation,
             son_wallet_create_operation,
             son_wallet_update_operation,
             son_wallet_close_operation,

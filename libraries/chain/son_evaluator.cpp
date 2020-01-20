@@ -123,6 +123,22 @@ object_id_type son_heartbeat_evaluator::do_apply(const son_heartbeat_operation& 
     auto itr = idx.find(op.son_id);
     if(itr != idx.end())
     {
+        const global_property_object& gpo = db().get_global_properties();
+        vector<son_id_type> active_son_ids;
+        active_son_ids.reserve(gpo.active_sons.size());
+        std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
+                        std::inserter(active_son_ids, active_son_ids.end()),
+                        [](const son_info& swi) {
+            return swi.son_id;
+        });
+
+        auto it_son = std::find(active_son_ids.begin(), active_son_ids.end(), op.son_id);
+        bool is_son_active = true;
+
+        if(it_son == active_son_ids.end()) {
+            is_son_active = false;
+        }
+
         if(itr->status == son_status::in_maintenance) {
             db().modify( itr->statistics( db() ), [&]( son_statistics_object& sso )
             {
@@ -130,8 +146,12 @@ object_id_type son_heartbeat_evaluator::do_apply(const son_heartbeat_operation& 
                 sso.last_active_timestamp = op.ts;
             } );
 
-            db().modify(*itr, [&op](son_object &so) {
-                so.status = son_status::active;
+            db().modify(*itr, [&is_son_active](son_object &so) {
+                if(is_son_active) {
+                    so.status = son_status::active;
+                } else {
+                    so.status = son_status::inactive;
+                }
             });
         } else if (itr->status == son_status::active) {
             db().modify( itr->statistics( db() ), [&]( son_statistics_object& sso )
@@ -168,6 +188,33 @@ object_id_type son_report_down_evaluator::do_apply(const son_report_down_operati
             });
 
             db().modify(*itr, [&op](son_object &so) {
+                so.status = son_status::in_maintenance;
+            });
+        }
+    }
+    return op.son_id;
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result son_maintenance_evaluator::do_evaluate(const son_maintenance_operation& op)
+{ try {
+    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK"); // can be removed after HF date pass
+    FC_ASSERT(db().get(op.son_id).son_account == op.owner_account);
+    const auto& idx = db().get_index_type<son_index>().indices().get<by_id>();
+    auto itr = idx.find(op.son_id);
+    FC_ASSERT( itr != idx.end() );
+    // Inactive SONs can't go to maintenance
+    FC_ASSERT(itr->status == son_status::active || itr->status == son_status::in_maintenance, "Inactive SONs can't go to maintenance");
+    return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type son_maintenance_evaluator::do_apply(const son_maintenance_operation& op)
+{ try {
+    const auto& idx = db().get_index_type<son_index>().indices().get<by_id>();
+    auto itr = idx.find(op.son_id);
+    if(itr != idx.end())
+    {
+        if(itr->status == son_status::active) {
+            db().modify(*itr, [](son_object &so) {
                 so.status = son_status::in_maintenance;
             });
         }

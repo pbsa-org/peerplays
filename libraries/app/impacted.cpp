@@ -313,6 +313,9 @@ struct get_impacted_account_visitor
    void operator()( const son_report_down_operation& op ){
       _impacted.insert( op.payer );
    }
+   void operator()( const son_maintenance_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
    void operator()( const son_wallet_create_operation& op ){
       _impacted.insert( op.payer );
    }
