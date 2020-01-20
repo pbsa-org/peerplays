@@ -105,7 +105,7 @@ void_result son_heartbeat_evaluator::do_evaluate(const son_heartbeat_operation& 
     auto itr = idx.find(op.son_id);
     auto stats = itr->statistics( db() );
     // Inactive SONs need not send heartbeats
-    FC_ASSERT(itr->status == son_status::active || itr->status == son_status::in_maintenance, "Inactive SONs need not send heartbeats");
+    FC_ASSERT(itr->status == son_status::active || itr->status == son_status::in_maintenance || itr->status == son_status::request_maintenance, "Inactive SONs need not send heartbeats");
     // Account for network delays
     fc::time_point_sec min_ts = db().head_block_time() - fc::seconds(5 * db().block_interval());
     // Account for server ntp sync difference
@@ -139,7 +139,7 @@ object_id_type son_heartbeat_evaluator::do_apply(const son_heartbeat_operation& 
             is_son_active = false;
         }
 
-        if(itr->status == son_status::in_maintenance) {
+        if((itr->status == son_status::in_maintenance) || (itr->status == son_status::request_maintenance)) {
             db().modify( itr->statistics( db() ), [&]( son_statistics_object& sso )
             {
                 sso.current_interval_downtime += op.ts.sec_since_epoch() - sso.last_down_timestamp.sec_since_epoch();
@@ -188,7 +188,7 @@ object_id_type son_report_down_evaluator::do_apply(const son_report_down_operati
             });
 
             db().modify(*itr, [&op](son_object &so) {
-                so.status = son_status::in_maintenance;
+                so.status = son_status::request_maintenance;
             });
         }
     }
@@ -203,7 +203,7 @@ void_result son_maintenance_evaluator::do_evaluate(const son_maintenance_operati
     auto itr = idx.find(op.son_id);
     FC_ASSERT( itr != idx.end() );
     // Inactive SONs can't go to maintenance
-    FC_ASSERT(itr->status == son_status::active || itr->status == son_status::in_maintenance, "Inactive SONs can't go to maintenance");
+    FC_ASSERT(itr->status == son_status::active || itr->status == son_status::in_maintenance  || itr->status == son_status::request_maintenance, "Inactive SONs can't go to maintenance");
     return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -215,7 +215,7 @@ object_id_type son_maintenance_evaluator::do_apply(const son_maintenance_operati
     {
         if(itr->status == son_status::active) {
             db().modify(*itr, [](son_object &so) {
-                so.status = son_status::in_maintenance;
+                so.status = son_status::request_maintenance;
             });
         }
     }

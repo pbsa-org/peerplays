@@ -164,7 +164,8 @@ std::set<son_id_type> database::get_sons_to_be_deregistered()
 
    for( auto& son : son_idx )
    {
-      if(son.status == son_status::in_maintenance)
+      if((son.status == son_status::in_maintenance) ||
+         (son.status == son_status::request_maintenance))
       {
          auto stats = son.statistics(*this);
          // TODO : We need to add a function that returns if we can deregister SON 
@@ -251,7 +252,7 @@ bool database::is_son_dereg_valid( const son_id_type& son_id )
    const auto& son_idx = get_index_type<son_index>().indices().get< by_id >();
    auto son = son_idx.find( son_id );
    FC_ASSERT( son != son_idx.end() );
-   bool ret = ( son->status == son_status::in_maintenance &&
+   bool ret = ( ((son->status == son_status::in_maintenance) || (son->status == son_status::request_maintenance)) &&
                 (head_block_time() - son->statistics(*this).last_down_timestamp >= fc::hours(SON_DEREGISTER_TIME)));
    return ret;
 }
