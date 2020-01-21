@@ -129,6 +129,28 @@ void bitcoin_rpc_client::send_btc_tx( const std::string& tx_hex )
    }
 }
 
+std::string bitcoin_rpc_client::add_multisig_address( const std::vector<std::string> public_keys )
+{
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"addmultisigaddress\", \"method\": \"addmultisigaddress\", \"params\": [");
+   std::string params = "2, \"[";
+   std::string pubkeys = "";
+   for (std::string pubkey : public_keys) {
+      if (!pubkeys.empty()) {
+         pubkeys = pubkeys + ", ";
+      }
+      pubkeys = pubkeys + std::string("\"") + pubkey + std::string("\"");
+   }
+   params = params + pubkeys + std::string("]\"");
+   body = body + params + std::string("] }");
+
+   ilog(body);
+
+   //const auto reply = send_post_request( body );
+
+   return "";
+
+}
+
 bool bitcoin_rpc_client::connection_is_not_defined() const
 {
    return ip.empty() || rpc_port == 0 || user.empty() || password.empty();
@@ -215,6 +237,11 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(std::shared_ptr<gra
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
+void sidechain_net_handler_bitcoin::recreate_primary_wallet( const vector<string>& participants ) {
+   ilog(__FUNCTION__);
+   string result = create_multisignature_wallet(participants);
+}
+
 bool sidechain_net_handler_bitcoin::connection_is_not_defined() const
 {
    return listener->connection_is_not_defined() && bitcoin_client->connection_is_not_defined();
@@ -222,7 +249,7 @@ bool sidechain_net_handler_bitcoin::connection_is_not_defined() const
 
 std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys )
 {
-   return "";
+   return bitcoin_client->add_multisig_address(public_keys);
 }
 
 std::string sidechain_net_handler_bitcoin::transfer( const std::string& from, const std::string& to, const uint64_t amount )

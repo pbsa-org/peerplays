@@ -14,6 +14,10 @@ sidechain_net_handler::sidechain_net_handler(std::shared_ptr<graphene::chain::da
 sidechain_net_handler::~sidechain_net_handler() {
 }
 
+graphene::peerplays_sidechain::sidechain_type sidechain_net_handler::get_sidechain() {
+   return sidechain;
+}
+
 std::vector<std::string> sidechain_net_handler::get_sidechain_addresses() {
    std::vector<std::string> result;
 

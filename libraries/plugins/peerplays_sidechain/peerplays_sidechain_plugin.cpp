@@ -2,8 +2,10 @@
 
 #include <fc/log/logger.hpp>
 #include <fc/smart_ref_impl.hpp>
-#include <graphene/chain/sidechain_address_object.hpp>
+
 #include <graphene/chain/proposal_object.hpp>
+#include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
@@ -25,13 +27,16 @@ class peerplays_sidechain_plugin_impl
          boost::program_options::options_description& cfg);
       void plugin_initialize(const boost::program_options::variables_map& options);
       void plugin_startup();
+
       void schedule_heartbeat_loop();
       void heartbeat_loop();
       void schedule_son_event_processing_loop();
       void son_event_processing_loop();
+      void recreate_primary_wallet();
       chain::proposal_create_operation create_son_down_proposal(chain::son_id_type son_id, fc::time_point_sec last_active_ts);
       void on_block_applied( const signed_block& b );
       void on_objects_new(const vector<object_id_type>& new_object_ids);
+
    private:
       peerplays_sidechain_plugin& plugin;
 
@@ -43,6 +48,7 @@ class peerplays_sidechain_plugin_impl
       std::set<chain::son_id_type> _sons;
       fc::future<void> _heartbeat_task;
       fc::future<void> _son_event_processing_task;
+
 };
 
 peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin) :
@@ -245,6 +251,26 @@ void peerplays_sidechain_plugin_impl::son_event_processing_loop()
     schedule_son_event_processing_loop();
 }
 
+void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
+{
+   chain::database& d = plugin.database();
+
+   const auto& idx_swi = d.get_index_type<son_wallet_index>().indices().get<by_id>();
+   auto obj = idx_swi.rbegin();
+   if (obj != idx_swi.rend()) {
+
+      if (obj->addresses.at(sidechain_type::bitcoin).empty()) {
+         auto active_sons = d.get_global_properties().active_sons;
+         vector<string> son_pubkeys_bitcoin;
+         for ( const son_info& si : active_sons ) {
+            son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+         }
+         net_manager->recreate_primary_wallet(sidechain_type::bitcoin, son_pubkeys_bitcoin);
+      }
+
+   }
+}
+
 chain::proposal_create_operation peerplays_sidechain_plugin_impl::create_son_down_proposal(chain::son_id_type son_id, fc::time_point_sec last_active_ts)
 {
    chain::database& d = plugin.database();
@@ -268,6 +294,9 @@ chain::proposal_create_operation peerplays_sidechain_plugin_impl::create_son_dow
 
 void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
 {
+
+   recreate_primary_wallet();
+
    chain::database& d = plugin.database();
    chain::son_id_type my_son_id = *(_sons.begin());
    const chain::global_property_object& gpo = d.get_global_properties();

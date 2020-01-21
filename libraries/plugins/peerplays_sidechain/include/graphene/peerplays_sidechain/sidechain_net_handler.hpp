@@ -14,7 +14,10 @@ public:
     sidechain_net_handler(std::shared_ptr<graphene::chain::database> db, const boost::program_options::variables_map& options);
     virtual ~sidechain_net_handler();
 
+    graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_addresses();
+
+    virtual void recreate_primary_wallet(const vector<string>& participants) = 0;
 
 protected:
     std::shared_ptr<graphene::chain::database> database;

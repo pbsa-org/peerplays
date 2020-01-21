@@ -16,6 +16,7 @@ public:
    virtual ~sidechain_net_manager();
 
    bool create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options);
+   void recreate_primary_wallet(peerplays_sidechain::sidechain_type sidechain, const vector<string>& participants);
 private:
    std::shared_ptr<graphene::chain::database> database;
    std::vector<std::unique_ptr<sidechain_net_handler>> net_handlers;
