@@ -2221,6 +2221,8 @@ FC_API( graphene::wallet::wallet_api,
         (delete_son)
         (list_sons)
         (list_active_sons)
+        (start_son_maintenance)
+        (stop_son_maintenance)
         (add_sidechain_address)
         (update_sidechain_address)
         (delete_sidechain_address)
