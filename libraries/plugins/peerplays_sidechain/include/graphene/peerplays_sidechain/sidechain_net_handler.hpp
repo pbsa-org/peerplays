@@ -17,7 +17,7 @@ public:
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_addresses();
 
-    virtual void recreate_primary_wallet(const vector<string>& participants) = 0;
+    virtual string recreate_primary_wallet(const vector<string>& participants) = 0;
 
 protected:
     std::shared_ptr<graphene::chain::database> database;

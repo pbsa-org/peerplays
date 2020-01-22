@@ -34,13 +34,14 @@ bool sidechain_net_manager::create_handler(peerplays_sidechain::sidechain_type s
    return ret_val;
 }
 
-void sidechain_net_manager::recreate_primary_wallet(peerplays_sidechain::sidechain_type sidechain, const vector<string>& participants) {
+string sidechain_net_manager::recreate_primary_wallet(peerplays_sidechain::sidechain_type sidechain, const vector<string>& participants) {
    ilog(__FUNCTION__);
    for ( size_t i = 0; i < net_handlers.size(); i++ ) {
       if (net_handlers.at(i)->get_sidechain() == sidechain) {
-         net_handlers.at(i)->recreate_primary_wallet(participants);
+         return net_handlers.at(i)->recreate_primary_wallet(participants);
       }
    }
+   return "";
 }
 
 } } // graphene::peerplays_sidechain

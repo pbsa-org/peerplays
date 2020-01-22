@@ -132,23 +132,36 @@ void bitcoin_rpc_client::send_btc_tx( const std::string& tx_hex )
 std::string bitcoin_rpc_client::add_multisig_address( const std::vector<std::string> public_keys )
 {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"addmultisigaddress\", \"method\": \"addmultisigaddress\", \"params\": [");
-   std::string params = "2, \"[";
+   std::string params = "2, [";
    std::string pubkeys = "";
    for (std::string pubkey : public_keys) {
       if (!pubkeys.empty()) {
-         pubkeys = pubkeys + ", ";
+         pubkeys = pubkeys + ",";
       }
       pubkeys = pubkeys + std::string("\"") + pubkey + std::string("\"");
    }
-   params = params + pubkeys + std::string("]\"");
+   params = params + pubkeys + std::string("]");
    body = body + params + std::string("] }");
 
-   ilog(body);
+   const auto reply = send_post_request( body );
 
-   //const auto reply = send_post_request( body );
+   if( reply.body.empty() )
+      return "";
 
+   std::string reply_str( reply.body.begin(), reply.body.end() );
+
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   if( reply.status == 200 ) {
+      return reply_str;
+   }
+
+   if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
+      wlog( "BTC multisig address creation failed! Reply: ${msg}", ("msg", reply_str) );
+   }
    return "";
-
 }
 
 bool bitcoin_rpc_client::connection_is_not_defined() const
@@ -237,9 +250,10 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(std::shared_ptr<gra
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
-void sidechain_net_handler_bitcoin::recreate_primary_wallet( const vector<string>& participants ) {
+string sidechain_net_handler_bitcoin::recreate_primary_wallet( const vector<string>& participants ) {
    ilog(__FUNCTION__);
    string result = create_multisignature_wallet(participants);
+   return result;
 }
 
 bool sidechain_net_handler_bitcoin::connection_is_not_defined() const

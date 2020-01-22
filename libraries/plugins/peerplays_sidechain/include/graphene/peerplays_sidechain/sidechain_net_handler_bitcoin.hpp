@@ -60,7 +60,7 @@ public:
    sidechain_net_handler_bitcoin(std::shared_ptr<graphene::chain::database> db, const boost::program_options::variables_map& options);
    virtual ~sidechain_net_handler_bitcoin();
 
-   void recreate_primary_wallet(const vector<string>& participants);
+   string recreate_primary_wallet(const vector<string>& participants);
 
    bool connection_is_not_defined() const;
 
