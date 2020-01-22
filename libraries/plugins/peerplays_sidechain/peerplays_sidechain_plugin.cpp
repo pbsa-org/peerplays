@@ -256,38 +256,30 @@ void peerplays_sidechain_plugin_impl::son_event_processing_loop()
 
 void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
 {
-   ilog(__FUNCTION__);
    chain::database& d = plugin.database();
 
-   ilog(__FUNCTION__);
    const auto& idx_swi = d.get_index_type<son_wallet_index>().indices().get<by_id>();
    auto obj = idx_swi.rbegin();
    if (obj != idx_swi.rend()) {
 
-   ilog(__FUNCTION__);
       if ((obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) ||
           (obj->addresses.at(sidechain_type::bitcoin).empty())) {
-   ilog(__FUNCTION__);
          auto active_sons = d.get_global_properties().active_sons;
          vector<string> son_pubkeys_bitcoin;
          for ( const son_info& si : active_sons ) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
          }
-   ilog(__FUNCTION__);
          string reply_str = net_manager->recreate_primary_wallet(sidechain_type::bitcoin, son_pubkeys_bitcoin);
-   ilog(reply_str);
 
          std::stringstream ss(reply_str);
-         boost::property_tree::ptree json;
-         boost::property_tree::read_json( ss, json );
-
-         if (json.count( "result" )) {
-            //if (json.get_child( "result" ).count( "address" )) {
-               d.modify(*obj, [&, &obj, &json](son_wallet_object &swo) {
-   ilog(__FUNCTION__);
-                  swo.addresses[sidechain_type::bitcoin] = json.get_child("result").get_value<std::string>();;
-               });
-            //}
+         boost::property_tree::ptree pt;
+         boost::property_tree::read_json( ss, pt );
+         if( pt.count( "error" ) && pt.get_child( "error" ).empty() ) {
+            d.modify(*obj, [&, &obj, &pt](son_wallet_object &swo) {
+               std::stringstream ss;
+               boost::property_tree::json_parser::write_json(ss, pt.get_child("result"));
+               swo.addresses[sidechain_type::bitcoin] = ss.str();
+            });
          }
       }
    }
