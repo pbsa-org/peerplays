@@ -50,7 +50,6 @@ class peerplays_sidechain_plugin_impl
       std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
       std::set<chain::son_id_type> _sons;
       fc::future<void> _heartbeat_task;
-      fc::future<void> _son_event_processing_task;
 
 };
 
