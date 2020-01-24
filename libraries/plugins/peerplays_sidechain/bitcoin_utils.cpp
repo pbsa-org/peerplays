@@ -169,88 +169,59 @@ bytes signature_for_raw_transaction(const bytes& unsigned_tx, const fc::ecc::pri
    return bytes(res.begin(), res.begin() + res.size());
 }
 
-struct btc_outpoint
+bytes btc_tx::to_bytes() const
 {
-   fc::uint256 hash;
-   uint32_t n;
-};
-
-struct btc_in
-{
-   btc_outpoint prevout;
-   bytes scriptSig;
-   uint32_t nSequence;
-   bytes scriptWitness;
-};
-
-struct btc_out
-{
-   int64_t nValue;
-   bytes scriptPubKey;
-};
-
-struct btc_tx
-{
-   std::vector<btc_in> vin;
-   std::vector<btc_out> vout;
-   int32_t nVersion;
-   uint32_t nLockTime;
-   bool hasWitness;
-
-   bytes to_bytes() const
+   bytes res;
+   WriteBytesStream str(res);
+   str.add(nVersion);
+   if(hasWitness)
    {
-      bytes res;
-      WriteBytesStream str(res);
-      str.add(nVersion);
-      if(hasWitness)
-      {
-         std::vector<btc_in> dummy;
-         fc::raw::pack(str, dummy);
-         unsigned char flags = 1;
-         str.put(flags);
-      }
-      fc::raw::pack(str, vin);
-      fc::raw::pack(str, vout);
-      if(hasWitness)
-      {
-         for(const auto& in: vin)
-            fc::raw::pack(str, in.scriptWitness);
-      }
-      str.add(nLockTime);
-      return res;
+      std::vector<btc_in> dummy;
+      fc::raw::pack(str, dummy);
+      unsigned char flags = 1;
+      str.put(flags);
    }
-
-   void fill_from_bytes(const bytes& data)
+   fc::raw::pack(str, vin);
+   fc::raw::pack(str, vout);
+   if(hasWitness)
    {
-      ReadBytesStream ds( data );
-      ds.direct_read(nVersion);
-      unsigned char flags = 0;
-      vin.clear();
-      vout.clear();
-      hasWitness = false;
-      /* Try to read the vin. In case the dummy is there, this will be read as an empty vector. */
-      fc::raw::unpack(ds, vin);
-      if (vin.size() == 0) {
-          /* We read a dummy or an empty vin. */
-          ds.get(flags);
-          if (flags != 0) {
-             fc::raw::unpack(ds, vin);
-             fc::raw::unpack(ds, vout);
-             hasWitness = true;
-          }
-      } else {
-          /* We read a non-empty vin. Assume a normal vout follows. */
-         fc::raw::unpack(ds, vout);
-      }
-      if (hasWitness) {
-          /* The witness flag is present, and we support witnesses. */
-          for (size_t i = 0; i < vin.size(); i++) {
-              fc::raw::unpack(ds, vin[i].scriptWitness);
-          }
-      }
-      ds.direct_read(nLockTime);
+      for(const auto& in: vin)
+         fc::raw::pack(str, in.scriptWitness);
    }
-};
+   str.add(nLockTime);
+   return res;
+}
+
+void btc_tx::fill_from_bytes(const bytes& data)
+{
+   ReadBytesStream ds( data );
+   ds.direct_read(nVersion);
+   unsigned char flags = 0;
+   vin.clear();
+   vout.clear();
+   hasWitness = false;
+   /* Try to read the vin. In case the dummy is there, this will be read as an empty vector. */
+   fc::raw::unpack(ds, vin);
+   if (vin.size() == 0) {
+       /* We read a dummy or an empty vin. */
+       ds.get(flags);
+       if (flags != 0) {
+          fc::raw::unpack(ds, vin);
+          fc::raw::unpack(ds, vout);
+          hasWitness = true;
+       }
+   } else {
+       /* We read a non-empty vin. Assume a normal vout follows. */
+      fc::raw::unpack(ds, vout);
+   }
+   if (hasWitness) {
+       /* The witness flag is present, and we support witnesses. */
+       for (size_t i = 0; i < vin.size(); i++) {
+           fc::raw::unpack(ds, vin[i].scriptWitness);
+       }
+   }
+   ds.direct_read(nLockTime);
+}
 
 bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, const bytes& redeem_script, const std::vector<fc::optional<fc::ecc::private_key> > &priv_keys)
 {
@@ -278,7 +249,3 @@ bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, const bytes& redeem
 }
 
 }}
-
-FC_REFLECT(graphene::peerplays_sidechain::btc_outpoint, (hash)(n))
-FC_REFLECT(graphene::peerplays_sidechain::btc_in, (prevout)(scriptSig)(nSequence))
-FC_REFLECT(graphene::peerplays_sidechain::btc_out, (nValue)(scriptPubKey))
