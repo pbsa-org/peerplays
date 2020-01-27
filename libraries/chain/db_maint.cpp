@@ -583,6 +583,8 @@ void database::update_active_sons()
          modify( get(gpo.parameters.get_son_btc_account_id()), [&]( account_object& obj )
          {
             uint64_t total_votes = 0;
+            obj.active.weight_threshold = 0;
+            obj.active.account_auths.clear();
             for( const auto& son_info : gpo.active_sons )
             {
                const son_object& son = get(son_info.son_id);
