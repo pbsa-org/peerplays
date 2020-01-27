@@ -11,16 +11,18 @@ namespace graphene { namespace peerplays_sidechain {
 
 class sidechain_net_handler {
 public:
-    sidechain_net_handler(std::shared_ptr<graphene::chain::database> db, const boost::program_options::variables_map& options);
+    sidechain_net_handler(peerplays_sidechain_plugin& _plugin, const boost::program_options::variables_map& options);
     virtual ~sidechain_net_handler();
 
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_addresses();
 
+    virtual son_wallet_update_operation recreate_primary_wallet() = 0;
     virtual string recreate_primary_wallet(const vector<string>& participants) = 0;
 
 protected:
-    std::shared_ptr<graphene::chain::database> database;
+    peerplays_sidechain_plugin& plugin;
+    graphene::chain::database& database;
     graphene::peerplays_sidechain::sidechain_type sidechain;
 
     void sidechain_event_data_received(const sidechain_event_data& sed);

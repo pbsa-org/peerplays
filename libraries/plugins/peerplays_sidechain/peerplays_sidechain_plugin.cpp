@@ -132,7 +132,7 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       throw;
    }
 
-   net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin.app().chain_database()));
+   net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
 
    config_ready_bitcoin = options.count( "bitcoin-node-ip" ) &&
            options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" ) &&
@@ -282,31 +282,18 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals() {
 void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
 {
    chain::database& d = plugin.database();
+   signed_transaction trx = net_manager->recreate_primary_wallet();
+   auto dyn_props = d.get_dynamic_global_properties();
+   trx.set_reference_block( dyn_props.head_block_id );
+   trx.set_expiration( d.head_block_time() + d.get_global_properties().parameters.maximum_time_until_expiration );
+   d.current_fee_schedule().set_fee( trx.operations.back() );
 
-   const auto& idx_swi = d.get_index_type<son_wallet_index>().indices().get<by_id>();
-   auto obj = idx_swi.rbegin();
-   if (obj != idx_swi.rend()) {
+   trx.sign(_private_keys.begin()->second, d.get_chain_id());
 
-      if ((obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) ||
-          (obj->addresses.at(sidechain_type::bitcoin).empty())) {
-         auto active_sons = d.get_global_properties().active_sons;
-         vector<string> son_pubkeys_bitcoin;
-         for ( const son_info& si : active_sons ) {
-            son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
-         }
-         string reply_str = net_manager->recreate_primary_wallet(sidechain_type::bitcoin, son_pubkeys_bitcoin);
-
-         std::stringstream ss(reply_str);
-         boost::property_tree::ptree pt;
-         boost::property_tree::read_json( ss, pt );
-         if( pt.count( "error" ) && pt.get_child( "error" ).empty() ) {
-            d.modify(*obj, [&, obj, pt](son_wallet_object &swo) {
-               std::stringstream ss;
-               boost::property_tree::json_parser::write_json(ss, pt.get_child("result"));
-               swo.addresses[sidechain_type::bitcoin] = ss.str();
-            });
-         }
-      }
+   try {
+      d.push_transaction(trx, database::validation_steps::skip_block_size_check);
+   } catch (fc::exception e) {
+       ilog("peerplays_sidechain_plugin_impl:  sending son wallet update operations failed with exception ${e}",("e", e.what()));
    }
 }
 

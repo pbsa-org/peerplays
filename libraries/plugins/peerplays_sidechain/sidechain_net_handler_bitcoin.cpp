@@ -12,6 +12,9 @@
 #include <fc/network/ip.hpp>
 
 #include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/son_info.hpp>
+#include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/chain/protocol/son_wallet.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -221,8 +224,8 @@ void zmq_listener::handle_zmq() {
 
 // =============================================================================
 
-sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(std::shared_ptr<graphene::chain::database> db, const boost::program_options::variables_map& options) :
-      sidechain_net_handler(db, options) {
+sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain_plugin& _plugin, const boost::program_options::variables_map& options) :
+      sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::bitcoin;
 
    ip = options.at("bitcoin-node-ip").as<std::string>();
@@ -248,6 +251,41 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(std::shared_ptr<gra
 }
 
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
+}
+
+son_wallet_update_operation sidechain_net_handler_bitcoin::recreate_primary_wallet() {
+   const auto& idx_swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+   auto obj = idx_swi.rbegin();
+   if (obj != idx_swi.rend()) {
+
+      if ((obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) ||
+          (obj->addresses.at(sidechain_type::bitcoin).empty())) {
+         auto active_sons = database.get_global_properties().active_sons;
+         vector<string> son_pubkeys_bitcoin;
+         for ( const son_info& si : active_sons ) {
+            son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+         }
+         string reply_str = create_multisignature_wallet(son_pubkeys_bitcoin);
+
+         ilog(reply_str);
+
+         std::stringstream ss(reply_str);
+         boost::property_tree::ptree pt;
+         boost::property_tree::read_json( ss, pt );
+         if( pt.count( "error" ) && pt.get_child( "error" ).empty() ) {
+            ilog(__FUNCTION__);
+
+            son_wallet_update_operation op;
+            op.payer = database.get_global_properties().parameters.get_son_btc_account_id();
+            op.son_wallet_id = (*obj).id;
+            op.sidechain = sidechain_type::bitcoin;
+            op.address = ss.str();
+
+            return op;
+         }
+      }
+   }
+   return {};
 }
 
 string sidechain_net_handler_bitcoin::recreate_primary_wallet( const vector<string>& participants ) {
@@ -289,7 +327,7 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
    if( block != "" ) {
       const auto& vins = extract_info_from_block( block );
 
-      const auto& sidechain_addresses_idx = database->get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_address>();
+      const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_address>();
 
       for( const auto& v : vins ) {
          const auto& addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain_type::bitcoin, v.address));
