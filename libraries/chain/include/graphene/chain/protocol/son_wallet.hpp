@@ -45,6 +45,6 @@ namespace graphene { namespace chain {
 FC_REFLECT(graphene::chain::son_wallet_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::son_wallet_create_operation, (fee)(payer) )
 FC_REFLECT(graphene::chain::son_wallet_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT(graphene::chain::son_wallet_update_operation, (fee)(payer) )
+FC_REFLECT(graphene::chain::son_wallet_update_operation, (fee)(payer)(son_wallet_id)(sidechain)(address) )
 FC_REFLECT(graphene::chain::son_wallet_close_operation::fee_parameters_type, (fee) )
-FC_REFLECT(graphene::chain::son_wallet_close_operation, (fee)(payer) )
+FC_REFLECT(graphene::chain::son_wallet_close_operation, (fee)(payer)(son_wallet_id) )

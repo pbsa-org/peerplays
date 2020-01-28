@@ -155,7 +155,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // SON wallets
       optional<son_wallet_object> get_active_son_wallet();
       optional<son_wallet_object> get_son_wallet_by_time_point(time_point_sec time_point);
-      vector<optional<son_wallet_object>> get_son_wallets(uint32_t limit);      
+      vector<optional<son_wallet_object>> get_son_wallets(uint32_t limit);
 
       // Sidechain addresses
       vector<optional<sidechain_address_object>> get_sidechain_addresses(const vector<sidechain_address_id_type>& sidechain_address_ids)const;

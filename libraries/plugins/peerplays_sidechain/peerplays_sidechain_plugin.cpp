@@ -193,6 +193,7 @@ void peerplays_sidechain_plugin_impl::schedule_heartbeat_loop()
 
 void peerplays_sidechain_plugin_impl::heartbeat_loop()
 {
+   schedule_heartbeat_loop();
    chain::database& d = plugin.database();
    chain::son_id_type son_id = *(_sons.begin());
    const auto& idx = d.get_index_type<chain::son_index>().indices().get<by_id>();
@@ -219,7 +220,8 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop()
       fc::future<bool> fut = fc::async( [&](){
          try {
             d.push_transaction(trx);
-            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+            if(plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             return true;
          } catch(fc::exception e){
             ilog("peerplays_sidechain_plugin_impl:  sending heartbeat failed with exception ${e}",("e", e.what()));
@@ -228,11 +230,10 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop()
       });
       fut.wait(fc::seconds(10));
    }
-   schedule_heartbeat_loop();
 }
 
-void peerplays_sidechain_plugin_impl::create_son_down_proposals() {
-
+void peerplays_sidechain_plugin_impl::create_son_down_proposals()
+{
    auto create_son_down_proposal = [&](chain::son_id_type son_id, fc::time_point_sec last_active_ts) {
       chain::database& d = plugin.database();
       chain::son_id_type my_son_id = *(_sons.begin());
@@ -256,18 +257,23 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals() {
    chain::database& d = plugin.database();
    const chain::global_property_object& gpo = d.get_global_properties();
    const auto& idx = d.get_index_type<chain::son_index>().indices().get<by_id>();
+   chain::son_id_type my_son_id = *(_sons.begin());
    for(auto son_inf: gpo.active_sons) {
+      if(my_son_id == son_inf.son_id)
+         continue;
       auto son_obj = idx.find( son_inf.son_id );
       auto stats = son_obj->statistics(d);
       fc::time_point_sec last_active_ts = stats.last_active_timestamp;
       int64_t down_threshold = 2*180000000;
-      if((fc::time_point::now() - last_active_ts) > fc::microseconds(down_threshold))  {
+      if(son_obj->status == chain::son_status::active && (fc::time_point::now() - last_active_ts) > fc::microseconds(down_threshold))  {
+         ilog("peerplays_sidechain_plugin:  sending son down proposal for ${t} from ${s}",("t",std::string(object_id_type(son_obj->id)))("s",std::string(object_id_type(my_son_id))));
          chain::proposal_create_operation op = create_son_down_proposal(son_inf.son_id, last_active_ts);
          chain::signed_transaction trx = d.create_signed_transaction(_private_keys.begin()->second, op);
          fc::future<bool> fut = fc::async( [&](){
             try {
                d.push_transaction(trx);
-               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+               if(plugin.app().p2p_node())
+                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                return true;
             } catch(fc::exception e){
                ilog("peerplays_sidechain_plugin_impl:  sending son down proposal failed with exception ${e}",("e", e.what()));
@@ -308,8 +314,9 @@ void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
    chain::database& d = plugin.database();
    chain::son_id_type my_son_id = *(_sons.begin());
    const chain::global_property_object& gpo = d.get_global_properties();
+   bool latest_block = ((fc::time_point::now() - b.timestamp) < fc::microseconds(gpo.parameters.block_interval * 1000000));
    // Return if there are no active SONs
-   if(gpo.active_sons.size() <= 0) {
+   if(gpo.active_sons.size() <= 0 || !latest_block) {
       return;
    }
 
@@ -349,6 +356,7 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
 
    auto approve_proposal = [ & ]( const chain::proposal_id_type& id )
    {
+      ilog("peerplays_sidechain_plugin:  sending approval for ${t} from ${s}",("t",std::string(object_id_type(id)))("s",std::string(object_id_type(my_son_id))));
       chain::proposal_update_operation puo;
       puo.fee_paying_account = son_obj->son_account;
       puo.proposal = id;
@@ -357,7 +365,8 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
       fc::future<bool> fut = fc::async( [&](){
          try {
             d.push_transaction(trx);
-            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+            if(plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             return true;
          } catch(fc::exception e){
             ilog("peerplays_sidechain_plugin_impl:  sending approval failed with exception ${e}",("e", e.what()));
