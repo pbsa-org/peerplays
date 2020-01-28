@@ -8,7 +8,9 @@
 
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/son_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/chain/protocol/types.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
@@ -30,6 +32,10 @@ class peerplays_sidechain_plugin_impl
          boost::program_options::options_description& cfg);
       void plugin_initialize(const boost::program_options::variables_map& options);
       void plugin_startup();
+
+      son_id_type get_son_id();
+      son_object get_son_object();
+      std::map<chain::public_key_type, fc::ecc::private_key> get_private_keys();
 
       void schedule_heartbeat_loop();
       void heartbeat_loop();
@@ -132,6 +138,9 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       throw;
    }
 
+   plugin.database().applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
+   plugin.database().new_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_objects_new(ids); } );
+
    net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
 
    config_ready_bitcoin = options.count( "bitcoin-node-ip" ) &&
@@ -139,7 +148,7 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
            options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" ) &&
            options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" );
    if (config_ready_bitcoin) {
-      net_manager->create_handler(sidechain_type::bitcoin, options);
+      std::unique_ptr<sidechain_net_handler> h = net_manager->create_handler(sidechain_type::bitcoin, options);
       ilog("Bitcoin sidechain handler created");
    } else {
       wlog("Haven't set up Bitcoin sidechain parameters");
@@ -178,6 +187,25 @@ void peerplays_sidechain_plugin_impl::plugin_startup()
    //if (config_ready_ethereum) {
    //   ilog("Ethereum sidechain handler running");
    //}
+}
+
+son_id_type peerplays_sidechain_plugin_impl::get_son_id()
+{
+   return *(_sons.begin());
+}
+
+son_object peerplays_sidechain_plugin_impl::get_son_object()
+{
+   const auto& idx = plugin.database().get_index_type<chain::son_index>().indices().get<by_id>();
+   auto son_obj = idx.find( get_son_id() );
+   if (son_obj == idx.end())
+      return {};
+   return *son_obj;
+}
+
+std::map<chain::public_key_type, fc::ecc::private_key> peerplays_sidechain_plugin_impl::get_private_keys()
+{
+   return _private_keys;
 }
 
 void peerplays_sidechain_plugin_impl::schedule_heartbeat_loop()
@@ -421,14 +449,27 @@ void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options:
 {
    ilog("peerplays sidechain plugin:  plugin_initialize()");
    my->plugin_initialize(options);
-   database().applied_block.connect( [&]( const signed_block& b){ my->on_block_applied(b); } );
-   database().new_objects.connect([this](const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { my->on_objects_new(ids); });
 }
 
 void peerplays_sidechain_plugin::plugin_startup()
 {
    ilog("peerplays sidechain plugin:  plugin_startup()");
    my->plugin_startup();
+}
+
+son_id_type peerplays_sidechain_plugin::get_son_id()
+{
+   return my->get_son_id();
+}
+
+son_object peerplays_sidechain_plugin::get_son_object()
+{
+   return my->get_son_object();
+}
+
+std::map<chain::public_key_type, fc::ecc::private_key> peerplays_sidechain_plugin::get_private_keys()
+{
+   return my->get_private_keys();
 }
 
 } } // graphene::peerplays_sidechain

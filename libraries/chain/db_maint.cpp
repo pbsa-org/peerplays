@@ -475,13 +475,13 @@ void database::update_active_sons()
       const auto& idx_swi = get_index_type<son_wallet_index>().indices().get<by_id>();
       auto obj = idx_swi.rbegin();
       if (obj != idx_swi.rend()) {
-         modify(*obj, [&, &obj](son_wallet_object &swo) {
+         modify(*obj, [&, obj](son_wallet_object &swo) {
             swo.expires = head_block_time();
          });
       }
 
       // Create new son_wallet_object, to initiate wallet recreation
-      const auto& new_son_wallet_object = create<son_wallet_object>( [&]( son_wallet_object& obj ){
+      create<son_wallet_object>( [&]( son_wallet_object& obj ) {
          obj.valid_from = head_block_time();
          obj.expires = time_point_sec::maximum();
          obj.sons.insert(obj.sons.end(), new_active_sons.begin(), new_active_sons.end());

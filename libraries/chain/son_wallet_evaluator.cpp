@@ -59,7 +59,7 @@ object_id_type close_son_wallet_evaluator::do_apply(const son_wallet_close_opera
    auto itr = idx.find(op.son_wallet_id);
    if(itr != idx.end())
    {
-       db().modify(*itr, [&, &op](son_wallet_object &swo) {
+       db().modify(*itr, [&, op](son_wallet_object &swo) {
            swo.expires = db().head_block_time();
        });
    }

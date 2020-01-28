@@ -15,7 +15,7 @@ public:
    sidechain_net_manager(peerplays_sidechain_plugin& _plugin);
    virtual ~sidechain_net_manager();
 
-   bool create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options);
+   std::unique_ptr<sidechain_net_handler> create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options);
    signed_transaction recreate_primary_wallet();
    string recreate_primary_wallet(peerplays_sidechain::sidechain_type sidechain, const vector<string>& participants);
 private:

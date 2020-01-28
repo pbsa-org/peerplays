@@ -276,7 +276,7 @@ son_wallet_update_operation sidechain_net_handler_bitcoin::recreate_primary_wall
             ilog(__FUNCTION__);
 
             son_wallet_update_operation op;
-            op.payer = database.get_global_properties().parameters.get_son_btc_account_id();
+            op.payer = plugin.get_son_object().son_account;
             op.son_wallet_id = (*obj).id;
             op.sidechain = sidechain_type::bitcoin;
             op.address = ss.str();

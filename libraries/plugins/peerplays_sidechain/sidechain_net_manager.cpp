@@ -7,8 +7,8 @@
 namespace graphene { namespace peerplays_sidechain {
 
 sidechain_net_manager::sidechain_net_manager(peerplays_sidechain_plugin& _plugin) :
-    plugin(_plugin),
-    database(_plugin.database())
+   plugin(_plugin),
+   database(_plugin.database())
 {
    ilog(__FUNCTION__);
 }
@@ -17,17 +17,16 @@ sidechain_net_manager::~sidechain_net_manager() {
    ilog(__FUNCTION__);
 }
 
-bool sidechain_net_manager::create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options) {
+std::unique_ptr<sidechain_net_handler> sidechain_net_manager::create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options) {
    ilog(__FUNCTION__);
 
-   bool ret_val = false;
+   std::unique_ptr<sidechain_net_handler> ret_val = nullptr;
 
    switch (sidechain) {
       case sidechain_type::bitcoin: {
-          std::unique_ptr<sidechain_net_handler> h = std::unique_ptr<sidechain_net_handler>(new sidechain_net_handler_bitcoin(plugin, options));
-          net_handlers.push_back(std::move(h));
-          ret_val = true;
-          break;
+         ret_val = std::unique_ptr<sidechain_net_handler>(new sidechain_net_handler_bitcoin(plugin, options));
+         net_handlers.push_back(std::move(ret_val));
+         break;
       }
       default:
          assert(false);
