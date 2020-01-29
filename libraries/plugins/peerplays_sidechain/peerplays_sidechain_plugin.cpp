@@ -35,6 +35,7 @@ class peerplays_sidechain_plugin_impl
 
       son_id_type get_son_id();
       son_object get_son_object();
+      bool is_active_son();
       std::map<chain::public_key_type, fc::ecc::private_key> get_private_keys();
 
       void schedule_heartbeat_loop();
@@ -203,6 +204,27 @@ son_object peerplays_sidechain_plugin_impl::get_son_object()
    return *son_obj;
 }
 
+bool peerplays_sidechain_plugin_impl::is_active_son()
+{
+   const auto& idx = plugin.database().get_index_type<chain::son_index>().indices().get<by_id>();
+   auto son_obj = idx.find( get_son_id() );
+   if (son_obj == idx.end())
+      return false;
+
+   const chain::global_property_object& gpo = plugin.database().get_global_properties();
+   vector<son_id_type> active_son_ids;
+   active_son_ids.reserve(gpo.active_sons.size());
+   std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
+                  std::inserter(active_son_ids, active_son_ids.end()),
+                  [](const son_info& swi) {
+      return swi.son_id;
+   });
+
+   auto it = std::find(active_son_ids.begin(), active_son_ids.end(), get_son_id());
+
+   return (it != active_son_ids.end());
+}
+
 std::map<chain::public_key_type, fc::ecc::private_key> peerplays_sidechain_plugin_impl::get_private_keys()
 {
    return _private_keys;
@@ -325,9 +347,9 @@ void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
    trx.sign(_private_keys.begin()->second, d.get_chain_id());
 
    try {
-      d.push_transaction(trx, database::validation_steps::skip_block_size_check);
+      d.push_transaction(trx);
    } catch (fc::exception e) {
-       ilog("peerplays_sidechain_plugin_impl:  sending son wallet update operations failed with exception ${e}",("e", e.what()));
+       ilog("peerplays_sidechain_plugin_impl:  sending son wallet update operation failed with exception ${e}",("e", e.what()));
    }
 }
 
@@ -465,6 +487,11 @@ son_id_type peerplays_sidechain_plugin::get_son_id()
 son_object peerplays_sidechain_plugin::get_son_object()
 {
    return my->get_son_object();
+}
+
+bool peerplays_sidechain_plugin::is_active_son()
+{
+   return my->is_active_son();
 }
 
 std::map<chain::public_key_type, fc::ecc::private_key> peerplays_sidechain_plugin::get_private_keys()

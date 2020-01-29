@@ -335,6 +335,10 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
             continue;
 
          sidechain_event_data sed;
+         std::stringstream ss;
+         ss << "bitcoin" << "-" << v.out.hash_tx << "-" << v.out.n_vout;
+         sed.uid = ss.str();
+         sed.timestamp = plugin.database().head_block_time();
          sed.sidechain = addr_itr->sidechain;
          sed.transaction_id = v.out.hash_tx;
          sed.from = "";

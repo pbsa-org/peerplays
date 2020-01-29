@@ -44,11 +44,38 @@ std::vector<std::string> sidechain_net_handler::get_sidechain_addresses() {
 void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_data& sed) {
    ilog( __FUNCTION__ );
    ilog( "sidechain_event_data:" );
+   ilog( "  uid:            ${uid}", ( "uid", sed.uid ) );
+   ilog( "  timestamp:      ${timestamp}", ( "timestamp", sed.timestamp ) );
    ilog( "  sidechain:      ${sidechain}", ( "sidechain", sed.sidechain ) );
    ilog( "  transaction_id: ${transaction_id}", ( "transaction_id", sed.transaction_id ) );
    ilog( "  from:           ${from}", ( "from", sed.from ) );
    ilog( "  to:             ${to}", ( "to", sed.to ) );
    ilog( "  amount:         ${amount}", ( "amount", sed.amount ) );
+
+   const chain::global_property_object& gpo = database.get_global_properties();
+
+   son_wallet_transfer_create_operation op;
+   op.payer = gpo.parameters.get_son_btc_account_id();
+   op.uid = sed.uid;
+   op.timestamp = sed.timestamp;
+   op.sidechain = sed.sidechain;
+   op.transaction_id = sed.transaction_id;
+   op.from = sed.from;
+   op.to = sed.to;
+   op.amount = sed.amount;
+
+   proposal_create_operation proposal_op;
+   proposal_op.fee_paying_account = plugin.get_son_object().son_account;
+   proposal_op.proposed_ops.push_back( op_wrapper( op ) );
+   uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+   proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+
+   signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_keys().begin()->second, proposal_op);
+   try {
+      database.push_transaction(trx);
+   } catch(fc::exception e){
+      ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation failed with exception ${e}",("e", e.what()));
+   }
 }
 
 } } // graphene::peerplays_sidechain

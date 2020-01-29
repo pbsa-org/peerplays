@@ -18,10 +18,10 @@ public:
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_addresses();
 
+    void sidechain_event_data_received(const sidechain_event_data& sed);
+
     virtual son_wallet_update_operation recreate_primary_wallet() = 0;
     virtual string recreate_primary_wallet(const vector<string>& participants) = 0;
-
-    fc::signal<void(const sidechain_event_data&)> sidechain_event_data_received;
 
 protected:
     peerplays_sidechain_plugin& plugin;
