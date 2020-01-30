@@ -28,7 +28,8 @@ void_result update_son_wallet_evaluator::do_evaluate(const son_wallet_update_ope
    const auto& idx = db().get_index_type<son_wallet_index>().indices().get<by_id>();
    FC_ASSERT( idx.find(op.son_wallet_id) != idx.end() );
    auto itr = idx.find(op.son_wallet_id);
-   //FC_ASSERT( itr.addresses[op.sidechain] == "", "Sidechain wallet address already set");
+   FC_ASSERT( itr->addresses.find(peerplays_sidechain::sidechain_type::bitcoin) == itr->addresses.end() ||
+           itr->addresses.at(peerplays_sidechain::sidechain_type::bitcoin).empty(), "Sidechain wallet address already set");
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 

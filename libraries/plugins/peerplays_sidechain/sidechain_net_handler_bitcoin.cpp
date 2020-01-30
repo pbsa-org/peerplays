@@ -253,7 +253,7 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
-son_wallet_update_operation sidechain_net_handler_bitcoin::recreate_primary_wallet() {
+void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
    const auto& idx_swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
    auto obj = idx_swi.rbegin();
    if (obj != idx_swi.rend()) {
@@ -275,23 +275,25 @@ son_wallet_update_operation sidechain_net_handler_bitcoin::recreate_primary_wall
          if( pt.count( "error" ) && pt.get_child( "error" ).empty() ) {
             ilog(__FUNCTION__);
 
+            std::stringstream res;
+            boost::property_tree::json_parser::write_json(res, pt.get_child("result"));
+
             son_wallet_update_operation op;
             op.payer = plugin.get_son_object().son_account;
             op.son_wallet_id = (*obj).id;
             op.sidechain = sidechain_type::bitcoin;
-            op.address = ss.str();
+            op.address = res.str();
 
-            return op;
+            signed_transaction trx = database.create_signed_transaction(plugin.get_private_keys().begin()->second, op);
+
+            try {
+               database.push_transaction(trx);
+            } catch (fc::exception e) {
+               ilog("sidechain_net_handler_bitcoin:  sending son wallet update operation failed with exception ${e}",("e", e.what()));
+            }
          }
       }
    }
-   return {};
-}
-
-string sidechain_net_handler_bitcoin::recreate_primary_wallet( const vector<string>& participants ) {
-   ilog(__FUNCTION__);
-   string result = create_multisignature_wallet(participants);
-   return result;
 }
 
 bool sidechain_net_handler_bitcoin::connection_is_not_defined() const

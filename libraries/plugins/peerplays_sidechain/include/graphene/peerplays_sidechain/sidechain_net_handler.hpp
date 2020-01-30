@@ -20,8 +20,7 @@ public:
 
     void sidechain_event_data_received(const sidechain_event_data& sed);
 
-    virtual son_wallet_update_operation recreate_primary_wallet() = 0;
-    virtual string recreate_primary_wallet(const vector<string>& participants) = 0;
+    virtual void recreate_primary_wallet() = 0;
 
 protected:
     peerplays_sidechain_plugin& plugin;

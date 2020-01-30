@@ -36,7 +36,7 @@ class peerplays_sidechain_plugin_impl
       son_id_type get_son_id();
       son_object get_son_object();
       bool is_active_son();
-      std::map<chain::public_key_type, fc::ecc::private_key> get_private_keys();
+      std::map<chain::public_key_type, fc::ecc::private_key>& get_private_keys();
 
       void schedule_heartbeat_loop();
       void heartbeat_loop();
@@ -149,7 +149,7 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
            options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" ) &&
            options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" );
    if (config_ready_bitcoin) {
-      std::unique_ptr<sidechain_net_handler> h = net_manager->create_handler(sidechain_type::bitcoin, options);
+      net_manager->create_handler(sidechain_type::bitcoin, options);
       ilog("Bitcoin sidechain handler created");
    } else {
       wlog("Haven't set up Bitcoin sidechain parameters");
@@ -225,7 +225,7 @@ bool peerplays_sidechain_plugin_impl::is_active_son()
    return (it != active_son_ids.end());
 }
 
-std::map<chain::public_key_type, fc::ecc::private_key> peerplays_sidechain_plugin_impl::get_private_keys()
+std::map<chain::public_key_type, fc::ecc::private_key>& peerplays_sidechain_plugin_impl::get_private_keys()
 {
    return _private_keys;
 }
@@ -337,20 +337,7 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals()
 
 void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
 {
-   chain::database& d = plugin.database();
-   signed_transaction trx = net_manager->recreate_primary_wallet();
-   auto dyn_props = d.get_dynamic_global_properties();
-   trx.set_reference_block( dyn_props.head_block_id );
-   trx.set_expiration( d.head_block_time() + d.get_global_properties().parameters.maximum_time_until_expiration );
-   d.current_fee_schedule().set_fee( trx.operations.back() );
-
-   trx.sign(_private_keys.begin()->second, d.get_chain_id());
-
-   try {
-      d.push_transaction(trx);
-   } catch (fc::exception e) {
-       ilog("peerplays_sidechain_plugin_impl:  sending son wallet update operation failed with exception ${e}",("e", e.what()));
-   }
+   net_manager->recreate_primary_wallet();
 }
 
 void peerplays_sidechain_plugin_impl::process_deposits() {
@@ -494,7 +481,7 @@ bool peerplays_sidechain_plugin::is_active_son()
    return my->is_active_son();
 }
 
-std::map<chain::public_key_type, fc::ecc::private_key> peerplays_sidechain_plugin::get_private_keys()
+std::map<chain::public_key_type, fc::ecc::private_key>& peerplays_sidechain_plugin::get_private_keys()
 {
    return my->get_private_keys();
 }
