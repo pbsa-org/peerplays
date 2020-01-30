@@ -31,6 +31,11 @@ class peerplays_sidechain_plugin_impl
       void plugin_initialize(const boost::program_options::variables_map& options);
       void plugin_startup();
 
+      son_id_type get_son_id();
+      son_object get_son_object();
+      bool is_active_son();
+      std::map<chain::public_key_type, fc::ecc::private_key>& get_private_keys();
+
       void schedule_heartbeat_loop();
       void heartbeat_loop();
       void create_son_down_proposals();
@@ -180,6 +185,46 @@ void peerplays_sidechain_plugin_impl::plugin_startup()
    //}
 }
 
+son_id_type peerplays_sidechain_plugin_impl::get_son_id()
+{
+   return *(_sons.begin());
+}
+
+son_object peerplays_sidechain_plugin_impl::get_son_object()
+{
+   const auto& idx = plugin.database().get_index_type<chain::son_index>().indices().get<by_id>();
+   auto son_obj = idx.find( get_son_id() );
+   if (son_obj == idx.end())
+      return {};
+   return *son_obj;
+}
+
+bool peerplays_sidechain_plugin_impl::is_active_son()
+{
+   const auto& idx = plugin.database().get_index_type<chain::son_index>().indices().get<by_id>();
+   auto son_obj = idx.find( get_son_id() );
+   if (son_obj == idx.end())
+      return false;
+
+   const chain::global_property_object& gpo = plugin.database().get_global_properties();
+   vector<son_id_type> active_son_ids;
+   active_son_ids.reserve(gpo.active_sons.size());
+   std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
+                  std::inserter(active_son_ids, active_son_ids.end()),
+                  [](const son_info& swi) {
+      return swi.son_id;
+   });
+
+   auto it = std::find(active_son_ids.begin(), active_son_ids.end(), get_son_id());
+
+   return (it != active_son_ids.end());
+}
+
+std::map<chain::public_key_type, fc::ecc::private_key>& peerplays_sidechain_plugin_impl::get_private_keys()
+{
+   return _private_keys;
+}
+
 void peerplays_sidechain_plugin_impl::schedule_heartbeat_loop()
 {
    fc::time_point now = fc::time_point::now();
@@ -287,20 +332,7 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals()
 
 void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
 {
-   chain::database& d = plugin.database();
-   signed_transaction trx = net_manager->recreate_primary_wallet();
-   auto dyn_props = d.get_dynamic_global_properties();
-   trx.set_reference_block( dyn_props.head_block_id );
-   trx.set_expiration( d.head_block_time() + d.get_global_properties().parameters.maximum_time_until_expiration );
-   d.current_fee_schedule().set_fee( trx.operations.back() );
-
-   trx.sign(_private_keys.begin()->second, d.get_chain_id());
-
-   try {
-      d.push_transaction(trx, database::validation_steps::skip_block_size_check);
-   } catch (fc::exception e) {
-       ilog("peerplays_sidechain_plugin_impl:  sending son wallet update operations failed with exception ${e}",("e", e.what()));
-   }
+   net_manager->recreate_primary_wallet();
 }
 
 void peerplays_sidechain_plugin_impl::process_deposits() {
@@ -429,6 +461,26 @@ void peerplays_sidechain_plugin::plugin_startup()
 {
    ilog("peerplays sidechain plugin:  plugin_startup()");
    my->plugin_startup();
+}
+
+son_id_type peerplays_sidechain_plugin::get_son_id()
+{
+   return my->get_son_id();
+}
+
+son_object peerplays_sidechain_plugin::get_son_object()
+{
+   return my->get_son_object();
+}
+
+bool peerplays_sidechain_plugin::is_active_son()
+{
+   return my->is_active_son();
+}
+
+std::map<chain::public_key_type, fc::ecc::private_key>& peerplays_sidechain_plugin::get_private_keys()
+{
+   return my->get_private_keys();
 }
 
 } } // graphene::peerplays_sidechain

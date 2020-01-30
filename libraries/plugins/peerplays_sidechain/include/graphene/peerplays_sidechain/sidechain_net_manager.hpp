@@ -16,8 +16,7 @@ public:
    virtual ~sidechain_net_manager();
 
    bool create_handler(peerplays_sidechain::sidechain_type sidechain, const boost::program_options::variables_map& options);
-   signed_transaction recreate_primary_wallet();
-   string recreate_primary_wallet(peerplays_sidechain::sidechain_type sidechain, const vector<string>& participants);
+   void recreate_primary_wallet();
 private:
    peerplays_sidechain_plugin& plugin;
    graphene::chain::database& database;

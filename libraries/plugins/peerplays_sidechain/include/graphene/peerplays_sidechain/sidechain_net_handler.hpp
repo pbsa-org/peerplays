@@ -17,8 +17,7 @@ public:
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_addresses();
 
-    virtual son_wallet_update_operation recreate_primary_wallet() = 0;
-    virtual string recreate_primary_wallet(const vector<string>& participants) = 0;
+    virtual void recreate_primary_wallet() = 0;
 
 protected:
     peerplays_sidechain_plugin& plugin;

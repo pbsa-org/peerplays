@@ -30,6 +30,11 @@ class peerplays_sidechain_plugin : public graphene::app::plugin
       virtual void plugin_startup() override;
 
       std::unique_ptr<detail::peerplays_sidechain_plugin_impl> my;
+
+      son_id_type get_son_id();
+      son_object get_son_object();
+      bool is_active_son();
+      std::map<chain::public_key_type, fc::ecc::private_key>& get_private_keys();
 };
 
 } } //graphene::peerplays_sidechain
