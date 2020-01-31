@@ -471,21 +471,39 @@ void database::update_active_sons()
    } else {
       ilog( "Active SONs set CHANGED" );
 
+      bool should_recreate_pw = true;
+
       // Expire for current son_wallet_object wallet, if exists
       const auto& idx_swi = get_index_type<son_wallet_index>().indices().get<by_id>();
       auto obj = idx_swi.rbegin();
       if (obj != idx_swi.rend()) {
-         modify(*obj, [&, &obj](son_wallet_object &swo) {
-            swo.expires = head_block_time();
-         });
+         // Compare current wallet SONs and to-be lists of active sons
+         auto cur_wallet_sons = (*obj).sons;
+
+         bool wallet_son_sets_equal = (cur_wallet_sons.size() == new_active_sons.size());
+         if (wallet_son_sets_equal) {
+            for( size_t i = 0; i < cur_wallet_sons.size(); i++ ) {
+               wallet_son_sets_equal = wallet_son_sets_equal && cur_wallet_sons.at(i) == new_active_sons.at(i);
+            }
+         }
+
+         should_recreate_pw = !wallet_son_sets_equal;
+
+         if (should_recreate_pw) {
+            modify(*obj, [&, obj](son_wallet_object &swo) {
+               swo.expires = head_block_time();
+            });
+         }
       }
 
-      // Create new son_wallet_object, to initiate wallet recreation
-      const auto& new_son_wallet_object = create<son_wallet_object>( [&]( son_wallet_object& obj ){
-         obj.valid_from = head_block_time();
-         obj.expires = time_point_sec::maximum();
-         obj.sons.insert(obj.sons.end(), new_active_sons.begin(), new_active_sons.end());
-      });
+      if (should_recreate_pw) {
+         // Create new son_wallet_object, to initiate wallet recreation
+         create<son_wallet_object>( [&]( son_wallet_object& obj ) {
+            obj.valid_from = head_block_time();
+            obj.expires = time_point_sec::maximum();
+            obj.sons.insert(obj.sons.end(), new_active_sons.begin(), new_active_sons.end());
+         });
+      }
 
       vector<son_info> sons_to_remove;
       // find all cur_active_sons members that is not in new_active_sons

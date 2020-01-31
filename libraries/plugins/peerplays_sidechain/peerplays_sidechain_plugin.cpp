@@ -137,6 +137,9 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       throw;
    }
 
+   plugin.database().applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
+   plugin.database().new_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_objects_new(ids); } );
+
    net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
 
    config_ready_bitcoin = options.count( "bitcoin-node-ip" ) &&
@@ -420,6 +423,11 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
          && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_report_down_operation>::value) {
             approve_proposal( proposal->id );
          }
+
+         if(proposal->proposed_transaction.operations.size() == 1
+         && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_update_operation>::value) {
+            approve_proposal( proposal->id );
+         }
       }
    }
 }
@@ -453,8 +461,6 @@ void peerplays_sidechain_plugin::plugin_initialize(const boost::program_options:
 {
    ilog("peerplays sidechain plugin:  plugin_initialize()");
    my->plugin_initialize(options);
-   database().applied_block.connect( [&]( const signed_block& b){ my->on_block_applied(b); } );
-   database().new_objects.connect([this](const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { my->on_objects_new(ids); });
 }
 
 void peerplays_sidechain_plugin::plugin_startup()

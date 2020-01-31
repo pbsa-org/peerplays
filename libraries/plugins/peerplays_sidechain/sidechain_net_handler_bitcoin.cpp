@@ -260,7 +260,10 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
       if ((obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) ||
           (obj->addresses.at(sidechain_type::bitcoin).empty())) {
-         auto active_sons = database.get_global_properties().active_sons;
+
+         const chain::global_property_object& gpo = database.get_global_properties();
+
+         auto active_sons = gpo.active_sons;
          vector<string> son_pubkeys_bitcoin;
          for ( const son_info& si : active_sons ) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
@@ -279,17 +282,22 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             boost::property_tree::json_parser::write_json(res, pt.get_child("result"));
 
             son_wallet_update_operation op;
-            op.payer = database.get_global_properties().parameters.get_son_btc_account_id();
+            op.payer = gpo.parameters.get_son_btc_account_id();
             op.son_wallet_id = (*obj).id;
             op.sidechain = sidechain_type::bitcoin;
             op.address = res.str();
 
-            signed_transaction trx = database.create_signed_transaction(plugin.get_private_keys().begin()->second, op);
+            proposal_create_operation proposal_op;
+            proposal_op.fee_paying_account = plugin.get_son_object().son_account;
+            proposal_op.proposed_ops.push_back( op_wrapper( op ) );
+            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+            proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
+            signed_transaction trx = database.create_signed_transaction(plugin.get_private_keys().begin()->second, proposal_op);
             try {
                database.push_transaction(trx);
-            } catch (fc::exception e) {
-               ilog("sidechain_net_handler_bitcoin:  sending son wallet update operation failed with exception ${e}",("e", e.what()));
+            } catch(fc::exception e){
+               ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
             }
          }
       }

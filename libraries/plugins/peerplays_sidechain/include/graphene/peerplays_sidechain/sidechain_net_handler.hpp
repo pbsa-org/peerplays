@@ -1,11 +1,12 @@
 #pragma once
 
-#include <graphene/peerplays_sidechain/defs.hpp>
-#include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
-
 #include <vector>
 
 #include <boost/program_options.hpp>
+
+#include <fc/signals.hpp>
+#include <graphene/peerplays_sidechain/defs.hpp>
+#include <graphene/peerplays_sidechain/peerplays_sidechain_plugin.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -17,14 +18,14 @@ public:
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_addresses();
 
+    void sidechain_event_data_received(const sidechain_event_data& sed);
+
     virtual void recreate_primary_wallet() = 0;
 
 protected:
     peerplays_sidechain_plugin& plugin;
     graphene::chain::database& database;
     graphene::peerplays_sidechain::sidechain_type sidechain;
-
-    void sidechain_event_data_received(const sidechain_event_data& sed);
 
     virtual std::string create_multisignature_wallet( const std::vector<std::string> public_keys ) = 0;
     virtual std::string transfer( const std::string& from, const std::string& to, const uint64_t amount ) = 0;

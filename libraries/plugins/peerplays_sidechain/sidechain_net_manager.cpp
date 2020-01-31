@@ -7,8 +7,8 @@
 namespace graphene { namespace peerplays_sidechain {
 
 sidechain_net_manager::sidechain_net_manager(peerplays_sidechain_plugin& _plugin) :
-    plugin(_plugin),
-    database(_plugin.database())
+   plugin(_plugin),
+   database(_plugin.database())
 {
    ilog(__FUNCTION__);
 }
