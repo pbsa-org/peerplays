@@ -425,6 +425,11 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
          && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_report_down_operation>::value) {
             approve_proposal( proposal->id );
          }
+
+         if(proposal->proposed_transaction.operations.size() == 1
+         && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_update_operation>::value) {
+            approve_proposal( proposal->id );
+         }
       }
    }
 }

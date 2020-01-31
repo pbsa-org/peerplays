@@ -24,15 +24,15 @@ BOOST_AUTO_TEST_CASE( son_wallet_create_test ) {
    set_expiration(db, trx);
 
    {
-      BOOST_TEST_MESSAGE("Send son_wallet_create_operation");
+      BOOST_TEST_MESSAGE("Send son_wallet_recreate_operation");
 
-      son_wallet_create_operation op;
+      son_wallet_recreate_operation op;
 
       op.payer = db.get_global_properties().parameters.get_son_btc_account_id();
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);
-      PUSH_TX(db, trx, ~0);
+      //PUSH_TX(db, trx, ~0);
    }
    generate_block();
 
@@ -75,38 +75,6 @@ BOOST_AUTO_TEST_CASE( son_wallet_update_test ) {
       BOOST_REQUIRE( idx.size() == 1 );
       auto obj = idx.find(son_wallet_id_type(0));
       BOOST_REQUIRE( obj->addresses.at(graphene::peerplays_sidechain::sidechain_type::bitcoin) == "bitcoin address" );
-   }
-
-}
-
-BOOST_AUTO_TEST_CASE( son_wallet_close_test ) {
-
-   BOOST_TEST_MESSAGE("son_wallet_close_test");
-
-   INVOKE(son_wallet_create_test);
-   GET_ACTOR(alice);
-
-   {
-      BOOST_TEST_MESSAGE("Send son_wallet_close_operation");
-
-      son_wallet_close_operation op;
-
-      op.payer = db.get_global_properties().parameters.get_son_btc_account_id();
-      op.son_wallet_id = son_wallet_id_type(0);
-
-      trx.operations.push_back(op);
-      sign(trx, alice_private_key);
-      PUSH_TX(db, trx, ~0);
-   }
-   generate_block();
-
-   {
-      BOOST_TEST_MESSAGE("Check son_wallet_close_operation results");
-
-      const auto& idx = db.get_index_type<son_wallet_index>().indices().get<by_id>();
-      BOOST_REQUIRE( idx.size() == 1 );
-      auto obj = idx.find(son_wallet_id_type(0));
-      BOOST_REQUIRE( obj->expires != time_point_sec::maximum() );
    }
 
 }
