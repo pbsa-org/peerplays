@@ -9,10 +9,10 @@ void_result recreate_son_wallet_evaluator::do_evaluate(const son_wallet_recreate
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
+   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id() );
 
    const auto& idx = db().get_index_type<son_wallet_index>().indices().get<by_id>();
    auto itr = idx.rbegin();
-   FC_ASSERT( itr->payer == db().get_global_properties().parameters.get_son_btc_account_id() );
    if(itr != idx.rend())
    {
       // Compare current wallet SONs and to-be lists of active sons
@@ -57,10 +57,11 @@ void_result update_son_wallet_evaluator::do_evaluate(const son_wallet_update_ope
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
+   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id() );
+
    const auto& idx = db().get_index_type<son_wallet_index>().indices().get<by_id>();
    FC_ASSERT( idx.find(op.son_wallet_id) != idx.end() );
    auto itr = idx.find(op.son_wallet_id);
-   FC_ASSERT( itr->payer == db().get_global_properties().parameters.get_son_btc_account_id() );
    FC_ASSERT( itr->addresses.find(peerplays_sidechain::sidechain_type::bitcoin) == itr->addresses.end() ||
            itr->addresses.at(peerplays_sidechain::sidechain_type::bitcoin).empty(), "Sidechain wallet address already set");
    return void_result();
