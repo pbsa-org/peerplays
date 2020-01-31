@@ -23,6 +23,7 @@ namespace graphene { namespace chain {
 
         asset fee;
         account_id_type payer;
+
         son_wallet_id_type son_wallet_id;
         graphene::peerplays_sidechain::sidechain_type sidechain;
         string address;
