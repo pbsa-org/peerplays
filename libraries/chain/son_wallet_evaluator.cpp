@@ -34,8 +34,6 @@ void_result recreate_son_wallet_evaluator::do_evaluate(const son_wallet_recreate
 
 object_id_type recreate_son_wallet_evaluator::do_apply(const son_wallet_recreate_operation& op)
 { try {
-   FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
-
    const auto& idx = db().get_index_type<son_wallet_index>().indices().get<by_id>();
    auto itr = idx.rbegin();
    if(itr != idx.rend())
