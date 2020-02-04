@@ -7,6 +7,8 @@
 #include <fc/time.hpp>
 #include <fc/crypto/sha256.hpp>
 
+#include <graphene/chain/protocol/types.hpp>
+
 namespace graphene { namespace peerplays_sidechain {
 
 enum class sidechain_type {
@@ -67,7 +69,9 @@ struct sidechain_event_data {
     sidechain_type sidechain;
     std::string transaction_id;
     std::string from;
+    chain::account_id_type peerplays_from;
     std::string to;
+    chain::account_id_type peerplays_to;
     int64_t amount;
 };
 

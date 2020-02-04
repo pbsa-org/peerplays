@@ -9,6 +9,7 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/chain/son_wallet_transfer_object.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
@@ -47,6 +48,7 @@ class peerplays_sidechain_plugin_impl
 
    private:
       peerplays_sidechain_plugin& plugin;
+      graphene::chain::database& database;
 
       bool config_ready_son;
       bool config_ready_bitcoin;
@@ -59,7 +61,8 @@ class peerplays_sidechain_plugin_impl
 };
 
 peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidechain_plugin& _plugin) :
-      plugin( _plugin ),
+      plugin(_plugin),
+      database(_plugin.database()),
       config_ready_son(false),
       config_ready_bitcoin(false),
       net_manager(nullptr)
@@ -137,8 +140,8 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       throw;
    }
 
-   plugin.database().applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
-   plugin.database().new_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_objects_new(ids); } );
+   database.applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
+   database.new_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_objects_new(ids); } );
 
    net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
 
@@ -195,7 +198,7 @@ son_id_type peerplays_sidechain_plugin_impl::get_son_id()
 
 son_object peerplays_sidechain_plugin_impl::get_son_object()
 {
-   const auto& idx = plugin.database().get_index_type<chain::son_index>().indices().get<by_id>();
+   const auto& idx = database.get_index_type<chain::son_index>().indices().get<by_id>();
    auto son_obj = idx.find( get_son_id() );
    if (son_obj == idx.end())
       return {};
@@ -204,12 +207,12 @@ son_object peerplays_sidechain_plugin_impl::get_son_object()
 
 bool peerplays_sidechain_plugin_impl::is_active_son()
 {
-   const auto& idx = plugin.database().get_index_type<chain::son_index>().indices().get<by_id>();
+   const auto& idx = database.get_index_type<chain::son_index>().indices().get<by_id>();
    auto son_obj = idx.find( get_son_id() );
    if (son_obj == idx.end())
       return false;
 
-   const chain::global_property_object& gpo = plugin.database().get_global_properties();
+   const chain::global_property_object& gpo = database.get_global_properties();
    vector<son_id_type> active_son_ids;
    active_son_ids.reserve(gpo.active_sons.size());
    std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
@@ -343,6 +346,15 @@ void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
 }
 
 void peerplays_sidechain_plugin_impl::process_deposits() {
+
+   const auto& idx = database.get_index_type<son_wallet_transfer_index>().indices().get<by_processed>();
+   const auto& idx_range = idx.equal_range(false);
+
+   std::for_each(idx_range.first, idx_range.second,
+         [&] (const son_wallet_transfer_object& swto) {
+
+
+   });
 }
 
 //void peerplays_sidechain_plugin_impl::process_withdrawals() {

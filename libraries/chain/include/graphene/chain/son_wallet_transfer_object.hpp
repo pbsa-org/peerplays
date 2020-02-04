@@ -25,13 +25,11 @@ namespace graphene { namespace chain {
          int64_t amount;
 
          bool processed;
-
-         flat_map<peerplays_sidechain::sidechain_type, string> addresses;
-         vector<son_info> sons;
    };
 
    struct by_uid;
    struct by_sidechain;
+   struct by_processed;
    struct by_sidechain_and_processed;
    using son_wallet_transfer_multi_index_type = multi_index_container<
       son_wallet_transfer_object,
@@ -44,6 +42,9 @@ namespace graphene { namespace chain {
          >,
          ordered_non_unique< tag<by_sidechain>,
             member<son_wallet_transfer_object, peerplays_sidechain::sidechain_type, &son_wallet_transfer_object::sidechain>
+         >,
+         ordered_non_unique< tag<by_processed>,
+            member<son_wallet_transfer_object, bool, &son_wallet_transfer_object::processed>
          >,
          ordered_non_unique< tag<by_sidechain_and_processed>,
             composite_key<son_wallet_transfer_object,

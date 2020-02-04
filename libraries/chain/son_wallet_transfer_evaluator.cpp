@@ -8,7 +8,9 @@ namespace graphene { namespace chain {
 void_result create_son_wallet_transfer_evaluator::do_evaluate(const son_wallet_transfer_create_operation& op)
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
-   FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
+   //FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
+   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id() );
+
    const auto& idx = db().get_index_type<son_wallet_transfer_index>().indices().get<by_uid>();
    FC_ASSERT(idx.find(op.uid) == idx.end(), "Already registered " + op.uid);
    return void_result();

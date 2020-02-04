@@ -11,6 +11,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
+#include <graphene/chain/account_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
@@ -337,6 +338,12 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
    if( block != "" ) {
       const auto& vins = extract_info_from_block( block );
 
+      account_id_type peerplays_to = GRAPHENE_NULL_ACCOUNT;
+      const auto& account_idx = database.get_index_type<account_index>().indices().get<by_name>();
+      const auto& account_itr = account_idx.find("nathan");
+      if (account_itr != account_idx.end())
+         peerplays_to = (*account_itr).id;
+
       const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_address>();
 
       for( const auto& v : vins ) {
@@ -352,7 +359,9 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
          sed.sidechain = addr_itr->sidechain;
          sed.transaction_id = v.out.hash_tx;
          sed.from = "";
+         sed.peerplays_from = addr_itr->sidechain_address_account;
          sed.to = v.address;
+         sed.peerplays_to = peerplays_to;
          sed.amount = v.out.amount;
          sidechain_event_data_received(sed);
       }
