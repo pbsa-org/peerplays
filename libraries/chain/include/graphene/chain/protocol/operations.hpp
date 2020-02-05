@@ -149,6 +149,7 @@ namespace graphene { namespace chain {
             son_wallet_recreate_operation,
             son_wallet_update_operation,
             son_wallet_transfer_create_operation,
+            son_wallet_transfer_process_operation,
             sidechain_address_add_operation,
             sidechain_address_update_operation,
             sidechain_address_delete_operation
