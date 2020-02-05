@@ -44,25 +44,29 @@ std::vector<std::string> sidechain_net_handler::get_sidechain_addresses() {
 void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_data& sed) {
    ilog( __FUNCTION__ );
    ilog( "sidechain_event_data:" );
-   ilog( "  uid:            ${uid}", ( "uid", sed.uid ) );
-   ilog( "  timestamp:      ${timestamp}", ( "timestamp", sed.timestamp ) );
-   ilog( "  sidechain:      ${sidechain}", ( "sidechain", sed.sidechain ) );
-   ilog( "  transaction_id: ${transaction_id}", ( "transaction_id", sed.transaction_id ) );
-   ilog( "  from:           ${from}", ( "from", sed.from ) );
-   ilog( "  to:             ${to}", ( "to", sed.to ) );
-   ilog( "  amount:         ${amount}", ( "amount", sed.amount ) );
+   ilog( "  timestamp:                ${timestamp}", ( "timestamp", sed.timestamp ) );
+   ilog( "  sidechain:                ${sidechain}", ( "sidechain", sed.sidechain ) );
+   ilog( "  sidechain_uid:            ${uid}", ( "uid", sed.sidechain_uid ) );
+   ilog( "  sidechain_transaction_id: ${transaction_id}", ( "transaction_id", sed.sidechain_transaction_id ) );
+   ilog( "  sidechain_from:           ${from}", ( "from", sed.sidechain_from ) );
+   ilog( "  sidechain_to:             ${to}", ( "to", sed.sidechain_to ) );
+   ilog( "  sidechain_amount:         ${amount}", ( "amount", sed.sidechain_amount ) );
+   ilog( "  peerplays_from:           ${peerplays_from}", ( "peerplays_from", sed.peerplays_from ) );
+   ilog( "  peerplays_to:             ${peerplays_to}", ( "peerplays_to", sed.peerplays_to ) );
 
    const chain::global_property_object& gpo = database.get_global_properties();
 
    son_wallet_transfer_create_operation op;
    op.payer = gpo.parameters.get_son_btc_account_id();
-   op.uid = sed.uid;
    op.timestamp = sed.timestamp;
    op.sidechain = sed.sidechain;
-   op.transaction_id = sed.transaction_id;
-   op.from = sed.from;
-   op.to = sed.to;
-   op.amount = sed.amount;
+   op.sidechain_uid = sed.sidechain_uid;
+   op.sidechain_transaction_id = sed.sidechain_transaction_id;
+   op.sidechain_from = sed.sidechain_from;
+   op.sidechain_to = sed.sidechain_to;
+   op.sidechain_amount = sed.sidechain_amount;
+   op.peerplays_from = sed.peerplays_from;
+   op.peerplays_to = sed.peerplays_to;
 
    proposal_create_operation proposal_op;
    proposal_op.fee_paying_account = plugin.get_son_object().son_account;

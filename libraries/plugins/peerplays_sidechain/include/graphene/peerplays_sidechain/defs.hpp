@@ -64,15 +64,15 @@ struct info_for_vin
 };
 
 struct sidechain_event_data {
-    std::string uid;
     fc::time_point_sec timestamp;
     sidechain_type sidechain;
-    std::string transaction_id;
-    std::string from;
+    std::string sidechain_uid;
+    std::string sidechain_transaction_id;
+    std::string sidechain_from;
+    std::string sidechain_to;
+    int64_t sidechain_amount;
     chain::account_id_type peerplays_from;
-    std::string to;
     chain::account_id_type peerplays_to;
-    int64_t amount;
 };
 
 } } // graphene::peerplays_sidechain
