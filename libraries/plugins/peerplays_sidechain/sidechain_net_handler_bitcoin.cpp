@@ -288,17 +288,19 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             op.sidechain = sidechain_type::bitcoin;
             op.address = res.str();
 
-            proposal_create_operation proposal_op;
-            proposal_op.fee_paying_account = plugin.get_son_object().son_account;
-            proposal_op.proposed_ops.push_back( op_wrapper( op ) );
-            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
-            proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+            for (son_id_type son_id : plugin.get_sons()) {
+               proposal_create_operation proposal_op;
+               proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
+               proposal_op.proposed_ops.push_back( op_wrapper( op ) );
+               uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+               proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-            signed_transaction trx = database.create_signed_transaction(plugin.get_private_keys().begin()->second, proposal_op);
-            try {
-               database.push_transaction(trx);
-            } catch(fc::exception e){
-               ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
+               signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_son_object(son_id).signing_key), proposal_op);
+               try {
+                  database.push_transaction(trx);
+               } catch(fc::exception e){
+                  ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
+               }
             }
          }
       }
