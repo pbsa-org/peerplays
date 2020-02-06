@@ -7,6 +7,7 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
+static const unsigned char OP_0 = 0x00;
 static const unsigned char OP_IF = 0x63;
 static const unsigned char OP_ENDIF = 0x68;
 static const unsigned char OP_SWAP = 0x7c;
@@ -253,7 +254,11 @@ void btc_tx::to_bytes(bytes& stream) const
    if(hasWitness)
    {
       for(const auto& in: vin)
-         str.writedata(in.scriptWitness);
+      {
+         str.write_compact_int(in.scriptWitness.size());
+         for(const auto& stack_item: in.scriptWitness)
+            str.writedata(stack_item);
+      }
    }
    str.writedata32(nLockTime);
 }
@@ -301,10 +306,14 @@ size_t btc_tx::fill_from_bytes(const bytes& data, size_t pos)
       ds.set_pos(pos);
    }
    if (hasWitness) {
-       /* The witness flag is present, and we support witnesses. */
-       for (auto& in: vin)
-          ds.readdata(in.scriptWitness);
-
+      /* The witness flag is present, and we support witnesses. */
+      for (auto& in: vin)
+      {
+         unsigned int size = ds.read_compact_int();
+         in.scriptWitness.resize(size);
+         for(auto& stack_item: in.scriptWitness)
+            ds.readdata(stack_item);
+      }
    }
    nLockTime = ds.readdata32();
    return ds.current_pos();
@@ -340,7 +349,7 @@ bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int> > k
    return result;
 }
 
-std::string p2sh_address_from_redeem_script(const bytes& script, bitcoin_network network)
+std::string p2wsh_address_from_redeem_script(const bytes& script, bitcoin_network network)
 {
    bytes data;
    // add version byte
@@ -371,45 +380,125 @@ std::string p2sh_address_from_redeem_script(const bytes& script, bitcoin_network
 bytes lock_script_for_redeem_script(const bytes &script)
 {
    bytes result;
-   result.push_back(OP_HASH160);
-   fc::ripemd160 h = fc::ripemd160::hash(reinterpret_cast<const char*>(&script[0]), script.size());
+   result.push_back(OP_0);
+   fc::sha256 h = fc::sha256::hash(fc::sha256::hash(reinterpret_cast<const char*>(&script[0]), script.size()));
    bytes shash(h.data(), h.data() + h.data_size());
    add_data_to_script(result, shash);
-   result.push_back(OP_EQUAL);
    return result;
 }
 
-bytes signature_for_raw_transaction(const bytes& unsigned_tx, const fc::ecc::private_key& priv_key)
+bytes hash_prevouts(const btc_tx& unsigned_tx)
 {
-   fc::sha256 digest = fc::sha256::hash(fc::sha256::hash(reinterpret_cast<const char*>(&unsigned_tx[0]), unsigned_tx.size()));
-   fc::ecc::compact_signature res = priv_key.sign_compact(digest);
-   return bytes(res.begin(), res.begin() + res.size());
+   fc::sha256::encoder hasher;
+   for(const auto& in: unsigned_tx.vin)
+   {
+      bytes data;
+      in.to_bytes(data);
+      hasher.write(reinterpret_cast<const char*>(&data[0]), data.size());
+   }
+   fc::sha256 res = fc::sha256::hash(hasher.result());
+   return bytes(res.data(), res.data() + res.data_size());
+}
+
+bytes hash_sequence(const btc_tx& unsigned_tx)
+{
+   fc::sha256::encoder hasher;
+   for(const auto& in: unsigned_tx.vin)
+   {
+      hasher.write(reinterpret_cast<const char*>(&in.nSequence), sizeof(in.nSequence));
+   }
+   fc::sha256 res = fc::sha256::hash(hasher.result());
+   return bytes(res.data(), res.data() + res.data_size());
+}
+
+bytes hash_outputs(const btc_tx& unsigned_tx)
+{
+   fc::sha256::encoder hasher;
+   for(const auto& out: unsigned_tx.vout)
+   {
+      bytes data;
+      out.to_bytes(data);
+      hasher.write(reinterpret_cast<const char*>(&data[0]), data.size());
+   }
+   fc::sha256 res = fc::sha256::hash(hasher.result());
+   return bytes(res.data(), res.data() + res.data_size());
+}
+
+std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
+                                                 std::vector<uint64_t> in_amounts,
+                                                 const bytes& redeem_script,
+                                                 const fc::ecc::private_key& priv_key)
+{
+   btc_tx tx;
+   tx.fill_from_bytes(unsigned_tx);
+
+   FC_ASSERT(tx.vin.size() == in_amounts.size(), "Incorrect input amounts data");
+
+   std::vector<bytes> results;
+   auto cur_amount = in_amounts.begin();
+   // pre-calc reused values
+   bytes hashPrevouts = hash_prevouts(tx);
+   bytes hashSequence = hash_sequence(tx);
+   bytes hashOutputs = hash_outputs(tx);
+   // calc digest for every input according to BIP143
+   // implement SIGHASH_ALL scheme
+   for(const auto& in: tx.vin)
+   {
+      fc::sha256::encoder hasher;
+      hasher.write(reinterpret_cast<const char*>(&tx.nVersion), sizeof(tx.nVersion));
+      hasher.write(reinterpret_cast<const char*>(&hashPrevouts[0]), hashPrevouts.size());
+      hasher.write(reinterpret_cast<const char*>(&hashSequence[0]), hashSequence.size());
+      bytes data;
+      in.prevout.to_bytes(data);
+      hasher.write(reinterpret_cast<const char*>(&data[0]), data.size());
+      bytes serializedScript;
+      WriteBytesStream stream(serializedScript);
+      stream.writedata(redeem_script);
+      hasher.write(reinterpret_cast<const char*>(&serializedScript[0]), serializedScript.size());
+      uint64_t amount = *cur_amount++;
+      hasher.write(reinterpret_cast<const char*>(&amount), sizeof(amount));
+      hasher.write(reinterpret_cast<const char*>(&in.nSequence), sizeof(in.nSequence));
+      hasher.write(reinterpret_cast<const char*>(&hashOutputs[0]), hashOutputs.size());
+      hasher.write(reinterpret_cast<const char*>(&tx.nLockTime), sizeof(tx.nLockTime));
+      // add sigtype SIGHASH_ALL
+      hasher.put(1);
+
+      fc::sha256 digest = fc::sha256::hash(hasher.result());
+      fc::ecc::compact_signature res = priv_key.sign_compact(digest);
+      results.push_back(bytes(res.begin(), res.begin() + res.size()));
+   }
+   return results;
 }
 
 
-bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, const bytes& redeem_script, const std::vector<fc::optional<fc::ecc::private_key> > &priv_keys)
+bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, std::vector<uint64_t> in_amounts, const bytes& redeem_script, const std::vector<fc::optional<fc::ecc::private_key> > &priv_keys)
 {
    btc_tx tx;
    tx.fill_from_bytes(unsigned_tx);
    fc::ecc::compact_signature dummy_sig;
    bytes dummy_data(dummy_sig.begin(), dummy_sig.begin() + dummy_sig.size());
+   for(auto key: priv_keys)
+   {
+      if(key)
+      {
+         std::vector<bytes> signatures = signature_for_raw_transaction(unsigned_tx, in_amounts, redeem_script, *key);
+         FC_ASSERT(signatures.size() == tx.vin.size(), "Invaid signatures number");
+         for(unsigned int i = 0; i < tx.vin.size(); i++)
+            tx.vin[i].scriptWitness.push_back(signatures[i]);
+      }
+      else
+      {
+         for(unsigned int i = 0; i < tx.vin.size(); i++)
+            tx.vin[i].scriptWitness.push_back(dummy_data);
+      }
+   }
+
    for(auto& in: tx.vin)
    {
-      WriteBytesStream script(in.scriptSig);
-      for(auto key: priv_keys)
-      {
-         if(key)
-         {
-            bytes signature = signature_for_raw_transaction(unsigned_tx, *key);
-            script.writedata(signature);
-         }
-         else
-         {
-            script.writedata(dummy_data);
-         }
-      }
-      script.writedata(redeem_script);
+      in.scriptWitness.push_back(redeem_script);
    }
+
+   tx.hasWitness = true;
    bytes ret;
    tx.to_bytes(ret);
    return ret;

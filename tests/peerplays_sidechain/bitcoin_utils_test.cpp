@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    // redeem script for old PW
    bytes redeem_old =generate_redeem_script(weights_old);
    // Old PW address
-   std::string old_pw = p2sh_address_from_redeem_script(redeem_old, bitcoin_network::testnet);
+   std::string old_pw = p2wsh_address_from_redeem_script(redeem_old, bitcoin_network::testnet);
    // This address was filled with testnet transaction  8d8a466f6c829175a8bb747860828b59e7774be0bbf79ffdc70d5e75348180ca
    BOOST_REQUIRE(old_pw == "2NGLS3x8Vk3vN18672YmSnpASm7FxYcoWu6");
 
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    // redeem script for new PW
    bytes redeem_new =generate_redeem_script(weights_new);
    // New PW address
-   std::string new_pw = p2sh_address_from_redeem_script(redeem_new, bitcoin_network::testnet);
+   std::string new_pw = p2wsh_address_from_redeem_script(redeem_new, bitcoin_network::testnet);
 
    BOOST_REQUIRE(new_pw == "2MyzbFRwNqj1Y4Q4oWELhDwz5DCHkTndE1S");
 
@@ -100,9 +100,11 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    tx.vout.push_back(output);
    bytes unsigned_tx;
    tx.to_bytes(unsigned_tx);
+   ilog(fc::to_hex(reinterpret_cast<char*>(&unsigned_tx[0]), unsigned_tx.size()));
+   std::vector<uint64_t> in_amounts({20000});
    std::vector<fc::optional<fc::ecc::private_key>> keys_to_sign;
    for(auto key: priv_old)
       keys_to_sign.push_back(fc::optional<fc::ecc::private_key>(key));
-   bytes signed_tx =sign_pw_transfer_transaction(unsigned_tx, redeem_old, keys_to_sign);
+   bytes signed_tx =sign_pw_transfer_transaction(unsigned_tx, in_amounts, redeem_old, keys_to_sign);
    ilog(fc::to_hex(reinterpret_cast<char*>(&signed_tx[0]), signed_tx.size()));
 }
