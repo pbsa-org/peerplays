@@ -54,6 +54,11 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    ilog( "  peerplays_from:           ${peerplays_from}", ( "peerplays_from", sed.peerplays_from ) );
    ilog( "  peerplays_to:             ${peerplays_to}", ( "peerplays_to", sed.peerplays_to ) );
 
+   if (!plugin.is_active_son()) {
+      ilog( "  !!!                       SON is not active and not processing sidechain events...");
+      return;
+   }
+
    const chain::global_property_object& gpo = database.get_global_properties();
 
    son_wallet_transfer_create_operation op;
