@@ -259,6 +259,7 @@ void database::initialize_evaluators()
    register_evaluator<recreate_son_wallet_evaluator>();
    register_evaluator<update_son_wallet_evaluator>();
    register_evaluator<create_son_wallet_transfer_evaluator>();
+   register_evaluator<process_son_wallet_transfer_evaluator>();
    register_evaluator<add_sidechain_address_evaluator>();
    register_evaluator<update_sidechain_address_evaluator>();
    register_evaluator<delete_sidechain_address_evaluator>();

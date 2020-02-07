@@ -277,7 +277,6 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          boost::property_tree::ptree pt;
          boost::property_tree::read_json( ss, pt );
          if( pt.count( "error" ) && pt.get_child( "error" ).empty() ) {
-            ilog(__FUNCTION__);
 
             std::stringstream res;
             boost::property_tree::json_parser::write_json(res, pt.get_child("result"));
@@ -295,7 +294,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
                proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-               signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_son_object(son_id).signing_key), proposal_op);
+               signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
                try {
                   database.push_transaction(trx);
                } catch(fc::exception e){
@@ -335,11 +334,6 @@ std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& 
 void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data ) {
    ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_event");
    ilog("                             event_data: ${event_data}", ("event_data", event_data));
-
-   if (!plugin.is_active_son()) {
-      ilog("  !!!                        SON is not active and not processing sidechain events...");
-      return;
-   }
 
    std::string block = bitcoin_client->receive_full_block( event_data );
    if( block != "" ) {
