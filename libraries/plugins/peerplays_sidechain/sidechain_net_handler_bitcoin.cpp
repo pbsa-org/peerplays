@@ -334,6 +334,11 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
    ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_event");
    ilog("                             event_data: ${event_data}", ("event_data", event_data));
 
+   if (!plugin.is_active_son()) {
+      ilog("  !!!                        SON is not active and not processing sidechain events...");
+      return;
+   }
+
    std::string block = bitcoin_client->receive_full_block( event_data );
    if( block != "" ) {
       const auto& vins = extract_info_from_block( block );
