@@ -9,7 +9,7 @@ void_result create_son_wallet_transfer_evaluator::do_evaluate(const son_wallet_t
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    //FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
-   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id() );
+   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id(), "SON paying account must be set as payer." );
 
    //const auto& idx = db().get_index_type<son_wallet_transfer_index>().indices().get<by_sidechain_uid>();
    //FC_ASSERT(idx.find(op.sidechain_uid) == idx.end(), "Already registered " + op.sidechain_uid);
@@ -47,7 +47,7 @@ void_result process_son_wallet_transfer_evaluator::do_evaluate(const son_wallet_
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    //FC_ASSERT(db().get_global_properties().parameters.get_son_btc_account_id() != GRAPHENE_NULL_ACCOUNT, "SON paying account not set.");
-   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id() );
+   FC_ASSERT( op.payer == db().get_global_properties().parameters.get_son_btc_account_id(), "SON paying account must be set as payer." );
 
    const auto& idx = db().get_index_type<son_wallet_transfer_index>().indices().get<by_id>();
    const auto& itr = idx.find(op.son_wallet_transfer_id);

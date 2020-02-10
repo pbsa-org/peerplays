@@ -71,14 +71,14 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
       if (plugin.is_active_son(son_id)) {
          proposal_create_operation proposal_op;
          proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
-         proposal_op.proposed_ops.push_back( op_wrapper( op ) );
+         proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
          uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
          proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
          ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son}", ("son", son_id));
          signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
          try {
-            database.push_transaction(trx);
+            database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          } catch(fc::exception e){
             ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
          }

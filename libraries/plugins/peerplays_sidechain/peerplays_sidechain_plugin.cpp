@@ -279,7 +279,7 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop()
          chain::signed_transaction trx = d.create_signed_transaction(plugin.get_private_key(son_id), op);
          fc::future<bool> fut = fc::async( [&](){
             try {
-               d.push_transaction(trx);
+               d.push_transaction(trx, database::validation_steps::skip_block_size_check);
                if(plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                return true;
@@ -336,7 +336,7 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals()
          chain::signed_transaction trx = d.create_signed_transaction(plugin.get_private_key(son_obj->signing_key), op);
          fc::future<bool> fut = fc::async( [&](){
             try {
-               d.push_transaction(trx);
+               d.push_transaction(trx, database::validation_steps::skip_block_size_check);
                if(plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                return true;
@@ -357,13 +357,6 @@ void peerplays_sidechain_plugin_impl::recreate_primary_wallet()
 
 void peerplays_sidechain_plugin_impl::process_deposits() {
 
-   // Account who issues tokens to the user who made deposit
-   account_id_type pay_from = GRAPHENE_NULL_ACCOUNT;
-   const auto& account_idx = plugin.database().get_index_type<account_index>().indices().get<by_name>();
-   const auto& account_itr = account_idx.find("nathan");
-   if (account_itr != account_idx.end())
-      pay_from = (*account_itr).id;
-
    const auto& idx = plugin.database().get_index_type<son_wallet_transfer_index>().indices().get<by_processed>();
    const auto& idx_range = idx.equal_range(false);
 
@@ -376,24 +369,26 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
       p_op.payer = gpo.parameters.get_son_btc_account_id();
       p_op.son_wallet_transfer_id = swto.id;
 
-      //transfer_operation t_op;
-      //t_op.from = pay_from;
-      //t_op.to = swto.peerplays_from;
-      //t_op.amount = asset(swto.sidechain_amount); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
+      transfer_operation t_op;
+      t_op.from = gpo.parameters.get_son_btc_account_id();;
+      t_op.to = swto.peerplays_from;
+      t_op.amount = asset(swto.sidechain_amount / 1000000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
             proposal_create_operation proposal_op;
             proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
-            proposal_op.proposed_ops.push_back( op_wrapper( p_op ) );
-            //proposal_op.proposed_ops.push_back( op_wrapper( t_op ) );
+            proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
+            //proposal_op.proposed_ops.emplace_back( op_wrapper( t_op ) );
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
 
             ilog("sidechain_net_handler:  sending proposal for transfer operation ${swto} by ${son}", ("swto", swto.id) ("son", son_id));
             signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
+            trx.validate();
+            ilog("sidechain_net_handler:  transaction validated ${swto} by ${son}", ("swto", swto.id) ("son", son_id));
             try {
-               plugin.database().push_transaction(trx);
+               plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
             } catch(fc::exception e){
                ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
             }
@@ -444,7 +439,7 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
       chain::signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), puo);
       fc::future<bool> fut = fc::async( [&](){
          try {
-            plugin.database().push_transaction(trx);
+            plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
             if(plugin.app().p2p_node())
                plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             return true;
@@ -488,6 +483,17 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
             if(proposal->proposed_transaction.operations.size() == 1
             && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value
             /*&& proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value*/) {
+               approve_proposal( son_id, proposal->id );
+            }
+
+            if(proposal->proposed_transaction.operations.size() == 1
+            && proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value) {
+               approve_proposal( son_id, proposal->id );
+            }
+
+            if(proposal->proposed_transaction.operations.size() == 2
+            && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value
+            && proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value) {
                approve_proposal( son_id, proposal->id );
             }
          }
