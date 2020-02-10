@@ -379,7 +379,7 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
             proposal_create_operation proposal_op;
             proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
             proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
-            //proposal_op.proposed_ops.emplace_back( op_wrapper( t_op ) );
+            proposal_op.proposed_ops.emplace_back( op_wrapper( t_op ) );
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
 
@@ -453,13 +453,14 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
 
    for(auto object_id: new_object_ids) {
       if( object_id.is<chain::proposal_object>() ) {
-         const object* obj = plugin.database().find_object(object_id);
-         const chain::proposal_object* proposal = dynamic_cast<const chain::proposal_object*>(obj);
 
          for (son_id_type son_id : _sons) {
             if (!is_active_son(son_id)) {
                continue;
             }
+
+            const object* obj = plugin.database().find_object(object_id);
+            const chain::proposal_object* proposal = dynamic_cast<const chain::proposal_object*>(obj);
 
             if(proposal == nullptr || (proposal->available_active_approvals.find(get_son_object(son_id).son_account) != proposal->available_active_approvals.end())) {
                continue;
@@ -468,33 +469,38 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
             if(proposal->proposed_transaction.operations.size() == 1
             && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_report_down_operation>::value) {
                approve_proposal( son_id, proposal->id );
+               continue;
             }
 
             if(proposal->proposed_transaction.operations.size() == 1
             && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_update_operation>::value) {
                approve_proposal( son_id, proposal->id );
+               continue;
             }
 
             if(proposal->proposed_transaction.operations.size() == 1
             && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_create_operation>::value) {
                approve_proposal( son_id, proposal->id );
+               continue;
             }
 
-            if(proposal->proposed_transaction.operations.size() == 1
-            && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value
-            /*&& proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value*/) {
-               approve_proposal( son_id, proposal->id );
-            }
+            //if(proposal->proposed_transaction.operations.size() == 1
+            //&& proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value) {
+            //   approve_proposal( son_id, proposal->id );
+            //   continue;
+            //}
 
-            if(proposal->proposed_transaction.operations.size() == 1
-            && proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value) {
-               approve_proposal( son_id, proposal->id );
-            }
+            //if(proposal->proposed_transaction.operations.size() == 1
+            //&& proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::transfer_operation>::value) {
+            //   approve_proposal( son_id, proposal->id );
+            //   continue;
+            //}
 
             if(proposal->proposed_transaction.operations.size() == 2
             && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value
             && proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value) {
                approve_proposal( son_id, proposal->id );
+               continue;
             }
          }
       }
