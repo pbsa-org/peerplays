@@ -447,7 +447,7 @@ std::string segwit_addr_encode(const std::string& hrp, uint8_t witver, const byt
 std::string p2wsh_address_from_redeem_script(const bytes& script, bitcoin_network network)
 {
    // calc script hash
-   fc::sha256 sh = fc::sha256::hash(fc::sha256::hash(reinterpret_cast<const char*>(&script[0]), script.size()));
+   fc::sha256 sh = fc::sha256::hash(reinterpret_cast<const char*>(&script[0]), script.size());
    bytes wp(sh.data(), sh.data() + sh.data_size());
    switch (network) {
    case(mainnet):
@@ -465,7 +465,7 @@ bytes lock_script_for_redeem_script(const bytes &script)
 {
    bytes result;
    result.push_back(OP_0);
-   fc::sha256 h = fc::sha256::hash(fc::sha256::hash(reinterpret_cast<const char*>(&script[0]), script.size()));
+   fc::sha256 h = fc::sha256::hash(reinterpret_cast<const char*>(&script[0]), script.size());
    bytes shash(h.data(), h.data() + h.data_size());
    add_data_to_script(result, shash);
    return result;
