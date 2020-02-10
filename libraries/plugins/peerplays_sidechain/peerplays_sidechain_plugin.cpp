@@ -365,21 +365,16 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
 
       const chain::global_property_object& gpo = plugin.database().get_global_properties();
 
-      son_wallet_transfer_process_operation p_op;
-      p_op.payer = gpo.parameters.get_son_btc_account_id();
-      p_op.son_wallet_transfer_id = swto.id;
-
-      transfer_operation t_op;
-      t_op.from = gpo.parameters.get_son_btc_account_id();;
-      t_op.to = swto.peerplays_from;
-      t_op.amount = asset(swto.sidechain_amount / 1000000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
-
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
+
+            son_wallet_transfer_process_operation p_op;
+            p_op.payer = gpo.parameters.get_son_btc_account_id();
+            p_op.son_wallet_transfer_id = swto.id;
+
             proposal_create_operation proposal_op;
             proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
             proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
-            proposal_op.proposed_ops.emplace_back( op_wrapper( t_op ) );
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
 
@@ -389,6 +384,8 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
             ilog("sidechain_net_handler:  transaction validated ${swto} by ${son}", ("swto", swto.id) ("son", son_id));
             try {
                plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+               if(plugin.app().p2p_node())
+                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch(fc::exception e){
                ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
             }
@@ -484,21 +481,8 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
                continue;
             }
 
-            //if(proposal->proposed_transaction.operations.size() == 1
-            //&& proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value) {
-            //   approve_proposal( son_id, proposal->id );
-            //   continue;
-            //}
-
-            //if(proposal->proposed_transaction.operations.size() == 1
-            //&& proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::transfer_operation>::value) {
-            //   approve_proposal( son_id, proposal->id );
-            //   continue;
-            //}
-
-            if(proposal->proposed_transaction.operations.size() == 2
-            && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value
-            && proposal->proposed_transaction.operations[1].which() == chain::operation::tag<chain::transfer_operation>::value) {
+            if(proposal->proposed_transaction.operations.size() == 1
+            && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_transfer_process_operation>::value) {
                approve_proposal( son_id, proposal->id );
                continue;
             }

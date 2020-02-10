@@ -297,6 +297,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
                try {
                   database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+                  if(plugin.app().p2p_node())
+                     plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                } catch(fc::exception e){
                   ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
                }

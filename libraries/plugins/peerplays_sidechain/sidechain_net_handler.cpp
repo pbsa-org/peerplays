@@ -66,6 +66,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    op.sidechain_amount = sed.sidechain_amount;
    op.peerplays_from = sed.peerplays_from;
    op.peerplays_to = sed.peerplays_to;
+   op.peerplays_amount = asset(sed.sidechain_amount / 1000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
 
    for (son_id_type son_id : plugin.get_sons()) {
       if (plugin.is_active_son(son_id)) {
@@ -79,6 +80,8 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
          signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
          try {
             database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+            if(plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
          } catch(fc::exception e){
             ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
          }

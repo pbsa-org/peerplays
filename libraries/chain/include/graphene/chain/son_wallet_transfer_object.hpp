@@ -26,6 +26,7 @@ namespace graphene { namespace chain {
          int64_t sidechain_amount;
          chain::account_id_type peerplays_from;
          chain::account_id_type peerplays_to;
+         chain::asset peerplays_amount;
 
          bool processed;
    };
@@ -63,5 +64,5 @@ namespace graphene { namespace chain {
 FC_REFLECT_DERIVED( graphene::chain::son_wallet_transfer_object, (graphene::db::object),
                     (timestamp) (sidechain) (confirmations)
                     (sidechain_uid) (sidechain_transaction_id) (sidechain_from) (sidechain_to) (sidechain_amount)
-                    (peerplays_from) (peerplays_to)
+                    (peerplays_from) (peerplays_to) (peerplays_amount)
                     (processed) )
