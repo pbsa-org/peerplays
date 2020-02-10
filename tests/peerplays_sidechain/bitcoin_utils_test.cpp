@@ -47,8 +47,9 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    bytes redeem_old =generate_redeem_script(weights_old);
    // Old PW address
    std::string old_pw = p2wsh_address_from_redeem_script(redeem_old, bitcoin_network::testnet);
-   // This address was filled with testnet transaction  8d8a466f6c829175a8bb747860828b59e7774be0bbf79ffdc70d5e75348180ca
-   BOOST_REQUIRE(old_pw == "2NGLS3x8Vk3vN18672YmSnpASm7FxYcoWu6");
+   // This address was filled with testnet transaction  0c0549133bbd5c2b1e629109c58e9af36bd65aeb1ca8570491b6779d72e3cefd
+   ilog(old_pw);
+   BOOST_REQUIRE(old_pw == "tb1q624r67hvhysxdwztuxgg4ksw7q4kzs4vxfgp96vjj2jcjw0q4c0qj6gmue");
 
    // key set for the new Primary Wallet
    std::vector<fc::ecc::private_key> priv_new;
@@ -70,22 +71,23 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    // New PW address
    std::string new_pw = p2wsh_address_from_redeem_script(redeem_new, bitcoin_network::testnet);
 
-   BOOST_REQUIRE(new_pw == "2MyzbFRwNqj1Y4Q4oWELhDwz5DCHkTndE1S");
+   ilog(new_pw);
+   BOOST_REQUIRE(new_pw == "tb1qhhaes30wwvt3ces3g2dsx3j48gr7fsqagqgk45hpc0dtnaww5d6qsd7em0");
 
    // try to move funds from old wallet to new one
 
    // get unspent outputs for old wallet with list_uspent (address should be
    // added to wallet with import_address before). It should return
-   // 1 UTXO: [8d8a466f6c829175a8bb747860828b59e7774be0bbf79ffdc70d5e75348180ca:1]
+   // 1 UTXO: [0c0549133bbd5c2b1e629109c58e9af36bd65aeb1ca8570491b6779d72e3cefd:0]
    // with 20000 satoshis
    // So, we creating a raw transaction with 1 input and one output that gets
    // 20000 - fee satoshis with createrawtransaction call (bitcoin_rpc_client::prepare_tx)
    // Here we just serialize the transaction without scriptSig in inputs then sign it.
    btc_outpoint outpoint;
-   outpoint.hash = fc::uint256("8d8a466f6c829175a8bb747860828b59e7774be0bbf79ffdc70d5e75348180ca");
+   outpoint.hash = fc::uint256("0c0549133bbd5c2b1e629109c58e9af36bd65aeb1ca8570491b6779d72e3cefd");
    // reverse hash due to the different from_hex algo
    std::reverse(outpoint.hash.data(), outpoint.hash.data() + outpoint.hash.data_size());
-   outpoint.n = 1;
+   outpoint.n = 0;
    btc_in input;
    input.prevout = outpoint;
    input.nSequence = 0xffffffff;

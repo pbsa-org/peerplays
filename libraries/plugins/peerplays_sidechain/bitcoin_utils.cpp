@@ -349,32 +349,116 @@ bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int> > k
    return result;
 }
 
+/** The Bech32 character set for encoding. */
+const char* charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+/** Concatenate two byte arrays. */
+bytes cat(bytes x, const bytes& y) {
+    x.insert(x.end(), y.begin(), y.end());
+    return x;
+}
+
+/** Expand a HRP for use in checksum computation. */
+bytes expand_hrp(const std::string& hrp) {
+    bytes ret;
+    ret.resize(hrp.size() * 2 + 1);
+    for (size_t i = 0; i < hrp.size(); ++i) {
+        unsigned char c = hrp[i];
+        ret[i] = c >> 5;
+        ret[i + hrp.size() + 1] = c & 0x1f;
+    }
+    ret[hrp.size()] = 0;
+    return ret;
+}
+
+/** Find the polynomial with value coefficients mod the generator as 30-bit. */
+uint32_t polymod(const bytes& values) {
+    uint32_t chk = 1;
+    for (size_t i = 0; i < values.size(); ++i) {
+        uint8_t top = chk >> 25;
+        chk = (chk & 0x1ffffff) << 5 ^ values[i] ^
+            (-((top >> 0) & 1) & 0x3b6a57b2UL) ^
+            (-((top >> 1) & 1) & 0x26508e6dUL) ^
+            (-((top >> 2) & 1) & 0x1ea119faUL) ^
+            (-((top >> 3) & 1) & 0x3d4233ddUL) ^
+            (-((top >> 4) & 1) & 0x2a1462b3UL);
+    }
+    return chk;
+}
+
+/** Create a checksum. */
+bytes bech32_checksum(const std::string& hrp, const bytes& values) {
+    bytes enc = cat(expand_hrp(hrp), values);
+    enc.resize(enc.size() + 6);
+    uint32_t mod = polymod(enc) ^ 1;
+    bytes ret;
+    ret.resize(6);
+    for (size_t i = 0; i < 6; ++i) {
+        ret[i] = (mod >> (5 * (5 - i))) & 31;
+    }
+    return ret;
+}
+
+/** Encode a Bech32 string. */
+std::string bech32(const std::string& hrp, const bytes& values) {
+    bytes checksum = bech32_checksum(hrp, values);
+    bytes combined = cat(values, checksum);
+    std::string ret = hrp + '1';
+    ret.reserve(ret.size() + combined.size());
+    for (size_t i = 0; i < combined.size(); ++i) {
+        ret += charset[combined[i]];
+    }
+    return ret;
+}
+
+/** Convert from one power-of-2 number base to another. */
+template<int frombits, int tobits, bool pad>
+bool convertbits(bytes& out, const bytes& in) {
+    int acc = 0;
+    int bits = 0;
+    const int maxv = (1 << tobits) - 1;
+    const int max_acc = (1 << (frombits + tobits - 1)) - 1;
+    for (size_t i = 0; i < in.size(); ++i) {
+        int value = in[i];
+        acc = ((acc << frombits) | value) & max_acc;
+        bits += frombits;
+        while (bits >= tobits) {
+            bits -= tobits;
+            out.push_back((acc >> bits) & maxv);
+        }
+    }
+    if (pad) {
+        if (bits) out.push_back((acc << (tobits - bits)) & maxv);
+    } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) {
+        return false;
+    }
+    return true;
+}
+
+/** Encode a SegWit address. */
+std::string segwit_addr_encode(const std::string& hrp, uint8_t witver, const bytes& witprog) {
+    bytes enc;
+    enc.push_back(witver);
+    convertbits<8, 5, true>(enc, witprog);
+    std::string ret = bech32(hrp, enc);
+    return ret;
+}
+
 std::string p2wsh_address_from_redeem_script(const bytes& script, bitcoin_network network)
 {
-   bytes data;
-   // add version byte
+   // calc script hash
+   fc::sha256 sh = fc::sha256::hash(fc::sha256::hash(reinterpret_cast<const char*>(&script[0]), script.size()));
+   bytes wp(sh.data(), sh.data() + sh.data_size());
    switch (network) {
    case(mainnet):
-      data.push_back(5);
-      break;
+      return segwit_addr_encode("bc", 0, wp);
    case(testnet):
-      data.push_back(196);
-      break;
    case(regtest):
-      data.push_back(196);
-      break;
+      return segwit_addr_encode("tb", 0, wp);
    default:
       FC_THROW("Unknown bitcoin network type [${type}]", ("type", network));
    }
-   // add redeem script hash
-   fc::ripemd160 h = fc::ripemd160::hash(reinterpret_cast<const char*>(&script[0]), script.size());
-   data.insert(data.end(), h.data(), h.data() + h.data_size());
-   // calc control sum
-   fc::sha256 cs = fc::sha256::hash(fc::sha256::hash(reinterpret_cast<const char*>(&data[0]), data.size()));
-   // add first 4 bytes of control sum
-   data.insert(data.end(), cs.data(), cs.data() + 4);
-   // return base58 encoded data
-   return fc::to_base58(reinterpret_cast<const char*>(&data[0]), data.size());
+   FC_THROW("Unknown bitcoin network type [${type}]", ("type", network));
 }
 
 bytes lock_script_for_redeem_script(const bytes &script)
