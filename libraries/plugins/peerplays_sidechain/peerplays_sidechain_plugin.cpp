@@ -119,6 +119,10 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
          boost::insert(_sons, fc::json::from_string(options.at("son-ids").as<string>()).as<vector<chain::son_id_type>>( 5 ));
       config_ready_son = config_ready_son && !_sons.empty();
 
+#ifndef SUPPORT_MULTIPLE_SONS
+      FC_ASSERT( _sons.size() == 1, "Multiple SONs not supported" );
+#endif
+
       if( options.count("peerplays-private-key") )
       {
          const std::vector<std::string> key_id_to_wif_pair_strings = options["peerplays-private-key"].as<std::vector<std::string>>();
