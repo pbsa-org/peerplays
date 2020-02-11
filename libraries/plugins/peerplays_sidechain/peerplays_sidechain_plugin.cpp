@@ -488,11 +488,6 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
                continue;
             }
          }
-
-         if(proposal->proposed_transaction.operations.size() == 1
-         && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::transfer_operation>::value) {
-            approve_proposal( proposal->id );
-         }
       }
    }
 }
