@@ -59,6 +59,7 @@
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_transfer_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/sidechain_transaction_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -84,6 +85,7 @@
 #include <graphene/chain/son_wallet_evaluator.hpp>
 #include <graphene/chain/son_wallet_transfer_evaluator.hpp>
 #include <graphene/chain/sidechain_address_evaluator.hpp>
+#include <graphene/chain/sidechain_transaction_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -262,6 +264,8 @@ void database::initialize_evaluators()
    register_evaluator<add_sidechain_address_evaluator>();
    register_evaluator<update_sidechain_address_evaluator>();
    register_evaluator<delete_sidechain_address_evaluator>();
+   register_evaluator<bitcoin_transaction_send_evaluator>();
+   register_evaluator<bitcoin_transaction_sign_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -310,6 +314,7 @@ void database::initialize_indexes()
    add_index< primary_index<son_wallet_transfer_index> >();
 
    add_index< primary_index<sidechain_address_index> >();
+   add_index< primary_index<bitcoin_transaction_index> >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();
