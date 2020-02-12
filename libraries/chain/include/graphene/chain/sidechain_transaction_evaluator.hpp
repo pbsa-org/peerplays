@@ -23,4 +23,13 @@ public:
     void update_proposal( const bitcoin_transaction_sign_operation& o );
 };
 
+class bitcoin_send_transaction_process_evaluator : public evaluator<bitcoin_send_transaction_process_evaluator>
+{
+public:
+    typedef bitcoin_send_transaction_process_operation operation_type;
+
+    void_result do_evaluate(const bitcoin_send_transaction_process_operation& o);
+    object_id_type do_apply(const bitcoin_send_transaction_process_operation& o);
+};
+
 } } // namespace graphene::chain

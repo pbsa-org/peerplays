@@ -34,6 +34,20 @@ namespace graphene { namespace chain {
       share_type        calculate_fee( const fee_parameters_type& k )const { return 0; }
    };
 
+   struct bitcoin_send_transaction_process_operation : public base_operation
+   {
+      struct fee_parameters_type { uint64_t fee = 0; };
+
+      asset                         fee;
+      account_id_type               payer;
+
+      bitcoin_transaction_id_type   bitcoin_transaction_id;
+
+      account_id_type   fee_payer()const { return payer; }
+      void              validate()const {}
+      share_type        calculate_fee( const fee_parameters_type& k )const { return 0; }
+   };
+
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::bitcoin_transaction_send_operation::fee_parameters_type, (fee) )
@@ -41,3 +55,6 @@ FC_REFLECT( graphene::chain::bitcoin_transaction_send_operation, (fee)(payer)(si
 
 FC_REFLECT( graphene::chain::bitcoin_transaction_sign_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::bitcoin_transaction_sign_operation, (fee)(payer)(proposal_id)(signatures) )
+
+FC_REFLECT( graphene::chain::bitcoin_send_transaction_process_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::bitcoin_send_transaction_process_operation, (fee)(payer)(bitcoin_transaction_id) )
