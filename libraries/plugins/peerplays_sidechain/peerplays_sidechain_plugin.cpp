@@ -10,6 +10,7 @@
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_transfer_object.hpp>
+#include <graphene/chain/sidechain_transaction_object.hpp>
 #include <graphene/chain/protocol/transfer.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
@@ -43,6 +44,7 @@ class peerplays_sidechain_plugin_impl
       void create_son_down_proposals();
       void recreate_primary_wallet();
       void process_deposits();
+      void process_send_transactions();
       //void process_withdrawals();
       void on_block_applied( const signed_block& b );
       void on_objects_new(const vector<object_id_type>& new_object_ids);
@@ -382,6 +384,43 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
    });
 }
 
+void peerplays_sidechain_plugin_impl::process_send_transactions()
+{
+   const auto& idx = plugin.database().get_index_type<bitcoin_transaction_index>().indices().get<by_processed>();
+   const auto& idx_range = idx.equal_range(false);
+
+   std::for_each(idx_range.first, idx_range.second,
+         [&] (const bitcoin_transaction_object& bto) {
+
+      // TODO: Do the sending transaction stuff here after PW Script and Classes are available.
+      const chain::global_property_object& gpo = plugin.database().get_global_properties();
+
+      chain::bitcoin_send_transaction_process_operation process_op;
+      process_op.payer = gpo.parameters.get_son_btc_account_id();
+      process_op.bitcoin_transaction_id = bto.id;
+
+      proposal_create_operation proposal_op;
+      proposal_op.fee_paying_account = get_son_object().son_account;
+      proposal_op.proposed_ops.push_back( op_wrapper( process_op ) );
+      uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+      proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
+
+      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_keys().begin()->second, proposal_op);
+      fc::future<bool> fut = fc::async( [&](){
+         try {
+            plugin.database().push_transaction(trx);
+            if(plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+            return true;
+         } catch(fc::exception e){
+            ilog("peerplays_sidechain_plugin_impl:  sending son down proposal failed with exception ${e}",("e", e.what()));
+            return false;
+         }
+      });
+      fut.wait(fc::seconds(10));
+   });
+}
+
 //void peerplays_sidechain_plugin_impl::process_withdrawals() {
 //}
 
@@ -406,6 +445,8 @@ void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
       process_deposits();
 
       //process_withdrawals();
+
+      //process_send_transactions();
 
    }
 }
@@ -452,6 +493,12 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
       fut.wait(fc::seconds(10));
    };
 
+   auto sign_proposal = [ & ]( const chain::proposal_id_type& id )
+   {
+      // TODO: To be done after PW Script and transaction signing is checked in.
+      return true;
+   };
+
    for(auto object_id: new_object_ids) {
       if( object_id.is<chain::proposal_object>() ) {
          const object* obj = d.find_object(object_id);
@@ -472,6 +519,16 @@ void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type
 
          if(proposal->proposed_transaction.operations.size() == 1
          && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::transfer_operation>::value) {
+            approve_proposal( proposal->id );
+         }
+
+         if(proposal->proposed_transaction.operations.size() == 1
+         && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_transaction_send_operation>::value) {
+            sign_proposal( proposal->id );
+         }
+
+         if(proposal->proposed_transaction.operations.size() == 1
+         && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_send_transaction_process_operation>::value) {
             approve_proposal( proposal->id );
          }
       }
