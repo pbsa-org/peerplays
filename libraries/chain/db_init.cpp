@@ -266,6 +266,7 @@ void database::initialize_evaluators()
    register_evaluator<delete_sidechain_address_evaluator>();
    register_evaluator<bitcoin_transaction_send_evaluator>();
    register_evaluator<bitcoin_transaction_sign_evaluator>();
+   register_evaluator<bitcoin_send_transaction_process_evaluator>();
 }
 
 void database::initialize_indexes()

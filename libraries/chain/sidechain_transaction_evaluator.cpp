@@ -106,7 +106,7 @@ void_result bitcoin_send_transaction_process_evaluator::do_evaluate(const bitcoi
    {
       FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK"); // can be removed after HF date pass
       FC_ASSERT(op.payer == db().get_global_properties().parameters.get_son_btc_account_id(), "Payer should be the son btc account");
-      const auto &btidx = db.get_index_type<bitcoin_transaction_index>().indices().get<by_id>();
+      const auto& btidx = db().get_index_type<bitcoin_transaction_index>().indices().get<by_id>();
       const auto btobj = btidx.find(op.bitcoin_transaction_id);
       FC_ASSERT(btobj != btidx.end(), "Bitcoin Transaction Object not found");
       FC_ASSERT(btobj->processed == false, "Bitcoin Transaction already processed");
@@ -119,9 +119,9 @@ object_id_type bitcoin_send_transaction_process_evaluator::do_apply(const bitcoi
 {
    try
    {
-      const auto &btidx = db.get_index_type<bitcoin_transaction_index>().indices().get<by_id>();
+      const auto &btidx = db().get_index_type<bitcoin_transaction_index>().indices().get<by_id>();
       auto btobj = btidx.find(op.bitcoin_transaction_id);
-      if (btobj != btindx.end())
+      if (btobj != btidx.end())
       {
          db().modify(*btobj, [&op](bitcoin_transaction_object &bto) {
             bto.processed = true;

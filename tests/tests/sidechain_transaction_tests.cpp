@@ -291,6 +291,74 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
       BOOST_REQUIRE(sigs[son_obj2->id][0] == b1);
       BOOST_REQUIRE(sigs[son_obj2->id][1] == b2);
       BOOST_REQUIRE(sigs[son_obj2->id][2] == b3);
+
+      {
+         BOOST_TEST_MESSAGE("Send bitcoin_send_transaction_process_operation");
+
+         bitcoin_send_transaction_process_operation process_op;
+         process_op.bitcoin_transaction_id = bitcoin_transaction_id_type(0);
+         process_op.payer = db.get_global_properties().parameters.get_son_btc_account_id();
+
+         proposal_create_operation proposal_op;
+         proposal_op.fee_paying_account = alice_id;
+         proposal_op.proposed_ops.push_back(op_wrapper(process_op));
+         uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+         proposal_op.expiration_time = time_point_sec(db.head_block_time().sec_since_epoch() + lifetime);
+
+         trx.operations.push_back(proposal_op);
+         set_expiration(db, trx);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx, ~0);
+         trx.clear();
+      }
+
+      generate_block();
+      BOOST_REQUIRE(idx.size() == 1);
+      obj = idx.find(proposal_id_type(1));
+      BOOST_REQUIRE(obj != idx.end());
+
+
+      {
+         BOOST_TEST_MESSAGE("Send proposal_update_operation");
+
+         proposal_update_operation puo;
+         puo.fee_paying_account = bob_id;
+         puo.proposal = obj->id;
+         puo.active_approvals_to_add = { bob_id };
+
+         trx.operations.push_back(puo);
+         set_expiration(db, trx);
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx, ~0);
+         trx.clear();
+      }
+      generate_block();
+      BOOST_REQUIRE(idx.size() == 1);
+      obj = idx.find(proposal_id_type(1));
+      BOOST_REQUIRE(obj != idx.end());
+
+      BOOST_REQUIRE(btobj != btidx.end());
+      BOOST_REQUIRE(btobj->processed == false);
+
+      {
+         BOOST_TEST_MESSAGE("Send proposal_update_operation");
+
+         proposal_update_operation puo;
+         puo.fee_paying_account = alice_id;
+         puo.proposal = obj->id;
+         puo.active_approvals_to_add = { alice_id };
+
+         trx.operations.push_back(puo);
+         set_expiration(db, trx);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx, ~0);
+         trx.clear();
+      }
+      generate_block();
+      BOOST_REQUIRE(idx.size() == 0);
+
+      BOOST_REQUIRE(btobj != btidx.end());
+      BOOST_REQUIRE(btobj->processed == true);
    }
    FC_LOG_AND_RETHROW()
 }
