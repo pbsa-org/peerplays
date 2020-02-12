@@ -4,6 +4,7 @@
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/sha256.hpp>
+#include <fc/crypto/hex.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -477,7 +478,7 @@ bytes hash_prevouts(const btc_tx& unsigned_tx)
    for(const auto& in: unsigned_tx.vin)
    {
       bytes data;
-      in.to_bytes(data);
+      in.prevout.to_bytes(data);
       hasher.write(reinterpret_cast<const char*>(&data[0]), data.size());
    }
    fc::sha256 res = fc::sha256::hash(hasher.result());
@@ -508,6 +509,47 @@ bytes hash_outputs(const btc_tx& unsigned_tx)
    return bytes(res.data(), res.data() + res.data_size());
 }
 
+bytes get_r(const fc::ecc::compact_signature& s)
+{
+   const unsigned char* start = s.begin();
+   const unsigned char* end = s.begin() + 32;
+   while(*start++ == 0);
+   bytes res;
+   if(*start & 0x80)
+      res.push_back(0);
+   res.insert(res.end(), start, end);
+   return res;
+}
+
+bytes get_s(const fc::ecc::compact_signature& s)
+{
+   const unsigned char* start = s.begin() + 32;
+   const unsigned char* end = s.begin() + 64;
+   while(*start++ == 0);
+   bytes res;
+   if(*start & 0x80)
+      res.push_back(0);
+   res.insert(res.end(), start, end);
+   return res;
+}
+
+bytes to_DER_format(const fc::ecc::compact_signature& s)
+{
+   bytes r_value = get_r(s);
+   bytes s_value = get_s(s);
+   bytes der_signature;
+   der_signature.push_back(0x30);
+   der_signature.push_back(r_value.size() + s_value.size() + 4); // total len
+   der_signature.push_back(0x02);
+   der_signature.push_back(r_value.size());
+   der_signature.insert(der_signature.end(), r_value.begin(), r_value.end());
+   der_signature.push_back(0x02);
+   der_signature.push_back(s_value.size());
+   der_signature.insert(der_signature.end(), s_value.begin(), s_value.end());
+   der_signature.push_back(1); // SIGHASH_ALL
+   return der_signature;
+}
+
 std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
                                                  std::vector<uint64_t> in_amounts,
                                                  const bytes& redeem_script,
@@ -522,8 +564,11 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
    auto cur_amount = in_amounts.begin();
    // pre-calc reused values
    bytes hashPrevouts = hash_prevouts(tx);
+   ilog("hashPrevouts ${h}", ("h", fc::to_hex(reinterpret_cast<char*>(&hashPrevouts[0]), hashPrevouts.size())));
    bytes hashSequence = hash_sequence(tx);
+   ilog("hashSequence ${h}", ("h", fc::to_hex(reinterpret_cast<char*>(&hashSequence[0]), hashSequence.size())));
    bytes hashOutputs = hash_outputs(tx);
+   ilog("hashOutputs ${h}", ("h", fc::to_hex(reinterpret_cast<char*>(&hashOutputs[0]), hashOutputs.size())));
    // calc digest for every input according to BIP143
    // implement SIGHASH_ALL scheme
    for(const auto& in: tx.vin)
@@ -538,6 +583,7 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
       bytes serializedScript;
       WriteBytesStream stream(serializedScript);
       stream.writedata(redeem_script);
+      ilog("Script size: ${s}", ("s", redeem_script.size()));
       hasher.write(reinterpret_cast<const char*>(&serializedScript[0]), serializedScript.size());
       uint64_t amount = *cur_amount++;
       hasher.write(reinterpret_cast<const char*>(&amount), sizeof(amount));
@@ -545,11 +591,14 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
       hasher.write(reinterpret_cast<const char*>(&hashOutputs[0]), hashOutputs.size());
       hasher.write(reinterpret_cast<const char*>(&tx.nLockTime), sizeof(tx.nLockTime));
       // add sigtype SIGHASH_ALL
-      hasher.put(1);
+      uint32_t sigtype = 1;
+      hasher.write(reinterpret_cast<const char*>(&sigtype), sizeof(sigtype));
 
       fc::sha256 digest = fc::sha256::hash(hasher.result());
-      fc::ecc::compact_signature res = priv_key.sign_compact(digest);
-      results.push_back(bytes(res.begin(), res.begin() + res.size()));
+      ilog("Digest ${d}", ("d", fc::to_hex(digest.data(), digest.data_size())));
+      fc::ecc::compact_signature res = priv_key.sign_compact(digest, false);
+      results.push_back(to_DER_format(res));
+      ilog("Signature ${s}", ("s", fc::to_hex(reinterpret_cast<char*>(&results.back()[0]), results.back().size())));
    }
    return results;
 }
@@ -566,9 +615,10 @@ bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, std::vector<uint64_
       if(key)
       {
          std::vector<bytes> signatures = signature_for_raw_transaction(unsigned_tx, in_amounts, redeem_script, *key);
-         FC_ASSERT(signatures.size() == tx.vin.size(), "Invaid signatures number");
+         FC_ASSERT(signatures.size() == tx.vin.size(), "Invalid signatures number");
+         // push signatures in reverse order because script starts to check the top signature on the stack first
          for(unsigned int i = 0; i < tx.vin.size(); i++)
-            tx.vin[i].scriptWitness.push_back(signatures[i]);
+            tx.vin[i].scriptWitness.insert(tx.vin[i].scriptWitness.begin(), signatures[i]);
       }
       else
       {

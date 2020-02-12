@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
 
    // Old PW address
    std::string old_pw = p2wsh_address_from_redeem_script(redeem_old, bitcoin_network::testnet);
-   ilog(old_pw);
+   ilog("First wallet address ${a}", ("a", old_pw));
    // This address was filled with testnet transaction dc66f205a1bb03cd544c832f1d50e6746860c1223b08213f3cc793742e69c07d
    BOOST_REQUIRE(old_pw == "tb1qr2m64awu34wv8l69449ukl4atqylxh77ppdq862kuvfcp740hm7s3a0g6r");
 
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    bytes redeem_new =generate_redeem_script(weights_new);
    // New PW address
    std::string new_pw = p2wsh_address_from_redeem_script(redeem_new, bitcoin_network::testnet);
-   ilog(new_pw);
+   ilog("Second wallet address ${a}", ("a", new_pw));
    BOOST_REQUIRE(new_pw == "tb1qd6qfa9cu0gexk2y5xarlw56j542uultr7pepszc6473ksyrtna2q006kzc");
 
    // try to move funds from old wallet to new one
@@ -102,11 +102,11 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    tx.vout.push_back(output);
    bytes unsigned_tx;
    tx.to_bytes(unsigned_tx);
-   ilog(fc::to_hex(reinterpret_cast<char*>(&unsigned_tx[0]), unsigned_tx.size()));
+   ilog("Unsigned tx: [${tx}]", ("tx", fc::to_hex(reinterpret_cast<char*>(&unsigned_tx[0]), unsigned_tx.size())));
    std::vector<uint64_t> in_amounts({20000});
    std::vector<fc::optional<fc::ecc::private_key>> keys_to_sign;
    for(auto key: priv_old)
       keys_to_sign.push_back(fc::optional<fc::ecc::private_key>(key));
    bytes signed_tx =sign_pw_transfer_transaction(unsigned_tx, in_amounts, redeem_old, keys_to_sign);
-   ilog(fc::to_hex(reinterpret_cast<char*>(&signed_tx[0]), signed_tx.size()));
+   ilog("Signed tx: [${tx}]", ("tx", fc::to_hex(reinterpret_cast<char*>(&signed_tx[0]), signed_tx.size())));
 }
