@@ -47,8 +47,6 @@ class peerplays_sidechain_plugin_impl
       void recreate_primary_wallet();
       void process_deposits();
       //void process_withdrawals();
-      void on_block_applied( const signed_block& b );
-      void on_objects_new(const vector<object_id_type>& new_object_ids);
 
    private:
       peerplays_sidechain_plugin& plugin;
@@ -61,6 +59,9 @@ class peerplays_sidechain_plugin_impl
       std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
       std::set<chain::son_id_type> _sons;
       fc::future<void> _heartbeat_task;
+
+      void on_block_applied( const signed_block& b );
+      void on_objects_new(const vector<object_id_type>& new_object_ids);
 
 };
 

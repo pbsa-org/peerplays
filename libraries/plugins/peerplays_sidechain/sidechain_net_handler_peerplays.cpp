@@ -22,6 +22,8 @@ namespace graphene { namespace peerplays_sidechain {
 sidechain_net_handler_peerplays::sidechain_net_handler_peerplays(peerplays_sidechain_plugin& _plugin, const boost::program_options::variables_map& options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::peerplays;
+   plugin.database().applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
+   plugin.database().changed_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_changed_objects(ids); } );
 }
 
 sidechain_net_handler_peerplays::~sidechain_net_handler_peerplays() {
@@ -47,8 +49,28 @@ std::string sidechain_net_handler_peerplays::send_transaction( const std::string
 }
 
 void sidechain_net_handler_peerplays::handle_event( const std::string& event_data ) {
-   ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_event");
+   ilog("peerplays sidechain plugin:  sidechain_net_handler_peerplays::handle_event");
    ilog("                             event_data: ${event_data}", ("event_data", event_data));
+}
+
+void sidechain_net_handler_peerplays::on_block_applied(const signed_block& b) {
+    for (const auto& trx: b.transactions) {
+        for (auto op: trx.operations) {
+            ilog("sidechain_net_handler_peerplays:  operation detected ${op}", ("op", op));
+        }
+    }
+}
+
+void sidechain_net_handler_peerplays::on_changed_objects(const vector<object_id_type>& changed_object_ids) {
+    for (auto object_id: changed_object_ids) {
+        const object* obj = plugin.database().find_object(object_id);
+
+        const chain::account_balance_object * abo = dynamic_cast<const chain::account_balance_object*>(obj);
+        if (abo != nullptr) {
+           ilog("sidechain_net_handler_peerplays:  account_balance_object changed, id ${id}", ("id", abo->id));
+           continue;
+        }
+    }
 }
 
 } } // graphene::peerplays_sidechain
