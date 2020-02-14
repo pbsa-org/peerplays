@@ -308,11 +308,6 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
    }
 }
 
-bool sidechain_net_handler_bitcoin::connection_is_not_defined() const
-{
-   return listener->connection_is_not_defined() && bitcoin_client->connection_is_not_defined();
-}
-
 std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys )
 {
    return bitcoin_client->add_multisig_address(public_keys);

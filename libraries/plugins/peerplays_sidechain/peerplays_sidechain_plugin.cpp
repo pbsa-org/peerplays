@@ -55,6 +55,7 @@ class peerplays_sidechain_plugin_impl
 
       bool config_ready_son;
       bool config_ready_bitcoin;
+      bool config_ready_peerplays;
 
       std::unique_ptr<peerplays_sidechain::sidechain_net_manager> net_manager;
       std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
@@ -67,6 +68,7 @@ peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidec
       plugin(_plugin),
       config_ready_son(false),
       config_ready_bitcoin(false),
+      config_ready_peerplays(false),
       net_manager(nullptr)
 {
 }
@@ -177,6 +179,14 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
    //   wlog("Haven't set up Ethereum sidechain parameters");
    //}
 
+   config_ready_peerplays = true;
+   if (config_ready_peerplays) {
+      net_manager->create_handler(sidechain_type::peerplays, options);
+      ilog("Peerplays sidechain handler created");
+   } else {
+      wlog("Haven't set up Peerplays sidechain parameters");
+   }
+
    if (!(config_ready_bitcoin /*&& config_ready_ethereum*/)) {
       wlog("Haven't set up any sidechain parameters");
       throw;
@@ -200,6 +210,10 @@ void peerplays_sidechain_plugin_impl::plugin_startup()
    //if (config_ready_ethereum) {
    //   ilog("Ethereum sidechain handler running");
    //}
+
+   if (config_ready_peerplays) {
+      ilog("Peerplays sidechain handler running");
+   }
 }
 
 std::set<chain::son_id_type>& peerplays_sidechain_plugin_impl::get_sons()

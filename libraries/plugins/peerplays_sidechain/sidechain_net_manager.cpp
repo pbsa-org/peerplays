@@ -3,6 +3,7 @@
 #include <fc/log/logger.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_handler_bitcoin.hpp>
+#include <graphene/peerplays_sidechain/sidechain_net_handler_peerplays.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -22,6 +23,12 @@ bool sidechain_net_manager::create_handler(peerplays_sidechain::sidechain_type s
    switch (sidechain) {
       case sidechain_type::bitcoin: {
          std::unique_ptr<sidechain_net_handler> h = std::unique_ptr<sidechain_net_handler>(new sidechain_net_handler_bitcoin(plugin, options));
+         net_handlers.push_back(std::move(h));
+         ret_val = true;
+         break;
+      }
+      case sidechain_type::peerplays: {
+         std::unique_ptr<sidechain_net_handler> h = std::unique_ptr<sidechain_net_handler>(new sidechain_net_handler_peerplays(plugin, options));
          net_handlers.push_back(std::move(h));
          ret_val = true;
          break;
