@@ -21,6 +21,9 @@ public:
    void send_btc_tx( const std::string& tx_hex );
    std::string add_multisig_address( const std::vector<std::string> public_keys );
    bool connection_is_not_defined() const;
+   std::string create_raw_transaction(const sidechain_event_data& sed, const std::string& pw_address);
+   std::string sign_raw_transaction_with_wallet(const std::string& tx_hash);
+   std::string sign_raw_transaction_with_privkey(const std::string& tx_hash, const std::string& private_key);
 
 private:
 
@@ -68,6 +71,7 @@ public:
    std::string transfer( const std::string& from, const std::string& to, const uint64_t amount );
    std::string sign_transaction( const std::string& transaction );
    std::string send_transaction( const std::string& transaction );
+   std::string transfer_deposit_to_primary_wallet (const sidechain_event_data& sed);
 
 private:
    std::string ip;

@@ -55,6 +55,8 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
    const chain::global_property_object& gpo = database.get_global_properties();
 
+   transfer_deposit_to_primary_wallet(sed);
+
    son_wallet_transfer_create_operation op;
    op.payer = gpo.parameters.get_son_btc_account_id();
    op.timestamp = sed.timestamp;

@@ -110,6 +110,8 @@ void bitcoin_rpc_client::send_btc_tx( const std::string& tx_hex )
    const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"send_tx\", \"method\": \"sendrawtransaction\", \"params\": [") +
                      std::string("\"") + tx_hex + std::string("\"") + std::string("] }");
 
+   ilog(body);
+
    const auto reply = send_post_request( body );
 
    if( reply.body.empty() )
@@ -165,6 +167,79 @@ std::string bitcoin_rpc_client::add_multisig_address( const std::vector<std::str
    if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
       wlog( "BTC multisig address creation failed! Reply: ${msg}", ("msg", reply_str) );
    }
+   return "";
+}
+
+std::string bitcoin_rpc_client::create_raw_transaction(const sidechain_event_data& sed, const std::string& pw_address)
+{
+   std::string txid = sed.sidechain_transaction_id;
+   std::string suid = sed.sidechain_uid;
+   std::string nvout = suid.substr(suid.find_last_of("-")+1);
+   int64_t deposit_amount = sed.sidechain_amount;
+   deposit_amount -= 1000; // Deduct minimum relay fee
+   double transfer_amount = (double)deposit_amount/100000000.0;
+
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"createrawtransaction\", \"method\": \"createrawtransaction\", \"params\": [");
+   std::string params = "";
+   std::string input = std::string("[{\"txid\":\"") + txid + std::string("\",\"vout\":")+ nvout +std::string("}]");
+   std::string output = std::string("[{\"") + pw_address + std::string("\":") + std::to_string(transfer_amount) + std::string("}]");
+   params = params + input + std::string(",") + output;
+   body = body + params + std::string("]}");
+
+   ilog(body);
+
+   const auto reply = send_post_request( body );
+
+   if( reply.body.empty() )
+      return "";
+
+   std::string reply_str( reply.body.begin(), reply.body.end() );
+
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   if( reply.status == 200 ) {
+      return reply_str;
+   }
+
+   if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
+      wlog( "BTC createrawtransaction failed! Reply: ${msg}", ("msg", reply_str) );
+   }
+   return "";
+}
+
+std::string bitcoin_rpc_client::sign_raw_transaction_with_wallet(const std::string& tx_hash)
+{
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"signrawtransactionwithwallet\", \"method\": \"signrawtransactionwithwallet\", \"params\": [");
+   std::string params = "\"" + tx_hash + "\"";
+   body = body + params + std::string("]}");
+
+   ilog(body);
+
+   const auto reply = send_post_request( body );
+
+   if( reply.body.empty() )
+      return "";
+
+   std::string reply_str( reply.body.begin(), reply.body.end() );
+
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   if( reply.status == 200 ) {
+      return reply_str;
+   }
+
+   if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
+      wlog( "BTC sign_raw_transaction_with_wallet failed! Reply: ${msg}", ("msg", reply_str) );
+   }
+   return "";
+}
+
+std::string bitcoin_rpc_client::sign_raw_transaction_with_privkey(const std::string& tx_hash, const std::string& private_key)
+{
    return "";
 }
 
@@ -331,6 +406,52 @@ std::string sidechain_net_handler_bitcoin::sign_transaction( const std::string& 
 std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& transaction )
 {
    return "";
+}
+
+std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( const sidechain_event_data& sed )
+{
+   const auto& idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+   auto obj = idx.rbegin();
+   if (obj == idx.rend() || obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) {
+       return "";
+   }
+
+   std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
+
+   std::stringstream ss(pw_address_json);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   std::string pw_address = json.get<std::string>("address");
+
+   std::string reply_str = bitcoin_client->create_raw_transaction(sed, pw_address);
+   ilog(reply_str);
+
+   std::stringstream ss_utx(reply_str);
+   boost::property_tree::ptree pt;
+   boost::property_tree::read_json( ss_utx, pt );
+
+   if( !(pt.count( "error" ) && pt.get_child( "error" ).empty()) || !pt.count("result") ) {
+      return "";
+   }
+
+   std::string unsigned_tx_hex = pt.get<std::string>("result");
+
+   reply_str = bitcoin_client->sign_raw_transaction_with_wallet(unsigned_tx_hex);
+   ilog(reply_str);
+   std::stringstream ss_stx(reply_str);
+   boost::property_tree::ptree stx_json;
+   boost::property_tree::read_json( ss_stx, stx_json );
+
+   if( !(stx_json.count( "error" ) && stx_json.get_child( "error" ).empty()) || !stx_json.count("result") || !stx_json.get_child("result").count("hex") ) {
+      return "";
+   }
+
+   std::string signed_tx_hex = stx_json.get<std::string>("result.hex");
+
+   bitcoin_client->send_btc_tx(signed_tx_hex);
+
+   return reply_str;
 }
 
 void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data ) {
