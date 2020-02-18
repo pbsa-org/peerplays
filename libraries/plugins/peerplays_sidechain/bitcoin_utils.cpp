@@ -4,11 +4,28 @@
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/sha256.hpp>
-#include <fc/crypto/hex.hpp>
+#include <secp256k1.h>
 
 namespace graphene { namespace peerplays_sidechain {
 
 static const unsigned char OP_0 = 0x00;
+static const unsigned char OP_1 = 0x51;
+static const unsigned char OP_2 = 0x52;
+static const unsigned char OP_3 = 0x53;
+static const unsigned char OP_4 = 0x54;
+static const unsigned char OP_5 = 0x55;
+static const unsigned char OP_6 = 0x56;
+static const unsigned char OP_7 = 0x57;
+static const unsigned char OP_8 = 0x58;
+static const unsigned char OP_9 = 0x59;
+static const unsigned char OP_10 = 0x5a;
+static const unsigned char OP_11 = 0x5b;
+static const unsigned char OP_12 = 0x5c;
+static const unsigned char OP_13 = 0x5d;
+static const unsigned char OP_14 = 0x5e;
+static const unsigned char OP_15 = 0x5f;
+static const unsigned char OP_16 = 0x60;
+
 static const unsigned char OP_IF = 0x63;
 static const unsigned char OP_ENDIF = 0x68;
 static const unsigned char OP_SWAP = 0x7c;
@@ -327,11 +344,52 @@ void add_data_to_script(bytes& script, const bytes& data)
    str.writedata(data);
 }
 
+void add_number_to_script(bytes& script, unsigned char data)
+{
+   WriteBytesStream str(script);
+   if(data == 0)
+      str.put(OP_0);
+   else if(data == 1)
+      str.put(OP_1);
+   else if(data == 2)
+      str.put(OP_2);
+   else if(data == 3)
+      str.put(OP_3);
+   else if(data == 4)
+      str.put(OP_4);
+   else if(data == 5)
+      str.put(OP_5);
+   else if(data == 6)
+      str.put(OP_6);
+   else if(data == 7)
+      str.put(OP_7);
+   else if(data == 8)
+      str.put(OP_8);
+   else if(data == 9)
+      str.put(OP_9);
+   else if(data == 10)
+      str.put(OP_10);
+   else if(data == 11)
+      str.put(OP_11);
+   else if(data == 12)
+      str.put(OP_12);
+   else if(data == 13)
+      str.put(OP_13);
+   else if(data == 14)
+      str.put(OP_14);
+   else if(data == 15)
+      str.put(OP_15);
+   else if(data == 16)
+      str.put(OP_16);
+   else
+      add_data_to_script(script, {data});
+}
+
 bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int> > key_data)
 {
    int total_weight = 0;
    bytes result;
-   add_data_to_script(result, {0});
+   add_number_to_script(result, 0);
    for(auto& p: key_data)
    {
       total_weight += p.second;
@@ -340,12 +398,12 @@ bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int> > k
       add_data_to_script(result, bytes(raw_data.begin(), raw_data.begin() + raw_data.size()));
       result.push_back(OP_CHECKSIG);
       result.push_back(OP_IF);
-      add_data_to_script(result, {static_cast<unsigned char>(p.second)});
+      add_number_to_script(result, static_cast<unsigned char>(p.second));
       result.push_back(OP_ADD);
       result.push_back(OP_ENDIF);
    }
    int threshold_weight = 2 * total_weight / 3;
-   add_data_to_script(result, {static_cast<unsigned char>(threshold_weight)});
+   add_number_to_script(result, static_cast<unsigned char>(threshold_weight));
    result.push_back(OP_GREATERTHAN);
    return result;
 }
@@ -509,45 +567,23 @@ bytes hash_outputs(const btc_tx& unsigned_tx)
    return bytes(res.data(), res.data() + res.data_size());
 }
 
-bytes get_r(const fc::ecc::compact_signature& s)
-{
-   const unsigned char* start = s.begin();
-   const unsigned char* end = s.begin() + 32;
-   while(*start++ == 0);
-   bytes res;
-   if(*start & 0x80)
-      res.push_back(0);
-   res.insert(res.end(), start, end);
-   return res;
+const secp256k1_context_t* btc_get_context() {
+    static secp256k1_context_t* ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN );
+    return ctx;
 }
 
-bytes get_s(const fc::ecc::compact_signature& s)
+bytes der_sign(const fc::ecc::private_key& priv_key, const fc::sha256& digest)
 {
-   const unsigned char* start = s.begin() + 32;
-   const unsigned char* end = s.begin() + 64;
-   while(*start++ == 0);
-   bytes res;
-   if(*start & 0x80)
-      res.push_back(0);
-   res.insert(res.end(), start, end);
-   return res;
-}
-
-bytes to_DER_format(const fc::ecc::compact_signature& s)
-{
-   bytes r_value = get_r(s);
-   bytes s_value = get_s(s);
-   bytes der_signature;
-   der_signature.push_back(0x30);
-   der_signature.push_back(r_value.size() + s_value.size() + 4); // total len
-   der_signature.push_back(0x02);
-   der_signature.push_back(r_value.size());
-   der_signature.insert(der_signature.end(), r_value.begin(), r_value.end());
-   der_signature.push_back(0x02);
-   der_signature.push_back(s_value.size());
-   der_signature.insert(der_signature.end(), s_value.begin(), s_value.end());
-   der_signature.push_back(1); // SIGHASH_ALL
-   return der_signature;
+   fc::ecc::signature result;
+   int size = result.size();
+   FC_ASSERT( secp256k1_ecdsa_sign( btc_get_context(),
+                                    (unsigned char*) digest.data(),
+                                    (unsigned char*) result.begin(),
+                                    &size,
+                                    (unsigned char*) priv_key.get_secret().data(),
+                                    secp256k1_nonce_function_rfc6979,
+                                    nullptr));
+   return bytes(result.begin(), result.begin() + size);
 }
 
 std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
@@ -564,11 +600,8 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
    auto cur_amount = in_amounts.begin();
    // pre-calc reused values
    bytes hashPrevouts = hash_prevouts(tx);
-   ilog("hashPrevouts ${h}", ("h", fc::to_hex(reinterpret_cast<char*>(&hashPrevouts[0]), hashPrevouts.size())));
    bytes hashSequence = hash_sequence(tx);
-   ilog("hashSequence ${h}", ("h", fc::to_hex(reinterpret_cast<char*>(&hashSequence[0]), hashSequence.size())));
    bytes hashOutputs = hash_outputs(tx);
-   ilog("hashOutputs ${h}", ("h", fc::to_hex(reinterpret_cast<char*>(&hashOutputs[0]), hashOutputs.size())));
    // calc digest for every input according to BIP143
    // implement SIGHASH_ALL scheme
    for(const auto& in: tx.vin)
@@ -583,7 +616,6 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
       bytes serializedScript;
       WriteBytesStream stream(serializedScript);
       stream.writedata(redeem_script);
-      ilog("Script size: ${s}", ("s", redeem_script.size()));
       hasher.write(reinterpret_cast<const char*>(&serializedScript[0]), serializedScript.size());
       uint64_t amount = *cur_amount++;
       hasher.write(reinterpret_cast<const char*>(&amount), sizeof(amount));
@@ -595,10 +627,11 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
       hasher.write(reinterpret_cast<const char*>(&sigtype), sizeof(sigtype));
 
       fc::sha256 digest = fc::sha256::hash(hasher.result());
-      ilog("Digest ${d}", ("d", fc::to_hex(digest.data(), digest.data_size())));
-      fc::ecc::compact_signature res = priv_key.sign_compact(digest, false);
-      results.push_back(to_DER_format(res));
-      ilog("Signature ${s}", ("s", fc::to_hex(reinterpret_cast<char*>(&results.back()[0]), results.back().size())));
+      //std::vector<char> res = priv_key.sign(digest);
+      //bytes s_data(res.begin(), res.end());
+      bytes s_data = der_sign(priv_key, digest);
+      s_data.push_back(1);
+      results.push_back(s_data);
    }
    return results;
 }
