@@ -515,9 +515,9 @@ std::string p2wsh_address_from_redeem_script(const bytes& script, bitcoin_networ
    case(regtest):
       return segwit_addr_encode("tb", 0, wp);
    default:
-      FC_THROW("Unknown bitcoin network type [${type}]", ("type", network));
+      FC_THROW("Unknown bitcoin network type");
    }
-   FC_THROW("Unknown bitcoin network type [${type}]", ("type", network));
+   FC_THROW("Unknown bitcoin network type");
 }
 
 bytes lock_script_for_redeem_script(const bytes &script)
