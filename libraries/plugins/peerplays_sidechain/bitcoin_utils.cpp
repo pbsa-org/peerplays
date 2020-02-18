@@ -636,13 +636,11 @@ std::vector<bytes> signature_for_raw_transaction(const bytes& unsigned_tx,
    return results;
 }
 
-
 bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, std::vector<uint64_t> in_amounts, const bytes& redeem_script, const std::vector<fc::optional<fc::ecc::private_key> > &priv_keys)
 {
    btc_tx tx;
    tx.fill_from_bytes(unsigned_tx);
-   fc::ecc::compact_signature dummy_sig;
-   bytes dummy_data(dummy_sig.begin(), dummy_sig.begin() + dummy_sig.size());
+   bytes dummy_data;
    for(auto key: priv_keys)
    {
       if(key)
@@ -666,6 +664,47 @@ bytes sign_pw_transfer_transaction(const bytes &unsigned_tx, std::vector<uint64_
    }
 
    tx.hasWitness = true;
+   bytes ret;
+   tx.to_bytes(ret);
+   return ret;
+}
+
+bytes add_dummy_signatures_for_pw_transfer(const bytes& unsigned_tx,
+                                           const bytes& redeem_script,
+                                           unsigned int key_count)
+{
+   btc_tx tx;
+   tx.fill_from_bytes(unsigned_tx);
+
+   bytes dummy_data;
+   for(auto& in: tx.vin)
+   {
+      for(unsigned i = 0; i < key_count; i++)
+         in.scriptWitness.push_back(dummy_data);
+      in.scriptWitness.push_back(redeem_script);
+   }
+
+   tx.hasWitness = true;
+   bytes ret;
+   tx.to_bytes(ret);
+   return ret;
+}
+
+bytes partially_sign_pw_transfer_transaction(const bytes& partially_signed_tx,
+                                   std::vector<uint64_t> in_amounts,
+                                   const fc::ecc::private_key& priv_key,
+                                   unsigned int key_idx)
+{
+   btc_tx tx;
+   tx.fill_from_bytes(partially_signed_tx);
+   FC_ASSERT(tx.vin.size() > 0);
+   bytes redeem_script = tx.vin[0].scriptWitness.back();
+   std::vector<bytes> signatures = signature_for_raw_transaction(partially_signed_tx, in_amounts, redeem_script, priv_key);
+   FC_ASSERT(signatures.size() == tx.vin.size(), "Invalid signatures number");
+   // push signatures in reverse order because script starts to check the top signature on the stack first
+   unsigned witness_idx = tx.vin[0].scriptWitness.size() - 2 - key_idx;
+   for(unsigned int i = 0; i < tx.vin.size(); i++)
+      tx.vin[i].scriptWitness[witness_idx] = signatures[i];
    bytes ret;
    tx.to_bytes(ret);
    return ret;

@@ -13,6 +13,8 @@ enum bitcoin_network {
 bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int> > key_data);
 std::string p2wsh_address_from_redeem_script(const bytes& script, bitcoin_network network = mainnet);
 bytes lock_script_for_redeem_script(const bytes& script);
+
+
 /*
  * unsigned_tx - tx,  all inputs of which are spends of the PW P2SH address
  * returns signed transaction
@@ -21,6 +23,15 @@ bytes sign_pw_transfer_transaction(const bytes& unsigned_tx,
                                    std::vector<uint64_t> in_amounts,
                                    const bytes& redeem_script,
                                    const std::vector<fc::optional<fc::ecc::private_key>>& priv_keys);
+
+bytes add_dummy_signatures_for_pw_transfer(const bytes& unsigned_tx,
+                                           const bytes& redeem_script,
+                                           unsigned int key_count);
+
+bytes partially_sign_pw_transfer_transaction(const bytes& partially_signed_tx,
+                                   std::vector<uint64_t> in_amounts,
+                                   const fc::ecc::private_key& priv_key,
+                                   unsigned int key_idx);
 
 struct btc_outpoint
 {
