@@ -282,7 +282,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             boost::property_tree::json_parser::write_json(res, pt.get_child("result"));
 
             son_wallet_update_operation op;
-            op.payer = gpo.parameters.get_son_btc_account_id();
+            op.payer = GRAPHENE_SON_ACCOUNT;
             op.son_wallet_id = (*obj).id;
             op.sidechain = sidechain_type::bitcoin;
             op.address = res.str();
@@ -329,9 +329,6 @@ std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& 
 }
 
 void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data ) {
-   ilog("peerplays sidechain plugin:  sidechain_net_handler_bitcoin::handle_event");
-   ilog("                             event_data: ${event_data}", ("event_data", event_data));
-
    std::string block = bitcoin_client->receive_full_block( event_data );
    if( block != "" ) {
       const auto& vins = extract_info_from_block( block );
@@ -354,9 +351,11 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
          sed.sidechain_transaction_id = v.out.hash_tx;
          sed.sidechain_from = "";
          sed.sidechain_to = v.address;
+         sed.sidechain_currency = "BTC";
          sed.sidechain_amount = v.out.amount;
          sed.peerplays_from = addr_itr->sidechain_address_account;
          sed.peerplays_to = GRAPHENE_SON_ACCOUNT;
+         sed.peerplays_asset = asset(sed.sidechain_amount / 1000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
          sidechain_event_data_received(sed);
       }
    }

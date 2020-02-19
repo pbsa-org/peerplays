@@ -23,7 +23,6 @@ sidechain_net_handler_peerplays::sidechain_net_handler_peerplays(peerplays_sidec
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::peerplays;
    plugin.database().applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
-   plugin.database().changed_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_changed_objects(ids); } );
 }
 
 sidechain_net_handler_peerplays::~sidechain_net_handler_peerplays() {
@@ -48,27 +47,45 @@ std::string sidechain_net_handler_peerplays::send_transaction( const std::string
    return "";
 }
 
-void sidechain_net_handler_peerplays::handle_event( const std::string& event_data ) {
-   ilog("peerplays sidechain plugin:  sidechain_net_handler_peerplays::handle_event");
-   ilog("                             event_data: ${event_data}", ("event_data", event_data));
-}
-
 void sidechain_net_handler_peerplays::on_block_applied(const signed_block& b) {
     for (const auto& trx: b.transactions) {
+        size_t operation_index = -1;
         for (auto op: trx.operations) {
-            ilog("sidechain_net_handler_peerplays:  operation detected ${op}", ("op", op));
-        }
-    }
-}
+            operation_index = operation_index + 1;
+            if (op.which() == operation::tag<transfer_operation>::value){
+                transfer_operation transfer_op = op.get<transfer_operation>();
+                if (transfer_op.to != GRAPHENE_SON_ACCOUNT) {
+                    continue;
+                }
 
-void sidechain_net_handler_peerplays::on_changed_objects(const vector<object_id_type>& changed_object_ids) {
-    for (auto object_id: changed_object_ids) {
-        const object* obj = plugin.database().find_object(object_id);
+                std::stringstream ss;
+                ss << "peerplays" << "-" << trx.id().str() << "-" << operation_index;
+                std::string sidechain_uid = ss.str();
 
-        const chain::account_balance_object * abo = dynamic_cast<const chain::account_balance_object*>(obj);
-        if (abo != nullptr) {
-           ilog("sidechain_net_handler_peerplays:  account_balance_object changed, id ${id}", ("id", abo->id));
-           continue;
+                sidechain_event_data sed;
+                sed.timestamp = plugin.database().head_block_time();
+                sed.sidechain = sidechain_type::peerplays;
+                sed.sidechain_uid = sidechain_uid;
+                sed.sidechain_transaction_id = trx.id().str();
+                sed.sidechain_from = fc::to_string(transfer_op.from.space_id) + "." + fc::to_string(transfer_op.from.type_id) + "." + fc::to_string((uint64_t)transfer_op.from.instance);
+                sed.sidechain_to = fc::to_string(transfer_op.to.space_id) + "." + fc::to_string(transfer_op.to.type_id) + "." + fc::to_string((uint64_t)transfer_op.to.instance);
+                sed.sidechain_currency = transfer_op.amount.asset_id(plugin.database()).symbol;
+                sed.sidechain_amount = transfer_op.amount.amount;
+                if (transfer_op.amount.asset_id == asset_id_type(0)) {
+                    // User is returning CORE/TEST to the SON wallet
+                    // This is start of withdrawal process
+                    // We need to return BTC
+
+                } else {
+                    // User deposits other Peerplays asset
+                    // We need to pay CORE/TEST
+                    sed.peerplays_from = transfer_op.from;
+                    sed.peerplays_to = transfer_op.to;
+                    // We should calculate exchange rate between CORE/TEST and other Peerplays asset
+                    sed.peerplays_asset = asset(transfer_op.amount.amount); // It i 1:1 for now
+                }
+                sidechain_event_data_received(sed);
+            }
         }
     }
 }

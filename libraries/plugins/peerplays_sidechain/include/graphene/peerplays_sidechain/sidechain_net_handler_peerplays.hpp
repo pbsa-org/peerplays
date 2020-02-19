@@ -22,9 +22,7 @@ public:
 
 private:
 
-    void handle_event( const std::string& event_data );
     void on_block_applied(const signed_block& b);
-    void on_changed_objects(const vector<object_id_type>& changed_object_ids);
 
 };
 

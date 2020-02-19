@@ -322,7 +322,7 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals()
       auto son_obj = idx.find( my_son_id );
 
       chain::son_report_down_operation son_down_op;
-      son_down_op.payer = gpo.parameters.get_son_btc_account_id();
+      son_down_op.payer = GRAPHENE_SON_ACCOUNT;
       son_down_op.son_id = son_id;
       son_down_op.down_ts = last_active_ts;
 
@@ -389,7 +389,7 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
          if (plugin.is_active_son(son_id)) {
 
             son_wallet_transfer_process_operation p_op;
-            p_op.payer = gpo.parameters.get_son_btc_account_id();
+            p_op.payer = GRAPHENE_SON_ACCOUNT;
             p_op.son_wallet_transfer_id = swto.id;
 
             proposal_create_operation proposal_op;

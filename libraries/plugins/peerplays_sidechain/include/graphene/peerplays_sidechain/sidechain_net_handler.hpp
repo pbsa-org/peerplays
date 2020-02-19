@@ -32,8 +32,6 @@ protected:
     virtual std::string sign_transaction( const std::string& transaction ) = 0;
     virtual std::string send_transaction( const std::string& transaction ) = 0;
 
-    virtual void handle_event( const std::string& event_data ) = 0;
-
 private:
 
 };

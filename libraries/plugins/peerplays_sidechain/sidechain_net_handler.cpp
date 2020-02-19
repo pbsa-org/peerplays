@@ -49,24 +49,27 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    ilog( "  sidechain_transaction_id: ${transaction_id}", ( "transaction_id", sed.sidechain_transaction_id ) );
    ilog( "  sidechain_from:           ${from}", ( "from", sed.sidechain_from ) );
    ilog( "  sidechain_to:             ${to}", ( "to", sed.sidechain_to ) );
+   ilog( "  sidechain_currency:       ${currency}", ( "currency", sed.sidechain_currency ) );
    ilog( "  sidechain_amount:         ${amount}", ( "amount", sed.sidechain_amount ) );
    ilog( "  peerplays_from:           ${peerplays_from}", ( "peerplays_from", sed.peerplays_from ) );
    ilog( "  peerplays_to:             ${peerplays_to}", ( "peerplays_to", sed.peerplays_to ) );
+   ilog( "  peerplays_asset:          ${peerplays_asset}", ( "peerplays_asset", sed.peerplays_asset ) );
 
    const chain::global_property_object& gpo = database.get_global_properties();
 
    son_wallet_transfer_create_operation op;
-   op.payer = gpo.parameters.get_son_btc_account_id();
+   op.payer = GRAPHENE_SON_ACCOUNT;
    op.timestamp = sed.timestamp;
    op.sidechain = sed.sidechain;
    op.sidechain_uid = sed.sidechain_uid;
    op.sidechain_transaction_id = sed.sidechain_transaction_id;
    op.sidechain_from = sed.sidechain_from;
    op.sidechain_to = sed.sidechain_to;
+   op.sidechain_currency = sed.sidechain_currency;
    op.sidechain_amount = sed.sidechain_amount;
    op.peerplays_from = sed.peerplays_from;
    op.peerplays_to = sed.peerplays_to;
-   op.peerplays_amount = asset(sed.sidechain_amount / 1000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
+   op.peerplays_asset = sed.peerplays_asset;
 
    for (son_id_type son_id : plugin.get_sons()) {
       if (plugin.is_active_son(son_id)) {
