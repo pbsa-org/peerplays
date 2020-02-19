@@ -152,7 +152,6 @@ database_fixture::database_fixture()
    else {
       auto ahplugin = app.register_plugin<graphene::account_history::account_history_plugin>();
       app.enable_plugin("affiliate_stats");
-      app.enable_plugin("market_history");
       ahplugin->plugin_set_app(&app);
       ahplugin->plugin_initialize(options);
       ahplugin->plugin_startup();
