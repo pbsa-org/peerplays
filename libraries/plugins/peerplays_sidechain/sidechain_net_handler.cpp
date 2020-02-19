@@ -57,7 +57,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
    const chain::global_property_object& gpo = database.get_global_properties();
 
-   son_wallet_transfer_create_operation op;
+   son_wallet_deposit_create_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
    op.timestamp = sed.timestamp;
    op.sidechain = sed.sidechain;

@@ -440,13 +440,13 @@ void database::update_active_sons()
          map<account_id_type, uint64_t> weights;
          a.active.weight_threshold = 0;
          a.active.account_auths.clear();
-   
+
          for( const son_object& son : sons )
          {
             weights.emplace(son.son_account, _vote_tally_buffer[son.vote_id]);
             total_votes += _vote_tally_buffer[son.vote_id];
          }
-   
+
          // total_votes is 64 bits. Subtract the number of leading low bits from 64 to get the number of useful bits,
          // then I want to keep the most significant 16 bits of what's left.
          int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
