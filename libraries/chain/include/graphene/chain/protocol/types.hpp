@@ -150,6 +150,7 @@ namespace graphene { namespace chain {
       son_wallet_object_type,
       son_wallet_transfer_object_type,
       sidechain_address_object_type,
+      bitcoin_transaction_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -216,6 +217,7 @@ namespace graphene { namespace chain {
    class son_wallet_object;
    class son_wallet_transfer_object;
    class sidechain_address_object;
+   class bitcoin_transaction_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -247,6 +249,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, son_wallet_object_type,         son_wallet_object>            son_wallet_id_type;
    typedef object_id< protocol_ids, son_wallet_transfer_object_type, son_wallet_transfer_object>  son_wallet_transfer_id_type;
    typedef object_id< protocol_ids, sidechain_address_object_type,  sidechain_address_object>     sidechain_address_id_type;
+   typedef object_id< protocol_ids, bitcoin_transaction_object_type,bitcoin_transaction_object>   bitcoin_transaction_id_type;
 
    // implementation types
    class global_property_object;
@@ -436,6 +439,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (son_wallet_object_type)
                  (son_wallet_transfer_object_type)
                  (sidechain_address_object_type)
+                 (bitcoin_transaction_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
@@ -512,6 +516,7 @@ FC_REFLECT_TYPENAME( graphene::chain::son_proposal_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::son_wallet_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::son_wallet_transfer_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::sidechain_address_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::bitcoin_transaction_id_type )
 
 
 FC_REFLECT( graphene::chain::void_t, )

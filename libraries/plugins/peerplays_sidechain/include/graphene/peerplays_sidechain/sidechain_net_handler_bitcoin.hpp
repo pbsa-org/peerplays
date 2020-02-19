@@ -11,6 +11,14 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
+class btc_txout
+{
+public:
+   std::string txid_;
+   unsigned int out_num_;
+   double amount_;
+};
+
 class bitcoin_rpc_client {
 public:
    bitcoin_rpc_client( std::string _ip, uint32_t _rpc, std::string _user, std::string _password) ;
@@ -24,6 +32,9 @@ public:
    std::string create_raw_transaction(const sidechain_event_data& sed, const std::string& pw_address);
    std::string sign_raw_transaction_with_wallet(const std::string& tx_hash);
    std::string sign_raw_transaction_with_privkey(const std::string& tx_hash, const std::string& private_key);
+   void import_address( const std::string& address_or_script);
+   std::vector<btc_txout> list_unspent();
+   std::string prepare_tx(const std::vector<btc_txout>& ins, const fc::flat_map<std::string, double> outs);
 
 private:
 
@@ -79,6 +90,7 @@ private:
    uint32_t rpc_port;
    std::string rpc_user;
    std::string rpc_password;
+   std::map<std::string, std::string> _private_keys;
 
    std::unique_ptr<zmq_listener> listener;
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;

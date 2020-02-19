@@ -49,6 +49,7 @@
 #include <graphene/chain/protocol/sidechain_address.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/protocol/son_wallet_transfer.hpp>
+#include <graphene/chain/protocol/sidechain_transaction.hpp>
 
 namespace graphene { namespace chain {
 
@@ -152,7 +153,10 @@ namespace graphene { namespace chain {
             son_wallet_transfer_process_operation,
             sidechain_address_add_operation,
             sidechain_address_update_operation,
-            sidechain_address_delete_operation
+            sidechain_address_delete_operation,
+            bitcoin_transaction_send_operation,
+            bitcoin_transaction_sign_operation,
+            bitcoin_send_transaction_process_operation
          > operation;
 
    /// @} // operations group
