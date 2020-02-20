@@ -158,6 +158,8 @@ void sidechain_net_handler::process_deposits() {
    std::for_each(idx_range.first, idx_range.second,
          [&] (const son_wallet_deposit_object& swdo) {
 
+      process_deposit(swdo);
+
       const chain::global_property_object& gpo = plugin.database().get_global_properties();
 
       for (son_id_type son_id : plugin.get_sons()) {
@@ -195,6 +197,8 @@ void sidechain_net_handler::process_withdrawals() {
 
    std::for_each(idx_range.first, idx_range.second,
          [&] (const son_wallet_withdraw_object& swwo) {
+
+      process_withdrawal(swwo);
 
       const chain::global_property_object& gpo = plugin.database().get_global_properties();
 

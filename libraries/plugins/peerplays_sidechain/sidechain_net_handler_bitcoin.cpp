@@ -428,8 +428,14 @@ void sidechain_net_handler_bitcoin::process_deposits() {
    sidechain_net_handler::process_deposits();
 }
 
+void sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object& swdo) {
+}
+
 void sidechain_net_handler_bitcoin::process_withdrawals() {
    sidechain_net_handler::process_withdrawals();
+}
+
+void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object& swwo) {
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys ) {
