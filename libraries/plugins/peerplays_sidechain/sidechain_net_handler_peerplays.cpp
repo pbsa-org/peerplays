@@ -32,9 +32,11 @@ void sidechain_net_handler_peerplays::recreate_primary_wallet() {
 }
 
 void sidechain_net_handler_peerplays::process_deposits() {
+   sidechain_net_handler::process_deposits();
 }
 
 void sidechain_net_handler_peerplays::process_withdrawals() {
+   sidechain_net_handler::process_withdrawals();
 }
 
 std::string sidechain_net_handler_peerplays::create_multisignature_wallet( const std::vector<std::string> public_keys ) {
@@ -75,7 +77,7 @@ void sidechain_net_handler_peerplays::on_block_applied(const signed_block& b) {
                 sed.sidechain_transaction_id = trx.id().str();
                 sed.sidechain_from = fc::to_string(transfer_op.from.space_id) + "." + fc::to_string(transfer_op.from.type_id) + "." + fc::to_string((uint64_t)transfer_op.from.instance);
                 sed.sidechain_to = fc::to_string(transfer_op.to.space_id) + "." + fc::to_string(transfer_op.to.type_id) + "." + fc::to_string((uint64_t)transfer_op.to.instance);
-                sed.sidechain_currency = transfer_op.amount.asset_id(plugin.database()).symbol;
+                sed.sidechain_currency = fc::to_string(transfer_op.amount.asset_id.space_id) + "." + fc::to_string(transfer_op.amount.asset_id.type_id) + "." + fc::to_string((uint64_t)transfer_op.amount.asset_id.instance); //transfer_op.amount.asset_id(plugin.database()).symbol;
                 sed.sidechain_amount = transfer_op.amount.amount;
                 sed.peerplays_from = transfer_op.from;
                 sed.peerplays_to = transfer_op.to;

@@ -34,7 +34,6 @@ namespace graphene { namespace chain {
    struct by_sidechain;
    struct by_account_and_sidechain;
    struct by_sidechain_and_deposit_address;
-   struct by_sidechain_and_withdraw_address;
    using sidechain_address_multi_index_type = multi_index_container<
       sidechain_address_object,
       indexed_by<
@@ -57,12 +56,6 @@ namespace graphene { namespace chain {
             composite_key<sidechain_address_object,
                member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>,
                member<sidechain_address_object, std::string, &sidechain_address_object::deposit_address>
-            >
-         >,
-         ordered_unique< tag<by_sidechain_and_withdraw_address>,
-            composite_key<sidechain_address_object,
-               member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>,
-               member<sidechain_address_object, std::string, &sidechain_address_object::withdraw_address>
             >
          >
       >

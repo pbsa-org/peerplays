@@ -19,41 +19,39 @@ namespace graphene { namespace chain {
          time_point_sec timestamp;
          peerplays_sidechain::sidechain_type sidechain;
          int64_t confirmations;
-         std::string sidechain_uid;
-         std::string sidechain_transaction_id;
-         std::string sidechain_from;
-         std::string sidechain_to;
-         std::string sidechain_currency;
-         safe<int64_t> sidechain_amount;
+         std::string peerplays_uid;
+         std::string peerplays_transaction_id;
          chain::account_id_type peerplays_from;
-         chain::account_id_type peerplays_to;
          chain::asset peerplays_asset;
-
+         peerplays_sidechain::sidechain_type withdraw_sidechain;
+         std::string withdraw_address;
+         std::string withdraw_currency;
+         safe<int64_t> withdraw_amount;
          bool processed;
    };
 
-   struct by_sidechain;
-   struct by_sidechain_uid;
+   struct by_peerplays_uid;
+   struct by_withdraw_sidechain;
    struct by_processed;
-   struct by_sidechain_and_processed;
+   struct by_withdraw_sidechain_and_processed;
    using son_wallet_withdraw_multi_index_type = multi_index_container<
       son_wallet_withdraw_object,
       indexed_by<
          ordered_unique< tag<by_id>,
             member<object, object_id_type, &object::id>
          >,
-         ordered_non_unique< tag<by_sidechain>,
-            member<son_wallet_withdraw_object, peerplays_sidechain::sidechain_type, &son_wallet_withdraw_object::sidechain>
+         ordered_unique< tag<by_peerplays_uid>,
+            member<son_wallet_withdraw_object, std::string, &son_wallet_withdraw_object::peerplays_uid>
          >,
-         ordered_unique< tag<by_sidechain_uid>,
-            member<son_wallet_withdraw_object, std::string, &son_wallet_withdraw_object::sidechain_uid>
+         ordered_non_unique< tag<by_withdraw_sidechain>,
+            member<son_wallet_withdraw_object, peerplays_sidechain::sidechain_type, &son_wallet_withdraw_object::withdraw_sidechain>
          >,
          ordered_non_unique< tag<by_processed>,
             member<son_wallet_withdraw_object, bool, &son_wallet_withdraw_object::processed>
          >,
-         ordered_non_unique< tag<by_sidechain_and_processed>,
+         ordered_non_unique< tag<by_withdraw_sidechain_and_processed>,
             composite_key<son_wallet_withdraw_object,
-               member<son_wallet_withdraw_object, peerplays_sidechain::sidechain_type, &son_wallet_withdraw_object::sidechain>,
+               member<son_wallet_withdraw_object, peerplays_sidechain::sidechain_type, &son_wallet_withdraw_object::withdraw_sidechain>,
                member<son_wallet_withdraw_object, bool, &son_wallet_withdraw_object::processed>
             >
          >
@@ -64,6 +62,6 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::son_wallet_withdraw_object, (graphene::db::object),
                     (timestamp) (sidechain) (confirmations)
-                    (sidechain_uid) (sidechain_transaction_id) (sidechain_from) (sidechain_to) (sidechain_currency) (sidechain_amount)
-                    (peerplays_from) (peerplays_to) (peerplays_asset)
+                    (peerplays_uid) (peerplays_transaction_id) (peerplays_from) (peerplays_asset)
+                    (withdraw_sidechain) (withdraw_address) (withdraw_currency) (withdraw_amount)
                     (processed) )

@@ -14,15 +14,14 @@ namespace graphene { namespace chain {
 
         fc::time_point_sec timestamp;
         peerplays_sidechain::sidechain_type sidechain;
-        std::string sidechain_uid;
-        std::string sidechain_transaction_id;
-        std::string sidechain_from;
-        std::string sidechain_to;
-        std::string sidechain_currency;
-        fc::safe<int64_t> sidechain_amount;
+        std::string peerplays_uid;
+        std::string peerplays_transaction_id;
         chain::account_id_type peerplays_from;
-        chain::account_id_type peerplays_to;
         chain::asset peerplays_asset;
+        peerplays_sidechain::sidechain_type withdraw_sidechain;
+        std::string withdraw_address;
+        std::string withdraw_currency;
+        safe<int64_t> withdraw_amount;
 
         account_id_type fee_payer()const { return payer; }
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
@@ -45,7 +44,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT(graphene::chain::son_wallet_withdraw_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::son_wallet_withdraw_create_operation, (fee)(payer)
-      (timestamp) (sidechain) (sidechain_uid) (sidechain_transaction_id) (sidechain_from) (sidechain_to) (sidechain_currency) (sidechain_amount) (peerplays_from) (peerplays_to) (peerplays_asset))
+      (timestamp) (sidechain) (peerplays_uid) (peerplays_transaction_id) (peerplays_from) (peerplays_asset) (withdraw_sidechain) (withdraw_address) (withdraw_currency) (withdraw_amount) )
 FC_REFLECT(graphene::chain::son_wallet_withdraw_process_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::son_wallet_withdraw_process_operation, (fee)(payer)
       (son_wallet_withdraw_id))

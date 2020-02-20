@@ -425,9 +425,11 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 }
 
 void sidechain_net_handler_bitcoin::process_deposits() {
+   sidechain_net_handler::process_deposits();
 }
 
 void sidechain_net_handler_bitcoin::process_withdrawals() {
+   sidechain_net_handler::process_withdrawals();
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys ) {
