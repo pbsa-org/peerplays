@@ -328,10 +328,10 @@ struct get_impacted_account_visitor
    void operator()( const son_wallet_deposit_process_operation& op ){
       _impacted.insert( op.payer );
    }
-   void operator()( const son_wallet_withdrawal_create_operation& op ){
+   void operator()( const son_wallet_withdraw_create_operation& op ){
       _impacted.insert( op.payer );
    }
-   void operator()( const son_wallet_withdrawal_process_operation& op ){
+   void operator()( const son_wallet_withdraw_process_operation& op ){
       _impacted.insert( op.payer );
    }
    void operator()( const sidechain_address_add_operation& op ){

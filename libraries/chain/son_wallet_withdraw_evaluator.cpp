@@ -1,27 +1,27 @@
-#include <graphene/chain/son_wallet_withdrawal_evaluator.hpp>
+#include <graphene/chain/son_wallet_withdraw_evaluator.hpp>
 
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/is_authorized_asset.hpp>
-#include <graphene/chain/son_wallet_withdrawal_object.hpp>
+#include <graphene/chain/son_wallet_withdraw_object.hpp>
 
 namespace graphene { namespace chain {
 
-void_result create_son_wallet_withdrawal_evaluator::do_evaluate(const son_wallet_withdrawal_create_operation& op)
+void_result create_son_wallet_withdraw_evaluator::do_evaluate(const son_wallet_withdraw_create_operation& op)
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT( op.payer == GRAPHENE_SON_ACCOUNT, "SON paying account must be set as payer." );
 
-   //const auto& idx = db().get_index_type<son_wallet_withdrawal_index>().indices().get<by_sidechain_uid>();
+   //const auto& idx = db().get_index_type<son_wallet_withdraw_index>().indices().get<by_sidechain_uid>();
    //FC_ASSERT(idx.find(op.sidechain_uid) == idx.end(), "Already registered " + op.sidechain_uid);
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-object_id_type create_son_wallet_withdrawal_evaluator::do_apply(const son_wallet_withdrawal_create_operation& op)
+object_id_type create_son_wallet_withdraw_evaluator::do_apply(const son_wallet_withdraw_create_operation& op)
 { try {
-   const auto& idx = db().get_index_type<son_wallet_withdrawal_index>().indices().get<by_sidechain_uid>();
+   const auto& idx = db().get_index_type<son_wallet_withdraw_index>().indices().get<by_sidechain_uid>();
    auto itr = idx.find(op.sidechain_uid);
    if (itr == idx.end()) {
-      const auto& new_son_wallet_withdrawal_object = db().create<son_wallet_withdrawal_object>( [&]( son_wallet_withdrawal_object& swto ){
+      const auto& new_son_wallet_withdraw_object = db().create<son_wallet_withdraw_object>( [&]( son_wallet_withdraw_object& swto ){
          swto.timestamp = op.timestamp;
          swto.sidechain = op.sidechain;
          swto.confirmations = 1;
@@ -35,22 +35,22 @@ object_id_type create_son_wallet_withdrawal_evaluator::do_apply(const son_wallet
          swto.peerplays_asset = op.peerplays_asset;
          swto.processed = false;
       });
-      return new_son_wallet_withdrawal_object.id;
+      return new_son_wallet_withdraw_object.id;
    } else {
-      db().modify(*itr, [&op](son_wallet_withdrawal_object &swto) {
+      db().modify(*itr, [&op](son_wallet_withdraw_object &swto) {
          swto.confirmations = swto.confirmations + 1;
       });
       return (*itr).id;
    }
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-void_result process_son_wallet_withdrawal_evaluator::do_evaluate(const son_wallet_withdrawal_process_operation& op)
+void_result process_son_wallet_withdraw_evaluator::do_evaluate(const son_wallet_withdraw_process_operation& op)
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT( op.payer == GRAPHENE_SON_ACCOUNT, "SON paying account must be set as payer." );
 
-   const auto& idx = db().get_index_type<son_wallet_withdrawal_index>().indices().get<by_id>();
-   const auto& itr = idx.find(op.son_wallet_withdrawal_id);
+   const auto& idx = db().get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
+   const auto& itr = idx.find(op.son_wallet_withdraw_id);
    FC_ASSERT(itr != idx.end(), "Son wallet transfer not found");
    //FC_ASSERT(itr->processed == false, "Son wallet transfer is already processed");
 
@@ -96,14 +96,14 @@ void_result process_son_wallet_withdrawal_evaluator::do_evaluate(const son_walle
    } FC_RETHROW_EXCEPTIONS( error, "Unable to transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(itr->peerplays_asset))("f",from_account.name)("t",to_account.name) );
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-object_id_type process_son_wallet_withdrawal_evaluator::do_apply(const son_wallet_withdrawal_process_operation& op)
+object_id_type process_son_wallet_withdraw_evaluator::do_apply(const son_wallet_withdraw_process_operation& op)
 { try {
-   const auto& idx = db().get_index_type<son_wallet_withdrawal_index>().indices().get<by_id>();
-   auto itr = idx.find(op.son_wallet_withdrawal_id);
+   const auto& idx = db().get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
+   auto itr = idx.find(op.son_wallet_withdraw_id);
    if(itr != idx.end())
    {
        if (itr->processed == false) {
-          db().modify(*itr, [&op](son_wallet_withdrawal_object &swto) {
+          db().modify(*itr, [&op](son_wallet_withdraw_object &swto) {
              swto.processed = true;
           });
 
@@ -114,7 +114,7 @@ object_id_type process_son_wallet_withdrawal_evaluator::do_apply(const son_walle
           db().adjust_balance( to_account, itr->peerplays_asset );
        }
    }
-   return op.son_wallet_withdrawal_id;
+   return op.son_wallet_withdraw_id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 } } // namespace graphene::chain

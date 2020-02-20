@@ -315,10 +315,10 @@ struct get_impacted_account_visitor
    void operator()( const son_wallet_deposit_process_operation& op ) {
       _impacted.insert( op.payer );
    }
-   void operator()( const son_wallet_withdrawal_create_operation& op ) {
+   void operator()( const son_wallet_withdraw_create_operation& op ) {
       _impacted.insert( op.payer );
    }
-   void operator()( const son_wallet_withdrawal_process_operation& op ) {
+   void operator()( const son_wallet_withdraw_process_operation& op ) {
       _impacted.insert( op.payer );
    }
    void operator()( const sidechain_address_add_operation& op ) {
@@ -427,7 +427,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            break;
         } case son_wallet_deposit_object_type:{
            break;
-        } case son_wallet_withdrawal_object_type:{
+        } case son_wallet_withdraw_object_type:{
            break;
         } case sidechain_address_object_type:{
            const auto& aobj = dynamic_cast<const sidechain_address_object*>(obj);

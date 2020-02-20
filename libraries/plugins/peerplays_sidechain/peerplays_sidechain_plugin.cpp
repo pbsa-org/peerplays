@@ -11,7 +11,7 @@
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_deposit_object.hpp>
-#include <graphene/chain/son_wallet_withdrawal_object.hpp>
+#include <graphene/chain/son_wallet_withdraw_object.hpp>
 #include <graphene/chain/protocol/transfer.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
@@ -417,20 +417,20 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
 
 void peerplays_sidechain_plugin_impl::process_withdrawals() {
 
-   const auto& idx = plugin.database().get_index_type<son_wallet_withdrawal_index>().indices().get<by_processed>();
+   const auto& idx = plugin.database().get_index_type<son_wallet_withdraw_index>().indices().get<by_processed>();
    const auto& idx_range = idx.equal_range(false);
 
    std::for_each(idx_range.first, idx_range.second,
-         [&] (const son_wallet_withdrawal_object& swwo) {
+         [&] (const son_wallet_withdraw_object& swwo) {
 
       const chain::global_property_object& gpo = plugin.database().get_global_properties();
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
 
-            //son_wallet_withdrawal_process_operation p_op;
+            //son_wallet_withdraw_process_operation p_op;
             //p_op.payer = GRAPHENE_SON_ACCOUNT;
-            //p_op.son_wallet_withdrawal_id = swwo.id;
+            //p_op.son_wallet_withdraw_id = swwo.id;
             //
             //proposal_create_operation proposal_op;
             //proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;

@@ -119,7 +119,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
    // Withdrawal request
    if ((sed.peerplays_to == GRAPHENE_SON_ACCOUNT) && (sed.sidechain_currency.compare("1.3.0") == 0)) {
-      son_wallet_withdrawal_create_operation op;
+      son_wallet_withdraw_create_operation op;
       op.payer = GRAPHENE_SON_ACCOUNT;
       op.timestamp = sed.timestamp;
       op.sidechain = sed.sidechain;

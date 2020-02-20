@@ -58,7 +58,7 @@
 #include <graphene/chain/son_proposal_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_deposit_object.hpp>
-#include <graphene/chain/son_wallet_withdrawal_object.hpp>
+#include <graphene/chain/son_wallet_withdraw_object.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
@@ -84,7 +84,7 @@
 #include <graphene/chain/son_evaluator.hpp>
 #include <graphene/chain/son_wallet_evaluator.hpp>
 #include <graphene/chain/son_wallet_deposit_evaluator.hpp>
-#include <graphene/chain/son_wallet_withdrawal_evaluator.hpp>
+#include <graphene/chain/son_wallet_withdraw_evaluator.hpp>
 #include <graphene/chain/sidechain_address_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
@@ -262,8 +262,8 @@ void database::initialize_evaluators()
    register_evaluator<update_son_wallet_evaluator>();
    register_evaluator<create_son_wallet_deposit_evaluator>();
    register_evaluator<process_son_wallet_deposit_evaluator>();
-   register_evaluator<create_son_wallet_withdrawal_evaluator>();
-   register_evaluator<process_son_wallet_withdrawal_evaluator>();
+   register_evaluator<create_son_wallet_withdraw_evaluator>();
+   register_evaluator<process_son_wallet_withdraw_evaluator>();
    register_evaluator<add_sidechain_address_evaluator>();
    register_evaluator<update_sidechain_address_evaluator>();
    register_evaluator<delete_sidechain_address_evaluator>();
@@ -313,7 +313,7 @@ void database::initialize_indexes()
 
    add_index< primary_index<son_wallet_index> >();
    add_index< primary_index<son_wallet_deposit_index> >();
-   add_index< primary_index<son_wallet_withdrawal_index> >();
+   add_index< primary_index<son_wallet_withdraw_index> >();
 
    add_index< primary_index<sidechain_address_index> >();
 
