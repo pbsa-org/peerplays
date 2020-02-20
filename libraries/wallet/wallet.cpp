@@ -2022,9 +2022,8 @@ public:
 
    signed_transaction add_sidechain_address(string account,
                                             peerplays_sidechain::sidechain_type sidechain,
-                                            string address,
-                                            string private_key,
-                                            string public_key,
+                                            string deposit_address,
+                                            string withdrawal_address,
                                             bool broadcast /* = false */)
    { try {
       account_id_type sidechain_address_account_id = get_account_id(account);
@@ -2032,9 +2031,8 @@ public:
       sidechain_address_add_operation op;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
-      op.address = address;
-      op.private_key = private_key;
-      op.public_key = public_key;
+      op.deposit_address = deposit_address;
+      op.withdrawal_address = withdrawal_address;
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -2046,9 +2044,8 @@ public:
 
    signed_transaction update_sidechain_address(string account,
                                                peerplays_sidechain::sidechain_type sidechain,
-                                               string address,
-                                               string private_key,
-                                               string public_key,
+                                               string deposit_address,
+                                               string withdrawal_address,
                                                bool broadcast /* = false */)
    { try {
       account_id_type sidechain_address_account_id = get_account_id(account);
@@ -2060,9 +2057,8 @@ public:
       op.sidechain_address_id = sao->id;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
-      op.address = address;
-      op.private_key = private_key;
-      op.public_key = public_key;
+      op.deposit_address = deposit_address;
+      op.withdrawal_address = withdrawal_address;
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -4501,22 +4497,20 @@ vector<optional<son_wallet_object>> wallet_api::get_son_wallets(uint32_t limit)
 
 signed_transaction wallet_api::add_sidechain_address(string account,
                                           peerplays_sidechain::sidechain_type sidechain,
-                                          string address,
-                                          string private_key,
-                                          string public_key,
+                                          string deposit_address,
+                                          string withdrawal_address,
                                           bool broadcast /* = false */)
 {
-   return my->add_sidechain_address(account, sidechain, address, private_key, public_key, broadcast);
+   return my->add_sidechain_address(account, sidechain, deposit_address, withdrawal_address, broadcast);
 }
 
 signed_transaction wallet_api::update_sidechain_address(string account,
                                           peerplays_sidechain::sidechain_type sidechain,
-                                          string address,
-                                          string private_key,
-                                          string public_key,
+                                          string deposit_address,
+                                          string withdrawal_address,
                                           bool broadcast /* = false */)
 {
-   return my->update_sidechain_address(account, sidechain, address, private_key, public_key, broadcast);
+   return my->update_sidechain_address(account, sidechain, deposit_address, withdrawal_address, broadcast);
 }
 
 signed_transaction wallet_api::delete_sidechain_address(string account,

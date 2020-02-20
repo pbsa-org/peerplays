@@ -447,7 +447,7 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
    if( block != "" ) {
       const auto& vins = extract_info_from_block( block );
 
-      const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_address>();
+      const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address>();
 
       for( const auto& v : vins ) {
          const auto& addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain_type::bitcoin, v.address));

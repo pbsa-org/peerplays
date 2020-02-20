@@ -16,7 +16,8 @@ public:
     virtual ~sidechain_net_handler();
 
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
-    std::vector<std::string> get_sidechain_addresses();
+    std::vector<std::string> get_sidechain_deposit_addresses();
+    std::vector<std::string> get_sidechain_withdrawal_addresses();
 
     void sidechain_event_data_received(const sidechain_event_data& sed);
 

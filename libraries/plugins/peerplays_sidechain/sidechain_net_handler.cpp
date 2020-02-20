@@ -19,7 +19,7 @@ graphene::peerplays_sidechain::sidechain_type sidechain_net_handler::get_sidecha
    return sidechain;
 }
 
-std::vector<std::string> sidechain_net_handler::get_sidechain_addresses() {
+std::vector<std::string> sidechain_net_handler::get_sidechain_deposit_addresses() {
    std::vector<std::string> result;
 
    switch (sidechain) {
@@ -30,7 +30,29 @@ std::vector<std::string> sidechain_net_handler::get_sidechain_addresses() {
          const auto& sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
          std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
                [&result] (const sidechain_address_object& sao) {
-            result.push_back(sao.address);
+            result.push_back(sao.deposit_address);
+         });
+         break;
+      }
+      default:
+         assert(false);
+   }
+
+   return result;
+}
+
+std::vector<std::string> sidechain_net_handler::get_sidechain_withdrawal_addresses() {
+   std::vector<std::string> result;
+
+   switch (sidechain) {
+      case sidechain_type::bitcoin:
+      {
+         const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
+         const auto& sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
+         const auto& sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
+         std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
+               [&result] (const sidechain_address_object& sao) {
+            result.push_back(sao.withdrawal_address);
          });
          break;
       }
@@ -57,39 +79,83 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
    const chain::global_property_object& gpo = database.get_global_properties();
 
-   son_wallet_deposit_create_operation op;
-   op.payer = GRAPHENE_SON_ACCOUNT;
-   op.timestamp = sed.timestamp;
-   op.sidechain = sed.sidechain;
-   op.sidechain_uid = sed.sidechain_uid;
-   op.sidechain_transaction_id = sed.sidechain_transaction_id;
-   op.sidechain_from = sed.sidechain_from;
-   op.sidechain_to = sed.sidechain_to;
-   op.sidechain_currency = sed.sidechain_currency;
-   op.sidechain_amount = sed.sidechain_amount;
-   op.peerplays_from = sed.peerplays_from;
-   op.peerplays_to = sed.peerplays_to;
-   op.peerplays_asset = sed.peerplays_asset;
+   // Deposit request
+   if ((sed.peerplays_to == GRAPHENE_SON_ACCOUNT) && (sed.sidechain_currency.compare("1.3.0") != 0)) {
+      son_wallet_deposit_create_operation op;
+      op.payer = GRAPHENE_SON_ACCOUNT;
+      op.timestamp = sed.timestamp;
+      op.sidechain = sed.sidechain;
+      op.sidechain_uid = sed.sidechain_uid;
+      op.sidechain_transaction_id = sed.sidechain_transaction_id;
+      op.sidechain_from = sed.sidechain_from;
+      op.sidechain_to = sed.sidechain_to;
+      op.sidechain_currency = sed.sidechain_currency;
+      op.sidechain_amount = sed.sidechain_amount;
+      op.peerplays_from = sed.peerplays_from;
+      op.peerplays_to = sed.peerplays_to;
+      op.peerplays_asset = sed.peerplays_asset;
 
-   for (son_id_type son_id : plugin.get_sons()) {
-      if (plugin.is_active_son(son_id)) {
-         proposal_create_operation proposal_op;
-         proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
-         proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
-         uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
-         proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+      for (son_id_type son_id : plugin.get_sons()) {
+         if (plugin.is_active_son(son_id)) {
+            proposal_create_operation proposal_op;
+            proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
+            proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
+            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+            proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-         ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son}", ("son", son_id));
-         signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
-         try {
-            database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-            if(plugin.app().p2p_node())
-               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-         } catch(fc::exception e){
-            ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
+            ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son}", ("son", son_id));
+            signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
+            try {
+               database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+               if(plugin.app().p2p_node())
+                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+            } catch(fc::exception e){
+               ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
+            }
          }
       }
+      return;
    }
+
+   // Withdrawal request
+   if ((sed.peerplays_to == GRAPHENE_SON_ACCOUNT) && (sed.sidechain_currency.compare("1.3.0") == 0)) {
+      son_wallet_withdrawal_create_operation op;
+      op.payer = GRAPHENE_SON_ACCOUNT;
+      op.timestamp = sed.timestamp;
+      op.sidechain = sed.sidechain;
+      op.sidechain_uid = sed.sidechain_uid;
+      op.sidechain_transaction_id = sed.sidechain_transaction_id;
+      op.sidechain_from = sed.sidechain_from;
+      op.sidechain_to = sed.sidechain_to;
+      op.sidechain_currency = sed.sidechain_currency;
+      op.sidechain_amount = sed.sidechain_amount;
+      op.peerplays_from = sed.peerplays_from;
+      op.peerplays_to = sed.peerplays_to;
+      op.peerplays_asset = sed.peerplays_asset;
+
+      for (son_id_type son_id : plugin.get_sons()) {
+         if (plugin.is_active_son(son_id)) {
+            proposal_create_operation proposal_op;
+            proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
+            proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
+            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+            proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+
+            ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son}", ("son", son_id));
+            signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
+            try {
+               database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+               if(plugin.app().p2p_node())
+                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+            } catch(fc::exception e){
+               ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
+            }
+         }
+      }
+      return;
+   }
+
+   FC_ASSERT(false, "Invalid sidechain event");
 }
 
 } } // graphene::peerplays_sidechain

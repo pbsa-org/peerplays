@@ -71,19 +71,10 @@ void sidechain_net_handler_peerplays::on_block_applied(const signed_block& b) {
                 sed.sidechain_to = fc::to_string(transfer_op.to.space_id) + "." + fc::to_string(transfer_op.to.type_id) + "." + fc::to_string((uint64_t)transfer_op.to.instance);
                 sed.sidechain_currency = transfer_op.amount.asset_id(plugin.database()).symbol;
                 sed.sidechain_amount = transfer_op.amount.amount;
-                if (transfer_op.amount.asset_id == asset_id_type(0)) {
-                    // User is returning CORE/TEST to the SON wallet
-                    // This is start of withdrawal process
-                    // We need to return BTC
-
-                } else {
-                    // User deposits other Peerplays asset
-                    // We need to pay CORE/TEST
-                    sed.peerplays_from = transfer_op.from;
-                    sed.peerplays_to = transfer_op.to;
-                    // We should calculate exchange rate between CORE/TEST and other Peerplays asset
-                    sed.peerplays_asset = asset(transfer_op.amount.amount); // It i 1:1 for now
-                }
+                sed.peerplays_from = transfer_op.from;
+                sed.peerplays_to = transfer_op.to;
+                // We should calculate exchange rate between CORE/TEST and other Peerplays asset
+                sed.peerplays_asset = asset(transfer_op.amount.amount / transfer_op.amount.asset_id(plugin.database()).options.core_exchange_rate.quote.amount);
                 sidechain_event_data_received(sed);
             }
         }
