@@ -1417,14 +1417,14 @@ class wallet_api
        * @param account the name or id of the account who owns the address
        * @param sidechain a sidechain to whom address belongs
        * @param deposit_address sidechain address for deposits
-       * @param withdrawal_address sidechain address for withdrawals
+       * @param withdraw_address sidechain address for withdrawals
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction adding sidechain address
        */
       signed_transaction add_sidechain_address(string account,
                                           peerplays_sidechain::sidechain_type sidechain,
                                           string deposit_address,
-                                          string withdrawal_address,
+                                          string withdraw_address,
                                           bool broadcast = false);
 
       /** Updates existing sidechain address owned by the given account for a given sidechain.
@@ -1434,14 +1434,14 @@ class wallet_api
        * @param account the name or id of the account who owns the address
        * @param sidechain a sidechain to whom address belongs
        * @param deposit_address sidechain address for deposits
-       * @param withdrawal_address sidechain address for withdrawals
+       * @param withdraw_address sidechain address for withdrawals
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction updating sidechain address
        */
       signed_transaction update_sidechain_address(string account,
                                           peerplays_sidechain::sidechain_type sidechain,
                                           string deposit_address,
-                                          string withdrawal_address,
+                                          string withdraw_address,
                                           bool broadcast = false);
 
       /** Deletes existing sidechain address owned by the given account for a given sidechain.

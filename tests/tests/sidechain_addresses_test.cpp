@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_add_test ) {
       op.sidechain_address_account = alice_id;
       op.sidechain = graphene::peerplays_sidechain::sidechain_type::bitcoin;
       op.deposit_address = "deposit_address";
-      op.withdrawal_address = "withdrawal_address";
+      op.withdraw_address = "withdraw_address";
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_add_test ) {
    BOOST_CHECK( obj->sidechain_address_account == alice_id );
    BOOST_CHECK( obj->sidechain == graphene::peerplays_sidechain::sidechain_type::bitcoin );
    BOOST_CHECK( obj->deposit_address == "deposit_address" );
-   BOOST_CHECK( obj->withdrawal_address == "withdrawal_address" );
+   BOOST_CHECK( obj->withdraw_address == "withdraw_address" );
 }
 
 BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
    BOOST_REQUIRE( obj != idx.end() );
 
    std::string new_deposit_address = "new_deposit_address";
-   std::string new_withdrawal_address = "new_withdrawal_address";
+   std::string new_withdraw_address = "new_withdraw_address";
 
    {
       BOOST_TEST_MESSAGE("Send sidechain_address_update_operation");
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
       op.sidechain_address_account = obj->sidechain_address_account;
       op.sidechain = obj->sidechain;
       op.deposit_address = new_deposit_address;
-      op.withdrawal_address = new_withdrawal_address;
+      op.withdraw_address = new_withdraw_address;
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
       BOOST_CHECK( obj->sidechain_address_account == obj->sidechain_address_account );
       BOOST_CHECK( obj->sidechain == obj->sidechain );
       BOOST_CHECK( obj->deposit_address == new_deposit_address );
-      BOOST_CHECK( obj->withdrawal_address == new_withdrawal_address );
+      BOOST_CHECK( obj->withdraw_address == new_withdraw_address );
    }
 }
 

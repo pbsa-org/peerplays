@@ -46,5 +46,17 @@ void sidechain_net_manager::recreate_primary_wallet() {
    }
 }
 
+void sidechain_net_manager::process_deposits() {
+   for ( size_t i = 0; i < net_handlers.size(); i++ ) {
+      net_handlers.at(i)->process_deposits();
+   }
+}
+
+void sidechain_net_manager::process_withdrawals() {
+   for ( size_t i = 0; i < net_handlers.size(); i++ ) {
+      net_handlers.at(i)->process_withdrawals();
+   }
+}
+
 } } // graphene::peerplays_sidechain
 

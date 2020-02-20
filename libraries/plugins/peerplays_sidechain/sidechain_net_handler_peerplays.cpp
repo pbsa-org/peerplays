@@ -31,6 +31,12 @@ sidechain_net_handler_peerplays::~sidechain_net_handler_peerplays() {
 void sidechain_net_handler_peerplays::recreate_primary_wallet() {
 }
 
+void sidechain_net_handler_peerplays::process_deposits() {
+}
+
+void sidechain_net_handler_peerplays::process_withdrawals() {
+}
+
 std::string sidechain_net_handler_peerplays::create_multisignature_wallet( const std::vector<std::string> public_keys ) {
    return "";
 }

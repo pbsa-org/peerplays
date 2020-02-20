@@ -15,6 +15,8 @@
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/chain/son_wallet_deposit_object.hpp>
+#include <graphene/chain/son_wallet_withdraw_object.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
@@ -422,23 +424,25 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
    }
 }
 
-std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys )
-{
+void sidechain_net_handler_bitcoin::process_deposits() {
+}
+
+void sidechain_net_handler_bitcoin::process_withdrawals() {
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisignature_wallet( const std::vector<std::string> public_keys ) {
    return bitcoin_client->add_multisig_address(public_keys);
 }
 
-std::string sidechain_net_handler_bitcoin::transfer( const std::string& from, const std::string& to, const uint64_t amount )
-{
+std::string sidechain_net_handler_bitcoin::transfer( const std::string& from, const std::string& to, const uint64_t amount ) {
    return "";
 }
 
-std::string sidechain_net_handler_bitcoin::sign_transaction( const std::string& transaction )
-{
+std::string sidechain_net_handler_bitcoin::sign_transaction( const std::string& transaction ) {
    return "";
 }
 
-std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& transaction )
-{
+std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& transaction ) {
    return "";
 }
 
@@ -450,7 +454,7 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
       const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address>();
 
       for( const auto& v : vins ) {
-         const auto& addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain_type::bitcoin, v.address));
+         const auto& addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, v.address));
          if ( addr_itr == sidechain_addresses_idx.end() )
             continue;
 
@@ -475,8 +479,7 @@ void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data 
    }
 }
 
-std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block( const std::string& _block )
-{
+std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block( const std::string& _block ) {
    std::stringstream ss( _block );
    boost::property_tree::ptree block;
    boost::property_tree::read_json( ss, block );

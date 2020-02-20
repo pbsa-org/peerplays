@@ -409,7 +409,7 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch(fc::exception e){
                ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
-            }
+}
          }
       }
    });
@@ -428,6 +428,7 @@ void peerplays_sidechain_plugin_impl::process_withdrawals() {
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
 
+             ilog("Withdraw to process: ${swwo}", ("swwo", swwo));
             //son_wallet_withdraw_process_operation p_op;
             //p_op.payer = GRAPHENE_SON_ACCOUNT;
             //p_op.son_wallet_withdraw_id = swwo.id;
@@ -449,7 +450,7 @@ void peerplays_sidechain_plugin_impl::process_withdrawals() {
             //} catch(fc::exception e){
             //   ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
             //}
-         }
+}
       }
    });
 }
@@ -475,7 +476,7 @@ void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
 
       process_deposits();
 
-      //process_withdrawals();
+      process_withdrawals();
 
    }
 }

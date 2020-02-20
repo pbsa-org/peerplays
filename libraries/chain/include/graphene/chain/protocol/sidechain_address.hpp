@@ -13,7 +13,7 @@ namespace graphene { namespace chain {
         account_id_type sidechain_address_account;
         graphene::peerplays_sidechain::sidechain_type sidechain;
         string deposit_address;
-        string withdrawal_address;
+        string withdraw_address;
 
         account_id_type fee_payer()const { return sidechain_address_account; }
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
@@ -28,7 +28,7 @@ namespace graphene { namespace chain {
         account_id_type sidechain_address_account;
         graphene::peerplays_sidechain::sidechain_type sidechain;
         optional<string> deposit_address;
-        optional<string> withdrawal_address;
+        optional<string> withdraw_address;
 
         account_id_type fee_payer()const { return sidechain_address_account; }
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
@@ -51,12 +51,12 @@ namespace graphene { namespace chain {
 
 FC_REFLECT(graphene::chain::sidechain_address_add_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::sidechain_address_add_operation, (fee)
-        (sidechain_address_account)(sidechain)(deposit_address)(withdrawal_address) )
+        (sidechain_address_account)(sidechain)(deposit_address)(withdraw_address) )
 
 FC_REFLECT(graphene::chain::sidechain_address_update_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::sidechain_address_update_operation, (fee)
         (sidechain_address_id)
-        (sidechain_address_account)(sidechain)(deposit_address)(withdrawal_address) )
+        (sidechain_address_account)(sidechain)(deposit_address)(withdraw_address) )
 
 FC_REFLECT(graphene::chain::sidechain_address_delete_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::sidechain_address_delete_operation, (fee)

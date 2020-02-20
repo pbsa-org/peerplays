@@ -17,11 +17,13 @@ public:
 
     graphene::peerplays_sidechain::sidechain_type get_sidechain();
     std::vector<std::string> get_sidechain_deposit_addresses();
-    std::vector<std::string> get_sidechain_withdrawal_addresses();
+    std::vector<std::string> get_sidechain_withdraw_addresses();
 
     void sidechain_event_data_received(const sidechain_event_data& sed);
 
     virtual void recreate_primary_wallet() = 0;
+    virtual void process_deposits() = 0;
+    virtual void process_withdrawals() = 0;
 
 protected:
     peerplays_sidechain_plugin& plugin;

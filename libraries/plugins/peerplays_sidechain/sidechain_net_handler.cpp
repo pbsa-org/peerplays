@@ -22,44 +22,26 @@ graphene::peerplays_sidechain::sidechain_type sidechain_net_handler::get_sidecha
 std::vector<std::string> sidechain_net_handler::get_sidechain_deposit_addresses() {
    std::vector<std::string> result;
 
-   switch (sidechain) {
-      case sidechain_type::bitcoin:
-      {
-         const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
-         const auto& sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
-         const auto& sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
-         std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
-               [&result] (const sidechain_address_object& sao) {
-            result.push_back(sao.deposit_address);
-         });
-         break;
-      }
-      default:
-         assert(false);
-   }
-
+   const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
+   const auto& sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
+   const auto& sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
+   std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
+         [&result] (const sidechain_address_object& sao) {
+      result.push_back(sao.deposit_address);
+   });
    return result;
 }
 
-std::vector<std::string> sidechain_net_handler::get_sidechain_withdrawal_addresses() {
+std::vector<std::string> sidechain_net_handler::get_sidechain_withdraw_addresses() {
    std::vector<std::string> result;
 
-   switch (sidechain) {
-      case sidechain_type::bitcoin:
-      {
-         const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
-         const auto& sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
-         const auto& sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
-         std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
-               [&result] (const sidechain_address_object& sao) {
-            result.push_back(sao.withdrawal_address);
-         });
-         break;
-      }
-      default:
-         assert(false);
-   }
-
+   const auto& sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
+   const auto& sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
+   const auto& sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
+   std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
+         [&result] (const sidechain_address_object& sao) {
+      result.push_back(sao.withdraw_address);
+   });
    return result;
 }
 
@@ -103,14 +85,14 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-            ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son}", ("son", son_id));
+            ilog("sidechain_net_handler:  sending proposal for son wallet deposit create operation by ${son}", ("son", son_id));
             signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
             try {
                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
                if(plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch(fc::exception e){
-               ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
+               ilog("sidechain_net_handler:  sending proposal for son wallet deposit create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
             }
          }
       }
@@ -141,14 +123,14 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-            ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son}", ("son", son_id));
+            ilog("sidechain_net_handler:  sending proposal for son wallet withdraw create operation by ${son}", ("son", son_id));
             signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
             try {
                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
                if(plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch(fc::exception e){
-               ilog("sidechain_net_handler:  sending proposal for son wallet transfer create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
+               ilog("sidechain_net_handler:  sending proposal for son wallet withdraw create operation by ${son} failed with exception ${e}", ("son", son_id) ("e", e.what()));
             }
          }
       }
@@ -156,6 +138,18 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    FC_ASSERT(false, "Invalid sidechain event");
+}
+
+void sidechain_net_handler::recreate_primary_wallet() {
+   FC_ASSERT(false, "recreate_primary_wallet not implemented");
+}
+
+void sidechain_net_handler::process_deposits() {
+   FC_ASSERT(false, "process_deposits not implemented");
+}
+
+void sidechain_net_handler::process_withdrawals() {
+   FC_ASSERT(false, "process_withdrawals not implemented");
 }
 
 } } // graphene::peerplays_sidechain
