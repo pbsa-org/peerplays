@@ -170,19 +170,12 @@ std::string bitcoin_rpc_client::add_multisig_address( const std::vector<std::str
    return "";
 }
 
-std::string bitcoin_rpc_client::create_raw_transaction(const sidechain_event_data& sed, const std::string& pw_address)
+std::string bitcoin_rpc_client::create_raw_transaction(const std::string& txid, const std::string& nvout, const std::string& out_address, double transfer_amount)
 {
-   std::string txid = sed.sidechain_transaction_id;
-   std::string suid = sed.sidechain_uid;
-   std::string nvout = suid.substr(suid.find_last_of("-")+1);
-   int64_t deposit_amount = sed.sidechain_amount;
-   deposit_amount -= 1000; // Deduct minimum relay fee
-   double transfer_amount = (double)deposit_amount/100000000.0;
-
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"createrawtransaction\", \"method\": \"createrawtransaction\", \"params\": [");
    std::string params = "";
    std::string input = std::string("[{\"txid\":\"") + txid + std::string("\",\"vout\":")+ nvout +std::string("}]");
-   std::string output = std::string("[{\"") + pw_address + std::string("\":") + std::to_string(transfer_amount) + std::string("}]");
+   std::string output = std::string("[{\"") + out_address + std::string("\":") + std::to_string(transfer_amount) + std::string("}]");
    params = params + input + std::string(",") + output;
    body = body + params + std::string("]}");
 
@@ -278,6 +271,51 @@ void bitcoin_rpc_client::import_address(const std::string &address_or_script)
 std::vector<btc_txout> bitcoin_rpc_client::list_unspent()
 {
    const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"pp_plugin\", \"method\": \"listunspent\", \"params\": [] }");
+
+   const auto reply = send_post_request( body );
+
+   std::vector<btc_txout> result;
+   if( reply.body.empty() )
+   {
+      wlog("Failed to list unspent txo");
+      return result;
+   }
+
+   std::string reply_str( reply.body.begin(), reply.body.end() );
+
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   if( reply.status == 200 ) {
+      idump((reply_str));
+      if( json.count( "result" ) )
+      {
+         for(auto& entry: json.get_child("result"))
+         {
+            btc_txout txo;
+            txo.txid_ = entry.second.get_child("txid").get_value<std::string>();
+            txo.out_num_ = entry.second.get_child("vout").get_value<unsigned int>();
+            txo.amount_ = entry.second.get_child("amount").get_value<double>();
+            result.push_back(txo);
+         }
+      }
+   } else if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
+      wlog( "Failed to list unspent txo! Reply: ${msg}", ("msg", reply_str) );
+   }
+   return result;
+}
+
+std::vector<btc_txout> bitcoin_rpc_client::list_unspent_by_address_and_amount(const std::string& address, double minimum_amount)
+{
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"pp_plugin\", \"method\": \"listunspent\", \"params\": [");
+   body += std::string("1,999999,[\"");
+   body += address;
+   body += std::string("\"],true,{\"minimumAmount\":");
+   body += std::to_string(minimum_amount);
+   body += std::string("}] }");
+
+   ilog(body);
 
    const auto reply = send_post_request( body );
 
@@ -553,7 +591,15 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( 
 
    std::string pw_address = json.get<std::string>("address");
 
-   std::string reply_str = bitcoin_client->create_raw_transaction(sed, pw_address);
+   std::string txid = sed.sidechain_transaction_id;
+   std::string suid = sed.sidechain_uid;
+   std::string nvout = suid.substr(suid.find_last_of("-")+1);
+   int64_t deposit_amount = sed.sidechain_amount;
+   deposit_amount -= 1000; // Deduct minimum relay fee
+   double transfer_amount = (double)deposit_amount/100000000.0;
+
+   std::string reply_str = bitcoin_client->create_raw_transaction(txid, nvout, pw_address, transfer_amount);
+
    ilog(reply_str);
 
    std::stringstream ss_utx(reply_str);
@@ -581,6 +627,50 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( 
    bitcoin_client->send_btc_tx(signed_tx_hex);
 
    return reply_str;
+}
+
+std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wallet(const std::string& user_address, int64_t sidechain_amount) {
+   const auto& idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+   auto obj = idx.rbegin();
+   if (obj == idx.rend() || obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end())
+   {
+       return "";
+   }
+
+   std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
+
+   std::stringstream ss(pw_address_json);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   std::string pw_address = json.get<std::string>("address");
+
+   double total_amount = (((double)sidechain_amount*1000.0)+1000.0)/100000000.0; // Account only for relay fee for now
+   double transfer_amount = ((double)sidechain_amount*1000.0)/100000000.0;
+   std::vector<btc_txout> unspent_utxo= bitcoin_client->list_unspent_by_address_and_amount(pw_address, total_amount);
+
+   if(unspent_utxo.size() == 0)
+   {
+      return "";
+   }
+
+   btc_txout utxo = unspent_utxo[0];
+   std::string reply_str = bitcoin_client->create_raw_transaction(utxo.txid_, std::to_string(utxo.out_num_), user_address, transfer_amount);
+   ilog(reply_str);
+
+   std::stringstream ss_utx(reply_str);
+   boost::property_tree::ptree pt;
+   boost::property_tree::read_json( ss_utx, pt );
+
+   if( !(pt.count( "error" ) && pt.get_child( "error" ).empty()) || !pt.count("result") ) {
+      return "";
+   }
+
+   std::string unsigned_tx_hex = pt.get<std::string>("result");
+
+   std::cout << unsigned_tx_hex << std::endl;
+
+   return unsigned_tx_hex;
 }
 
 void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data ) {
