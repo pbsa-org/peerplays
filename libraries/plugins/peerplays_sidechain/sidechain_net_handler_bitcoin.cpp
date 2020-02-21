@@ -360,21 +360,21 @@ std::string bitcoin_rpc_client::prepare_tx(const std::vector<btc_txout> &ins, co
    {
       if(!first)
          body += ",";
-      body += "{\"txid\":\"" + entry.txid_ + "\",\"vout\":\"" + fc::to_string(entry.out_num_) + "\"}";
+      body += "{\"txid\":\"" + entry.txid_ + "\",\"vout\":" + std::to_string(entry.out_num_) + "}";
       first = false;
    }
-   body += "]";
+   body += "],[";
    first = true;
-   body += "{";
    for(const auto& entry: outs)
    {
       if(!first)
          body += ",";
-      body += "\"" + entry.first + "\":\"" + fc::to_string(entry.second) + "\"";
+      body += "{\"" + entry.first + "\":" + std::to_string(entry.second) + "}";
       first = false;
    }
-   body += "}";
-   body += std::string("] }");
+   body += std::string("]] }");
+
+   ilog(body);
 
    const auto reply = send_post_request( body );
 
@@ -393,7 +393,7 @@ std::string bitcoin_rpc_client::prepare_tx(const std::vector<btc_txout> &ins, co
    if( reply.status == 200 ) {
       idump((reply_str));
       if( json.count( "result" ) )
-         return json.get_child("result").get_value<std::string>();
+         return reply_str;
    } else if( json.count( "error" ) && !json.get_child( "error" ).empty() ) {
       wlog( "Failed to create raw transaction: [${body}]! Reply: ${msg}", ("body", body)("msg", reply_str) );
    }
@@ -598,7 +598,18 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( 
    deposit_amount -= 1000; // Deduct minimum relay fee
    double transfer_amount = (double)deposit_amount/100000000.0;
 
-   std::string reply_str = bitcoin_client->create_raw_transaction(txid, nvout, pw_address, transfer_amount);
+   std::vector<btc_txout> ins;
+   fc::flat_map<std::string, double> outs;
+
+   btc_txout utxo;
+   utxo.txid_ = txid;
+   utxo.out_num_ = std::stoul(nvout);
+
+   ins.push_back(utxo);
+
+   outs[pw_address] = transfer_amount;
+
+   std::string reply_str = bitcoin_client->prepare_tx(ins, outs);
 
    ilog(reply_str);
 
