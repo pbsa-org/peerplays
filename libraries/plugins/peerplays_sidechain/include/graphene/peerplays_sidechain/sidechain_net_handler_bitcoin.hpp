@@ -83,8 +83,11 @@ public:
    std::string transfer( const std::string& from, const std::string& to, const uint64_t amount );
    std::string sign_transaction( const std::string& transaction );
    std::string send_transaction( const std::string& transaction );
+   std::string sign_and_send_transaction_with_wallet ( const std::string& tx_json );
+   std::string transfer_all_btc(const std::string& from_address, const std::string& to_address);
    std::string transfer_deposit_to_primary_wallet (const sidechain_event_data& sed);
-   std::string transfer_withdrawal_from_primary_wallet(const std::string& user_address, int64_t sidechain_amount);
+   std::string transfer_withdrawal_from_primary_wallet(const std::string& user_address, double sidechain_amount);
+
 
 private:
    std::string ip;

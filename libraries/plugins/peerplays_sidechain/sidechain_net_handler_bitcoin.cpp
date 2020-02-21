@@ -575,41 +575,9 @@ std::string sidechain_net_handler_bitcoin::send_transaction( const std::string& 
    return "";
 }
 
-std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( const sidechain_event_data& sed )
+std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet ( const std::string& tx_json )
 {
-   const auto& idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
-   auto obj = idx.rbegin();
-   if (obj == idx.rend() || obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) {
-       return "";
-   }
-
-   std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
-
-   std::stringstream ss(pw_address_json);
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json( ss, json );
-
-   std::string pw_address = json.get<std::string>("address");
-
-   std::string txid = sed.sidechain_transaction_id;
-   std::string suid = sed.sidechain_uid;
-   std::string nvout = suid.substr(suid.find_last_of("-")+1);
-   int64_t deposit_amount = sed.sidechain_amount;
-   deposit_amount -= 1000; // Deduct minimum relay fee
-   double transfer_amount = (double)deposit_amount/100000000.0;
-
-   std::vector<btc_txout> ins;
-   fc::flat_map<std::string, double> outs;
-
-   btc_txout utxo;
-   utxo.txid_ = txid;
-   utxo.out_num_ = std::stoul(nvout);
-
-   ins.push_back(utxo);
-
-   outs[pw_address] = transfer_amount;
-
-   std::string reply_str = bitcoin_client->prepare_tx(ins, outs);
+   std::string reply_str = tx_json;
 
    ilog(reply_str);
 
@@ -640,7 +608,84 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( 
    return reply_str;
 }
 
-std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wallet(const std::string& user_address, int64_t sidechain_amount) {
+std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_address, const std::string& to_address)
+{
+   uint64_t fee_rate = bitcoin_client->receive_estimated_fee();
+   uint64_t min_fee_rate = 1000;
+   fee_rate = std::max(fee_rate, min_fee_rate);
+
+   double min_amount = ((double)fee_rate/100000000.0); // Account only for relay fee for now
+   double total_amount = 0.0;
+   std::vector<btc_txout> unspent_utxo= bitcoin_client->list_unspent_by_address_and_amount(from_address, 0);
+
+   if(unspent_utxo.size() == 0)
+   {
+      wlog("Failed to find UTXOs to spend for ${pw}",("pw", from_address));
+      return "";
+   }
+   else
+   {
+      for(const auto& utx: unspent_utxo)
+      {
+         total_amount += utx.amount_;
+      }
+
+      if(min_amount >= total_amount)
+      {
+         wlog("Failed not enough BTC to transfer from ${fa}",("fa", from_address));
+         return "";
+      }
+   }
+
+   fc::flat_map<std::string, double> outs;
+   outs[to_address] = total_amount - min_amount;
+
+   std::string reply_str = bitcoin_client->prepare_tx(unspent_utxo, outs);
+   return sign_and_send_transaction_with_wallet(reply_str);
+}
+
+std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( const sidechain_event_data& sed )
+{
+   const auto& idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+   auto obj = idx.rbegin();
+   if (obj == idx.rend() || obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) {
+       return "";
+   }
+
+   std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
+
+   std::stringstream ss(pw_address_json);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json( ss, json );
+
+   std::string pw_address = json.get<std::string>("address");
+
+   std::string txid = sed.sidechain_transaction_id;
+   std::string suid = sed.sidechain_uid;
+   std::string nvout = suid.substr(suid.find_last_of("-")+1);
+   uint64_t deposit_amount = sed.sidechain_amount;
+   uint64_t fee_rate = bitcoin_client->receive_estimated_fee();
+   uint64_t min_fee_rate = 1000;
+   fee_rate = std::max(fee_rate, min_fee_rate);
+   deposit_amount -= fee_rate; // Deduct minimum relay fee
+   double transfer_amount = (double)deposit_amount/100000000.0;
+
+   std::vector<btc_txout> ins;
+   fc::flat_map<std::string, double> outs;
+
+   btc_txout utxo;
+   utxo.txid_ = txid;
+   utxo.out_num_ = std::stoul(nvout);
+
+   ins.push_back(utxo);
+
+   outs[pw_address] = transfer_amount;
+
+   std::string reply_str = bitcoin_client->prepare_tx(ins, outs);
+   return sign_and_send_transaction_with_wallet(reply_str);
+}
+
+std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wallet(const std::string& user_address, double sidechain_amount) {
    const auto& idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
    auto obj = idx.rbegin();
    if (obj == idx.rend() || obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end())
@@ -656,32 +701,42 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
 
    std::string pw_address = json.get<std::string>("address");
 
-   double total_amount = (((double)sidechain_amount*1000.0)+1000.0)/100000000.0; // Account only for relay fee for now
-   double transfer_amount = ((double)sidechain_amount*1000.0)/100000000.0;
-   std::vector<btc_txout> unspent_utxo= bitcoin_client->list_unspent_by_address_and_amount(pw_address, total_amount);
+   uint64_t fee_rate = bitcoin_client->receive_estimated_fee();
+   uint64_t min_fee_rate = 1000;
+   fee_rate = std::max(fee_rate, min_fee_rate);
+
+   double min_amount = sidechain_amount + ((double)fee_rate/100000000.0); // Account only for relay fee for now
+   double total_amount = 0.0;
+   std::vector<btc_txout> unspent_utxo= bitcoin_client->list_unspent_by_address_and_amount(pw_address, 0);
 
    if(unspent_utxo.size() == 0)
    {
+      wlog("Failed to find UTXOs to spend for ${pw}",("pw", pw_address));
       return "";
    }
+   else
+   {
+      for(const auto& utx: unspent_utxo)
+      {
+         total_amount += utx.amount_;
+      }
 
-   btc_txout utxo = unspent_utxo[0];
-   std::string reply_str = bitcoin_client->create_raw_transaction(utxo.txid_, std::to_string(utxo.out_num_), user_address, transfer_amount);
-   ilog(reply_str);
-
-   std::stringstream ss_utx(reply_str);
-   boost::property_tree::ptree pt;
-   boost::property_tree::read_json( ss_utx, pt );
-
-   if( !(pt.count( "error" ) && pt.get_child( "error" ).empty()) || !pt.count("result") ) {
-      return "";
+      if(min_amount > total_amount)
+      {
+         wlog("Failed not enough BTC to spend for ${pw}",("pw", pw_address));
+	 return "";
+      }
    }
 
-   std::string unsigned_tx_hex = pt.get<std::string>("result");
+   fc::flat_map<std::string, double> outs;
+   outs[user_address] = sidechain_amount;
+   if((total_amount - min_amount) > 0.0)
+   {
+      outs[pw_address] = total_amount - min_amount;
+   }
 
-   std::cout << unsigned_tx_hex << std::endl;
-
-   return unsigned_tx_hex;
+   std::string reply_str = bitcoin_client->prepare_tx(unspent_utxo, outs);
+   return sign_and_send_transaction_with_wallet(reply_str);
 }
 
 void sidechain_net_handler_bitcoin::handle_event( const std::string& event_data ) {

@@ -13,7 +13,6 @@ namespace graphene { namespace chain {
       account_id_type                                payer;
 
       // TODO: BTC Transaction Structs go here
-      std::string     tx_hex;
       fc::flat_map<son_id_type, std::vector<peerplays_sidechain::bytes>> signatures;
 
       account_id_type fee_payer()const { return payer; }
@@ -28,7 +27,6 @@ namespace graphene { namespace chain {
       asset                         fee;
       account_id_type               payer;
       proposal_id_type              proposal_id;
-      std::string                   signed_tx_hex;
       std::vector<peerplays_sidechain::bytes> signatures;
 
       account_id_type   fee_payer()const { return payer; }
@@ -53,10 +51,10 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::bitcoin_transaction_send_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::bitcoin_transaction_send_operation, (fee)(payer)(tx_hex)(signatures) )
+FC_REFLECT( graphene::chain::bitcoin_transaction_send_operation, (fee)(payer)(signatures) )
 
 FC_REFLECT( graphene::chain::bitcoin_transaction_sign_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::bitcoin_transaction_sign_operation, (fee)(payer)(proposal_id)(signed_tx_hex)(signatures) )
+FC_REFLECT( graphene::chain::bitcoin_transaction_sign_operation, (fee)(payer)(proposal_id)(signatures) )
 
 FC_REFLECT( graphene::chain::bitcoin_send_transaction_process_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::bitcoin_send_transaction_process_operation, (fee)(payer)(bitcoin_transaction_id) )
