@@ -35,6 +35,7 @@ class peerplays_sidechain_plugin_impl
       void plugin_startup();
 
       std::set<chain::son_id_type>& get_sons();
+      son_id_type& get_current_son_id();
       son_object get_son_object(son_id_type son_id);
       bool is_active_son(son_id_type son_id);
       std::map<chain::public_key_type, fc::ecc::private_key>& get_private_keys();
@@ -55,6 +56,8 @@ class peerplays_sidechain_plugin_impl
       bool config_ready_bitcoin;
       bool config_ready_peerplays;
 
+      son_id_type current_son_id;
+
       std::unique_ptr<peerplays_sidechain::sidechain_net_manager> net_manager;
       std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
       std::set<chain::son_id_type> _sons;
@@ -70,6 +73,7 @@ peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidec
       config_ready_son(false),
       config_ready_bitcoin(false),
       config_ready_peerplays(false),
+      current_son_id(son_id_type(std::numeric_limits<uint32_t>().max())),
       net_manager(nullptr)
 {
 }
@@ -223,6 +227,10 @@ void peerplays_sidechain_plugin_impl::plugin_startup()
 std::set<chain::son_id_type>& peerplays_sidechain_plugin_impl::get_sons()
 {
     return _sons;
+}
+
+son_id_type& peerplays_sidechain_plugin_impl::get_current_son_id() {
+   return current_son_id;
 }
 
 son_object peerplays_sidechain_plugin_impl::get_son_object(son_id_type son_id)
@@ -403,6 +411,8 @@ void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
    // check if we control scheduled SON
    if( _sons.find( next_son_id ) != _sons.end() ) {
 
+      current_son_id = next_son_id;
+
       create_son_down_proposals();
 
       recreate_primary_wallet();
@@ -534,6 +544,10 @@ void peerplays_sidechain_plugin::plugin_startup()
 std::set<chain::son_id_type>& peerplays_sidechain_plugin::get_sons()
 {
     return my->get_sons();
+}
+
+son_id_type& peerplays_sidechain_plugin::get_current_son_id() {
+    return my->get_current_son_id();
 }
 
 son_object peerplays_sidechain_plugin::get_son_object(son_id_type son_id)

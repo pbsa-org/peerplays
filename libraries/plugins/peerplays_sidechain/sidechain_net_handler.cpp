@@ -164,29 +164,24 @@ void sidechain_net_handler::process_deposits() {
 
       const chain::global_property_object& gpo = plugin.database().get_global_properties();
 
-      for (son_id_type son_id : plugin.get_sons()) {
-         if (plugin.is_active_son(son_id)) {
+      son_wallet_deposit_process_operation p_op;
+      p_op.payer = GRAPHENE_SON_ACCOUNT;
+      p_op.son_wallet_deposit_id = swdo.id;
 
-            son_wallet_deposit_process_operation p_op;
-            p_op.payer = GRAPHENE_SON_ACCOUNT;
-            p_op.son_wallet_deposit_id = swdo.id;
+      proposal_create_operation proposal_op;
+      proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
+      uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+      proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
 
-            proposal_create_operation proposal_op;
-            proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
-            proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
-            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
-            proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
-
-            signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
-            trx.validate();
-            try {
-               plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
-               if(plugin.app().p2p_node())
-                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-            } catch(fc::exception e){
-               ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
-            }
-         }
+      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+      trx.validate();
+      try {
+         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         if(plugin.app().p2p_node())
+            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      } catch(fc::exception e){
+         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
       }
    });
 }
@@ -204,29 +199,24 @@ void sidechain_net_handler::process_withdrawals() {
 
       const chain::global_property_object& gpo = plugin.database().get_global_properties();
 
-      for (son_id_type son_id : plugin.get_sons()) {
-         if (plugin.is_active_son(son_id)) {
+      son_wallet_withdraw_process_operation p_op;
+      p_op.payer = GRAPHENE_SON_ACCOUNT;
+      p_op.son_wallet_withdraw_id = swwo.id;
 
-            son_wallet_withdraw_process_operation p_op;
-            p_op.payer = GRAPHENE_SON_ACCOUNT;
-            p_op.son_wallet_withdraw_id = swwo.id;
+      proposal_create_operation proposal_op;
+      proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
+      uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+      proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
 
-            proposal_create_operation proposal_op;
-            proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
-            proposal_op.proposed_ops.emplace_back( op_wrapper( p_op ) );
-            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
-            proposal_op.expiration_time = time_point_sec( plugin.database().head_block_time().sec_since_epoch() + lifetime );
-
-            signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
-            trx.validate();
-            try {
-               plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
-               if(plugin.app().p2p_node())
-                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-            } catch(fc::exception e){
-               ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
-            }
-         }
+      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+      trx.validate();
+      try {
+         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         if(plugin.app().p2p_node())
+            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      } catch(fc::exception e){
+         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}",("e", e.what()));
       }
    });
 }
