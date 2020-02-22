@@ -635,7 +635,7 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
 
-   double min_amount = swwo.withdraw_amount.value + ((double)fee_rate/100000000.0); // Account only for relay fee for now
+   double min_amount = ((double)(swwo.withdraw_amount.value + fee_rate) / 100000000.0); // Account only for relay fee for now
    double total_amount = 0.0;
    std::vector<btc_txout> unspent_utxo = bitcoin_client->listunspent_by_address_and_amount(pw_address, 0);
 
