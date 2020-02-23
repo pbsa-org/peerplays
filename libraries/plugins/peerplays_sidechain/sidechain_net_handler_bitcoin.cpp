@@ -418,12 +418,12 @@ sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
 void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
-   const auto& idx_swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
-   auto obj = idx_swi.rbegin();
-   if (obj != idx_swi.rend()) {
+   const auto& swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+   const auto &active_sw = swi.rbegin();
+   if (active_sw != swi.rend()) {
 
-      if ((obj->addresses.find(sidechain_type::bitcoin) == obj->addresses.end()) ||
-          (obj->addresses.at(sidechain_type::bitcoin).empty())) {
+      if ((active_sw->addresses.find(sidechain_type::bitcoin) == active_sw->addresses.end()) ||
+          (active_sw->addresses.at(sidechain_type::bitcoin).empty())) {
 
          const chain::global_property_object& gpo = database.get_global_properties();
 
@@ -436,35 +436,46 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
          ilog(reply_str);
 
-         std::stringstream ss(reply_str);
-         boost::property_tree::ptree pt;
-         boost::property_tree::read_json( ss, pt );
-         if( pt.count( "error" ) && pt.get_child( "error" ).empty() ) {
+         std::stringstream active_pw_ss(reply_str);
+         boost::property_tree::ptree active_pw_pt;
+         boost::property_tree::read_json( active_pw_ss, active_pw_pt );
+         if( active_pw_pt.count( "error" ) && active_pw_pt.get_child( "error" ).empty() ) {
 
             std::stringstream res;
-            boost::property_tree::json_parser::write_json(res, pt.get_child("result"));
+            boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
 
             son_wallet_update_operation op;
             op.payer = GRAPHENE_SON_ACCOUNT;
-            op.son_wallet_id = (*obj).id;
+            op.son_wallet_id = (*active_sw).id;
             op.sidechain = sidechain_type::bitcoin;
             op.address = res.str();
 
-            for (son_id_type son_id : plugin.get_sons()) {
-               proposal_create_operation proposal_op;
-               proposal_op.fee_paying_account = plugin.get_son_object(son_id).son_account;
-               proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
-               uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
-               proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+            proposal_create_operation proposal_op;
+            proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+            proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
+            uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+            proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-               signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
-               try {
-                  database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-                  if(plugin.app().p2p_node())
-                     plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-               } catch(fc::exception e){
-                  ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
-               }
+            signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+            try {
+               database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+               if(plugin.app().p2p_node())
+                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+            } catch(fc::exception e){
+               ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
+               return;
+            }
+
+            const auto &prev_sw = std::next(active_sw);
+            if (prev_sw != swi.rend()) {
+               std::stringstream prev_sw_ss(prev_sw->addresses.at(sidechain_type::bitcoin));
+               boost::property_tree::ptree prev_sw_pt;
+               boost::property_tree::read_json( prev_sw_ss, prev_sw_pt );
+
+               std::string active_pw_address = active_pw_pt.get_child("result").get<std::string>("address");
+               std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
+
+               transfer_all_btc(prev_pw_address, active_pw_address);
             }
          }
       }

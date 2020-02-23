@@ -63,8 +63,8 @@ class peerplays_sidechain_plugin_impl
       std::set<chain::son_id_type> _sons;
       fc::future<void> _heartbeat_task;
 
-      void on_block_applied( const signed_block& b );
-      void on_objects_new(const vector<object_id_type>& new_object_ids);
+      void on_applied_block( const signed_block& b );
+      void on_new_objects(const vector<object_id_type>& new_object_ids);
 
 };
 
@@ -162,8 +162,8 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       throw;
    }
 
-   plugin.database().applied_block.connect( [&] (const signed_block& b) { on_block_applied(b); } );
-   plugin.database().new_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_objects_new(ids); } );
+   plugin.database().applied_block.connect( [&] (const signed_block& b) { on_applied_block(b); } );
+   plugin.database().new_objects.connect( [&] (const vector<object_id_type>& ids, const flat_set<account_id_type>& impacted_accounts) { on_new_objects(ids); } );
 
    net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
 
@@ -396,7 +396,7 @@ void peerplays_sidechain_plugin_impl::process_withdrawals()
    net_manager->process_withdrawals();
 }
 
-void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
+void peerplays_sidechain_plugin_impl::on_applied_block( const signed_block& b )
 {
    chain::database& d = plugin.database();
    const chain::global_property_object& gpo = d.get_global_properties();
@@ -424,7 +424,7 @@ void peerplays_sidechain_plugin_impl::on_block_applied( const signed_block& b )
    }
 }
 
-void peerplays_sidechain_plugin_impl::on_objects_new(const vector<object_id_type>& new_object_ids)
+void peerplays_sidechain_plugin_impl::on_new_objects(const vector<object_id_type>& new_object_ids)
 {
 
    auto approve_proposal = [ & ]( const chain::son_id_type& son_id, const chain::proposal_id_type& proposal_id )
