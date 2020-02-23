@@ -1988,19 +1988,22 @@ public:
       });
       std::vector<fc::optional<son_object>> son_objects = _remote_db->get_sons(son_ids);
       vector<account_id_type> owners;
-      owners.resize(son_objects.size());
-      std::transform(son_objects.begin(), son_objects.end(), owners.begin(),
-                     [](const fc::optional<son_object>& obj) {
-                        FC_ASSERT(obj, "Invalid active SONs list in global properties.");
-                        return obj->son_account;
-                     });
+      for(auto obj: son_objects)
+      {
+         if (obj)
+            owners.push_back(obj->son_account);
+      }
       vector<fc::optional<account_object>> accs = _remote_db->get_accounts(owners);
+      std::remove_if(son_objects.begin(), son_objects.end(),
+                     [](const fc::optional<son_object>& obj) -> bool { return obj.valid(); });
       map<string, son_id_type> result;
-      std::transform(accs.begin(), accs.end(), son_ids.begin(),
+      std::transform(accs.begin(), accs.end(), son_objects.begin(),
                      std::inserter(result, result.end()),
-                     [](fc::optional<account_object>& acct, son_id_type& sid) {
+                     [](fc::optional<account_object>& acct, fc::optional<son_object> son) {
                         FC_ASSERT(acct, "Invalid active SONs list in global properties.");
-                        return std::make_pair<string, son_id_type>(string(acct->name), std::move(sid));
+                        if (son.valid())
+                           return std::make_pair<string, son_id_type>(string(acct->name), std::move(son->id));
+                        return std::make_pair<string, son_id_type>(string(acct->name), std::move(son_id_type()));
                      });
       return result;
    } FC_CAPTURE_AND_RETHROW() }
@@ -2022,9 +2025,8 @@ public:
 
    signed_transaction add_sidechain_address(string account,
                                             peerplays_sidechain::sidechain_type sidechain,
-                                            string address,
-                                            string private_key,
-                                            string public_key,
+                                            string deposit_address,
+                                            string withdraw_address,
                                             bool broadcast /* = false */)
    { try {
       account_id_type sidechain_address_account_id = get_account_id(account);
@@ -2032,9 +2034,8 @@ public:
       sidechain_address_add_operation op;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
-      op.address = address;
-      op.private_key = private_key;
-      op.public_key = public_key;
+      op.deposit_address = deposit_address;
+      op.withdraw_address = withdraw_address;
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -2046,9 +2047,8 @@ public:
 
    signed_transaction update_sidechain_address(string account,
                                                peerplays_sidechain::sidechain_type sidechain,
-                                               string address,
-                                               string private_key,
-                                               string public_key,
+                                               string deposit_address,
+                                               string withdraw_address,
                                                bool broadcast /* = false */)
    { try {
       account_id_type sidechain_address_account_id = get_account_id(account);
@@ -2060,9 +2060,8 @@ public:
       op.sidechain_address_id = sao->id;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
-      op.address = address;
-      op.private_key = private_key;
-      op.public_key = public_key;
+      op.deposit_address = deposit_address;
+      op.withdraw_address = withdraw_address;
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -4501,22 +4500,20 @@ vector<optional<son_wallet_object>> wallet_api::get_son_wallets(uint32_t limit)
 
 signed_transaction wallet_api::add_sidechain_address(string account,
                                           peerplays_sidechain::sidechain_type sidechain,
-                                          string address,
-                                          string private_key,
-                                          string public_key,
+                                          string deposit_address,
+                                          string withdraw_address,
                                           bool broadcast /* = false */)
 {
-   return my->add_sidechain_address(account, sidechain, address, private_key, public_key, broadcast);
+   return my->add_sidechain_address(account, sidechain, deposit_address, withdraw_address, broadcast);
 }
 
 signed_transaction wallet_api::update_sidechain_address(string account,
                                           peerplays_sidechain::sidechain_type sidechain,
-                                          string address,
-                                          string private_key,
-                                          string public_key,
+                                          string deposit_address,
+                                          string withdraw_address,
                                           bool broadcast /* = false */)
 {
-   return my->update_sidechain_address(account, sidechain, address, private_key, public_key, broadcast);
+   return my->update_sidechain_address(account, sidechain, deposit_address, withdraw_address, broadcast);
 }
 
 signed_transaction wallet_api::delete_sidechain_address(string account,
