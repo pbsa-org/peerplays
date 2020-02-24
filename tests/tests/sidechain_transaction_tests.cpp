@@ -150,7 +150,21 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
 
       generate_block();
 
-      const auto &son_btc_account = db.create<account_object>([&](account_object &obj) {
+      const auto& acc_idx = db.get_index_type<account_index>().indices().get<by_id>();
+      auto acc_itr = acc_idx.find(GRAPHENE_SON_ACCOUNT);
+      BOOST_REQUIRE(acc_itr != acc_idx.end());
+      db.modify(*acc_itr, [&](account_object &obj) {
+         obj.active.account_auths.clear();
+         obj.active.add_authority(bob_id, 1);
+         obj.active.add_authority(alice_id, 1);
+         obj.active.weight_threshold = 2;
+         obj.owner.account_auths.clear();
+         obj.owner.add_authority(bob_id, 1);
+         obj.owner.add_authority(alice_id, 1);
+         obj.owner.weight_threshold = 2;
+      });
+
+      /*const auto &son_btc_account = db.create<account_object>([&](account_object &obj) {
          obj.name = "son_btc_account";
          obj.statistics = db.create<account_statistics_object>([&](account_statistics_object &acc_stat) { acc_stat.owner = obj.id; }).id;
          obj.membership_expiration_date = time_point_sec::maximum();
@@ -170,7 +184,7 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
          _gpo.parameters.extensions.value.son_btc_account = son_btc_account.get_id();
          if( _gpo.pending_parameters )
             _gpo.pending_parameters->extensions.value.son_btc_account = son_btc_account.get_id();
-      });
+      });*/
 
       generate_block();
 
@@ -181,7 +195,7 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
 
          bitcoin_transaction_send_operation send_op;
 
-         send_op.payer = db.get_global_properties().parameters.get_son_btc_account_id();
+         send_op.payer = GRAPHENE_SON_ACCOUNT;
 
          proposal_create_operation proposal_op;
          proposal_op.fee_paying_account = alice_id;
@@ -297,7 +311,7 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
 
          bitcoin_send_transaction_process_operation process_op;
          process_op.bitcoin_transaction_id = bitcoin_transaction_id_type(0);
-         process_op.payer = db.get_global_properties().parameters.get_son_btc_account_id();
+         process_op.payer = GRAPHENE_SON_ACCOUNT;
 
          proposal_create_operation proposal_op;
          proposal_op.fee_paying_account = alice_id;

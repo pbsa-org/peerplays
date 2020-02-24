@@ -670,7 +670,7 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet ( 
    std::string txid = sed.sidechain_transaction_id;
    std::string suid = sed.sidechain_uid;
    std::string nvout = suid.substr(suid.find_last_of("-")+1);
-   uint64_t deposit_amount = sed.sidechain_amount;
+   uint64_t deposit_amount = sed.sidechain_amount.value;
    uint64_t fee_rate = bitcoin_client->receive_estimated_fee();
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
