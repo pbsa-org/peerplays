@@ -677,4 +677,13 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx, const std::vector<
    return ret;
 }
 
+std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t> > &public_keys)
+{
+   std::vector<std::pair<fc::ecc::public_key, int>> key_data;
+   for(auto p: public_keys)
+      key_data.push_back(std::make_pair(fc::ecc::public_key::from_base58(p.first), p.second));
+   bytes redeem_script = generate_redeem_script(key_data);
+   return p2wsh_address_from_redeem_script(redeem_script);
+}
+
 }} // namespace graphene::peerplays_sidechain
