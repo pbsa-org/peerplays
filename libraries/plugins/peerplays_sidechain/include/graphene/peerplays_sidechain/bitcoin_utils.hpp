@@ -13,6 +13,8 @@ enum bitcoin_network {
 bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int>> key_data);
 std::string p2wsh_address_from_redeem_script(const bytes &script, bitcoin_network network = mainnet);
 bytes lock_script_for_redeem_script(const bytes &script);
+bytes lock_script_from_pw_address(const std::string &address);
+
 std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t>>& public_keys);
 
 std::vector<bytes> signatures_for_raw_transaction(const bytes &unsigned_tx,
@@ -74,6 +76,20 @@ struct btc_outpoint {
 };
 
 struct btc_in {
+   btc_in() = default;
+   btc_in(const btc_in&) = default;
+   btc_in(btc_in&&) = default;
+   btc_in& operator=(const btc_in&) = default;
+
+   btc_in(const std::string& txid, uint32_t out, uint32_t sequence = 0xffffffff)
+   {
+      prevout.n = out;
+      prevout.hash = fc::uint256(txid);
+      // reverse hash due to the different from_hex algo in bitcoin
+      std::reverse(prevout.hash.data(), prevout.hash.data() + prevout.hash.data_size());
+      nSequence = sequence;
+   }
+
    btc_outpoint prevout;
    bytes scriptSig;
    uint32_t nSequence;
@@ -84,6 +100,17 @@ struct btc_in {
 };
 
 struct btc_out {
+   btc_out() = default;
+   btc_out(const btc_out&) = default;
+   btc_out(btc_out&&) = default;
+   btc_out& operator=(const btc_out&) = default;
+
+   btc_out(const std::string& address, uint64_t amount) :
+      nValue(amount),
+      scriptPubKey(lock_script_from_pw_address(address))
+   {
+   }
+
    int64_t nValue;
    bytes scriptPubKey;
 

@@ -9,6 +9,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <fc/crypto/base64.hpp>
+#include <fc/crypto/hex.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
@@ -754,10 +755,20 @@ std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &f
       }
    }
 
-   fc::flat_map<std::string, double> outs;
-   outs[to_address] = total_amount - min_amount;
+   btc_tx tx;
+   tx.hasWitness = true;
+   tx.nVersion = 2;
+   tx.nLockTime = 0;
+   for(const auto& utx: unspent_utxo)
+   {
+      tx.vin.push_back(btc_in(utx.txid_, utx.out_num_));
+   }
+   tx.vout.push_back(btc_out(to_address, uint64_t((total_amount - min_amount) * 100000000.0)));
 
-   std::string reply_str = bitcoin_client->createrawtransaction(unspent_utxo, outs);
+   bytes unsigned_tx;
+   tx.to_bytes(unsigned_tx);
+
+   std::string reply_str = fc::to_hex((char*)&unsigned_tx[0], unsigned_tx.size());
    return sign_and_send_transaction_with_wallet(reply_str);
 }
 
@@ -768,13 +779,7 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet(co
       return "";
    }
 
-   std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
-
-   std::stringstream ss(pw_address_json);
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   std::string pw_address = json.get<std::string>("address");
+   std::string pw_address = obj->addresses.find(sidechain_type::bitcoin)->second;
 
    std::string txid = swdo.sidechain_transaction_id;
    std::string suid = swdo.sidechain_uid;
@@ -784,20 +789,18 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet(co
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
    deposit_amount -= fee_rate; // Deduct minimum relay fee
-   double transfer_amount = (double)deposit_amount / 100000000.0;
 
-   std::vector<btc_txout> ins;
-   fc::flat_map<std::string, double> outs;
+   btc_tx tx;
+   tx.nVersion = 2;
+   tx.nLockTime = 0;
+   tx.hasWitness = true;
+   tx.vin.push_back(btc_in(txid, std::stoul(nvout)));
+   tx.vout.push_back(btc_out(pw_address, deposit_amount));
 
-   btc_txout utxo;
-   utxo.txid_ = txid;
-   utxo.out_num_ = std::stoul(nvout);
+   bytes unsigned_tx;
+   tx.to_bytes(unsigned_tx);
 
-   ins.push_back(utxo);
-
-   outs[pw_address] = transfer_amount;
-
-   std::string reply_str = bitcoin_client->createrawtransaction(ins, outs);
+   std::string reply_str = fc::to_hex((char*)&unsigned_tx[0], unsigned_tx.size());
    return sign_and_send_transaction_with_wallet(reply_str);
 }
 
@@ -808,13 +811,7 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
       return "";
    }
 
-   std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
-
-   std::stringstream ss(pw_address_json);
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   std::string pw_address = json.get<std::string>("address");
+   std::string pw_address = obj->addresses.find(sidechain_type::bitcoin)->second;
 
    uint64_t fee_rate = bitcoin_client->estimatesmartfee();
    uint64_t min_fee_rate = 1000;
@@ -838,13 +835,22 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
       }
    }
 
-   fc::flat_map<std::string, double> outs;
-   outs[swwo.withdraw_address] = swwo.withdraw_amount.value / 100000000.0;
-   if ((total_amount - min_amount) > 0.0) {
-      outs[pw_address] = total_amount - min_amount;
+   btc_tx tx;
+   tx.nVersion = 2;
+   tx.nLockTime = 0;
+   tx.hasWitness = true;
+   for(const auto& utxo: unspent_utxo)
+      tx.vin.push_back(btc_in(utxo.txid_, utxo.amount_));
+   tx.vout.push_back(btc_out(swwo.withdraw_address, swwo.withdraw_amount.value));
+   if((total_amount - min_amount) > 0.0)
+   {
+      tx.vout.push_back(btc_out(pw_address, (total_amount - min_amount) * 100000000.0));
    }
 
-   std::string reply_str = bitcoin_client->createrawtransaction(unspent_utxo, outs);
+   bytes unsigned_tx;
+   tx.to_bytes(unsigned_tx);
+
+   std::string reply_str = fc::to_hex((char*)&unsigned_tx[0], unsigned_tx.size());
    return sign_and_send_transaction_with_wallet(reply_str);
 }
 
