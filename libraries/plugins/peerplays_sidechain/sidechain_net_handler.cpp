@@ -87,7 +87,6 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-            //ilog("sidechain_net_handler:  sending proposal for son wallet deposit create operation by ${son}", ("son", son_id));
             signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
             try {
                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
@@ -130,7 +129,6 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
             proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
 
-            //ilog("sidechain_net_handler:  sending proposal for son wallet withdraw create operation by ${son}", ("son", son_id));
             signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
             try {
                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
@@ -145,10 +143,6 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    FC_ASSERT(false, "Invalid sidechain event");
-}
-
-void sidechain_net_handler::recreate_primary_wallet() {
-   FC_ASSERT(false, "recreate_primary_wallet not implemented");
 }
 
 void sidechain_net_handler::process_deposits() {
@@ -220,6 +214,19 @@ void sidechain_net_handler::process_withdrawals() {
       }
    });
 }
+
+void sidechain_net_handler::recreate_primary_wallet() {
+   FC_ASSERT(false, "recreate_primary_wallet not implemented");
+}
+
+void sidechain_net_handler::process_deposit(const son_wallet_deposit_object& swdo) {
+   FC_ASSERT(false, "process_deposit not implemented");
+}
+
+void sidechain_net_handler::process_withdrawal(const son_wallet_withdraw_object& swwo) {
+   FC_ASSERT(false, "process_withdrawal not implemented");
+}
+
 
 } } // graphene::peerplays_sidechain
 

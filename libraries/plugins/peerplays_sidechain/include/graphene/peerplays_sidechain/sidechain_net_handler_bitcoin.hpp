@@ -75,9 +75,7 @@ public:
    virtual ~sidechain_net_handler_bitcoin();
 
    void recreate_primary_wallet();
-   void process_deposits();
    void process_deposit(const son_wallet_deposit_object& swdo);
-   void process_withdrawals();
    void process_withdrawal(const son_wallet_withdraw_object& swwo);
 
    std::string create_multisignature_wallet( const std::vector<std::string> public_keys );

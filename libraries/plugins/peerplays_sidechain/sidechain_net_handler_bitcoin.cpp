@@ -482,17 +482,9 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
    }
 }
 
-void sidechain_net_handler_bitcoin::process_deposits() {
-   sidechain_net_handler::process_deposits();
-}
-
 void sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
    ilog(__FUNCTION__);
    transfer_deposit_to_primary_wallet(swdo);
-}
-
-void sidechain_net_handler_bitcoin::process_withdrawals() {
-   sidechain_net_handler::process_withdrawals();
 }
 
 void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {

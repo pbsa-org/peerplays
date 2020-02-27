@@ -20,11 +20,11 @@ public:
     std::vector<std::string> get_sidechain_withdraw_addresses();
 
     void sidechain_event_data_received(const sidechain_event_data& sed);
+    void process_deposits();
+    void process_withdrawals();
 
     virtual void recreate_primary_wallet() = 0;
-    virtual void process_deposits() = 0;
     virtual void process_deposit(const son_wallet_deposit_object& swdo) = 0;
-    virtual void process_withdrawals() = 0;
     virtual void process_withdrawal(const son_wallet_withdraw_object& swwo) = 0;
 
 protected:
