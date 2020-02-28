@@ -21,8 +21,8 @@ namespace graphene { namespace peerplays_sidechain {
 
 // =============================================================================
 
-bitcoin_rpc_client::bitcoin_rpc_client( std::string _ip, uint32_t _rpc, std::string _user, std::string _password ):
-                      ip( _ip ), rpc_port( _rpc ), user( _user ), password( _password )
+bitcoin_rpc_client::bitcoin_rpc_client( std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password ):
+                      ip( _ip ), rpc_port( _rpc ), user( _user ), password( _password ), wallet( _wallet ), wallet_password( _wallet_password )
 {
    authorization.key = "Authorization";
    authorization.val = "Basic " + fc::base64_encode( user + ":" + password );
@@ -326,7 +326,11 @@ fc::http::reply bitcoin_rpc_client::send_post_request( std::string body )
    fc::http::connection conn;
    conn.connect_to( fc::ip::endpoint( fc::ip::address( ip ), rpc_port ) );
 
-   const auto url = "http://" + ip + ":" + std::to_string( rpc_port );
+   std::string url = "http://" + ip + ":" + std::to_string( rpc_port );
+
+   if (wallet.length() > 0) {
+      url = url + "/wallet/" + wallet;
+   }
 
    return conn.request( "POST", url, body, fc::http::headers{authorization} );
 }
@@ -382,19 +386,21 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
    rpc_port = options.at("bitcoin-node-rpc-port").as<uint32_t>();
    rpc_user = options.at("bitcoin-node-rpc-user").as<std::string>();
    rpc_password = options.at("bitcoin-node-rpc-password").as<std::string>();
+   wallet = options.at("bitcoin-wallet").as<std::string>();
+   wallet_password = options.at("bitcoin-wallet-password").as<std::string>();
 
-   if( options.count("bitcoin-private-keys") )
+   if( options.count("bitcoin-private-key") )
    {
-      const std::vector<std::string> pub_priv_keys = options["bitcoin-private-keys"].as<std::vector<std::string>>();
+      const std::vector<std::string> pub_priv_keys = options["bitcoin-private-key"].as<std::vector<std::string>>();
       for (const std::string& itr_key_pair : pub_priv_keys)
       {
          auto key_pair = graphene::app::dejsonify<std::pair<std::string, std::string> >(itr_key_pair, 5);
-         ilog("Public Key: ${public}", ("public", key_pair.first));
+         ilog("Bitcoin Public Key: ${public}", ("public", key_pair.first));
          if(!key_pair.first.length() || !key_pair.second.length())
          {
             FC_THROW("Invalid public private key pair.");
          }
-         _private_keys[key_pair.first] = key_pair.second;
+         private_keys[key_pair.first] = key_pair.second;
       }
    }
 
@@ -407,7 +413,7 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
    }
 
    listener = std::unique_ptr<zmq_listener>( new zmq_listener( ip, zmq_port ) );
-   bitcoin_client = std::unique_ptr<bitcoin_rpc_client>( new bitcoin_rpc_client( ip, rpc_port, rpc_user, rpc_password ) );
+   bitcoin_client = std::unique_ptr<bitcoin_rpc_client>( new bitcoin_rpc_client( ip, rpc_port, rpc_user, rpc_password, wallet, wallet_password ) );
 
    listener->event_received.connect([this]( const std::string& event_data ) {
       std::thread( &sidechain_net_handler_bitcoin::handle_event, this, event_data ).detach();

@@ -47,6 +47,14 @@ std::vector<std::string> sidechain_net_handler::get_sidechain_withdraw_addresses
    return result;
 }
 
+std::string sidechain_net_handler::get_private_key(std::string public_key) {
+   auto private_key_itr = private_keys.find( public_key );
+   if( private_key_itr != private_keys.end() ) {
+      return private_key_itr->second;
+   }
+   return std::string();
+}
+
 void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_data& sed) {
    ilog( "sidechain_event_data:" );
    ilog( "  timestamp:                ${timestamp}", ( "timestamp", sed.timestamp ) );

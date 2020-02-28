@@ -22,7 +22,7 @@ public:
 
 class bitcoin_rpc_client {
 public:
-   bitcoin_rpc_client( std::string _ip, uint32_t _rpc, std::string _user, std::string _password) ;
+   bitcoin_rpc_client( std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password) ;
    bool connection_is_not_defined() const;
 
    std::string addmultisigaddress( const std::vector<std::string> public_keys );
@@ -44,6 +44,8 @@ private:
    uint32_t rpc_port;
    std::string user;
    std::string password;
+   std::string wallet;
+   std::string wallet_password;
 
    fc::http::header authorization;
 };
@@ -78,6 +80,18 @@ public:
    void process_deposit(const son_wallet_deposit_object& swdo);
    void process_withdrawal(const son_wallet_withdraw_object& swwo);
 
+private:
+   std::string ip;
+   uint32_t zmq_port;
+   uint32_t rpc_port;
+   std::string rpc_user;
+   std::string rpc_password;
+   std::string wallet;
+   std::string wallet_password;
+
+   std::unique_ptr<zmq_listener> listener;
+   std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
+
    std::string create_multisignature_wallet( const std::vector<std::string> public_keys );
    std::string transfer( const std::string& from, const std::string& to, const uint64_t amount );
    std::string sign_transaction( const std::string& transaction );
@@ -86,18 +100,6 @@ public:
    std::string transfer_all_btc(const std::string& from_address, const std::string& to_address);
    std::string transfer_deposit_to_primary_wallet (const son_wallet_deposit_object &swdo);
    std::string transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo);
-
-
-private:
-   std::string ip;
-   uint32_t zmq_port;
-   uint32_t rpc_port;
-   std::string rpc_user;
-   std::string rpc_password;
-   std::map<std::string, std::string> _private_keys;
-
-   std::unique_ptr<zmq_listener> listener;
-   std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
 
    void handle_event( const std::string& event_data);
    std::vector<info_for_vin> extract_info_from_block( const std::string& _block );

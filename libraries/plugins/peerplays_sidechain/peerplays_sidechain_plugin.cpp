@@ -38,7 +38,6 @@ class peerplays_sidechain_plugin_impl
       son_id_type& get_current_son_id();
       son_object get_son_object(son_id_type son_id);
       bool is_active_son(son_id_type son_id);
-      std::map<chain::public_key_type, fc::ecc::private_key>& get_private_keys();
       fc::ecc::private_key get_private_key(son_id_type son_id);
       fc::ecc::private_key get_private_key(chain::public_key_type public_key);
 
@@ -63,7 +62,7 @@ class peerplays_sidechain_plugin_impl
 
       std::unique_ptr<peerplays_sidechain::sidechain_net_manager> net_manager;
       std::set<chain::son_id_type> _sons;
-      std::map<chain::public_key_type, fc::ecc::private_key> _private_keys;
+      std::map<chain::public_key_type, fc::ecc::private_key> private_keys;
       fc::future<void> _heartbeat_task;
       fc::future<void> _son_processing_task;
 
@@ -122,12 +121,11 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
          ("bitcoin-node-rpc-port", bpo::value<uint32_t>()->default_value(22222), "RPC port of Bitcoin node")
          ("bitcoin-node-rpc-user", bpo::value<string>()->default_value("1"), "Bitcoin RPC user")
          ("bitcoin-node-rpc-password", bpo::value<string>()->default_value("1"), "Bitcoin RPC password")
-         ("bitcoin-address", bpo::value<string>()->default_value("2N911a7smwDzUGARg8s7Q1ViizFCw6gWcbR"), "Bitcoin address")
-         ("bitcoin-public-key", bpo::value<string>()->default_value("02d0f137e717fb3aab7aff99904001d49a0a636c5e1342f8927a4ba2eaee8e9772"), "Bitcoin public key")
-         ("bitcoin-private-key", bpo::value<string>()->default_value("cVN31uC9sTEr392DLVUEjrtMgLA8Yb3fpYmTRj7bomTm6nn2ANPr"), "Bitcoin private key")
-         ("bitcoin-private-keys", bpo::value<vector<string>>()->composing()->multitoken()->
+         ("bitcoin-wallet", bpo::value<string>(), "Bitcoin wallet")
+         ("bitcoin-wallet-password", bpo::value<string>(), "Bitcoin wallet password")
+         ("bitcoin-private-key", bpo::value<vector<string>>()->composing()->multitoken()->
                DEFAULT_VALUE_VECTOR(std::make_pair("02d0f137e717fb3aab7aff99904001d49a0a636c5e1342f8927a4ba2eaee8e9772", "cVN31uC9sTEr392DLVUEjrtMgLA8Yb3fpYmTRj7bomTm6nn2ANPr")),
-               "Tuple of [Bitcoin PublicKey, Bitcoin Private key] (may specify multiple times)")
+               "Tuple of [Bitcoin public key, Bitcoin private key] (may specify multiple times)")
          ;
    cfg.add(cli);
 }
@@ -166,7 +164,7 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
                   FC_THROW("Invalid WIF-format private key ${key_string}", ("key_string", key_id_to_wif_pair.second));
                }
             }
-            _private_keys[key_id_to_wif_pair.first] = *private_key;
+            private_keys[key_id_to_wif_pair.first] = *private_key;
          }
       }
    } else {
@@ -181,7 +179,8 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
    config_ready_bitcoin = options.count( "bitcoin-node-ip" ) &&
            options.count( "bitcoin-node-zmq-port" ) && options.count( "bitcoin-node-rpc-port" ) &&
            options.count( "bitcoin-node-rpc-user" ) && options.count( "bitcoin-node-rpc-password" ) &&
-           options.count( "bitcoin-address" ) && options.count( "bitcoin-public-key" ) && options.count( "bitcoin-private-key" );
+           options.count( "bitcoin-wallet" ) && options.count( "bitcoin-wallet-password" ) && 
+           options.count( "bitcoin-private-key" );
    if (config_ready_bitcoin) {
       net_manager->create_handler(sidechain_type::bitcoin, options);
       ilog("Bitcoin sidechain handler created");
@@ -274,11 +273,6 @@ bool peerplays_sidechain_plugin_impl::is_active_son(son_id_type son_id)
    return (it != active_son_ids.end());
 }
 
-std::map<chain::public_key_type, fc::ecc::private_key>& peerplays_sidechain_plugin_impl::get_private_keys()
-{
-   return _private_keys;
-}
-
 fc::ecc::private_key peerplays_sidechain_plugin_impl::get_private_key(son_id_type son_id)
 {
    return get_private_key(get_son_object(son_id).signing_key);
@@ -286,8 +280,8 @@ fc::ecc::private_key peerplays_sidechain_plugin_impl::get_private_key(son_id_typ
 
 fc::ecc::private_key peerplays_sidechain_plugin_impl::get_private_key(chain::public_key_type public_key)
 {
-   auto private_key_itr = _private_keys.find( public_key );
-   if( private_key_itr != _private_keys.end() ) {
+   auto private_key_itr = private_keys.find( public_key );
+   if( private_key_itr != private_keys.end() ) {
       return private_key_itr->second;
    }
    return {};
@@ -577,11 +571,6 @@ son_object peerplays_sidechain_plugin::get_son_object(son_id_type son_id)
 bool peerplays_sidechain_plugin::is_active_son(son_id_type son_id)
 {
    return my->is_active_son(son_id);
-}
-
-std::map<chain::public_key_type, fc::ecc::private_key>& peerplays_sidechain_plugin::get_private_keys()
-{
-   return my->get_private_keys();
 }
 
 fc::ecc::private_key peerplays_sidechain_plugin::get_private_key(son_id_type son_id)
