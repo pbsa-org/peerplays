@@ -111,23 +111,31 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
    string son_id_example2 = fc::json::to_string(chain::son_id_type(6));
 
    cli.add_options()
-         ("son-id", bpo::value<vector<string>>(), ("ID of SON controlled by this node (e.g. " + son_id_example + ", quotes are required)").c_str())
-         ("son-ids", bpo::value<string>(), ("IDs of multiple SONs controlled by this node (e.g. [" + son_id_example + ", " + son_id_example2 + "], quotes are required)").c_str())
+         ("son-id", bpo::value<vector<string>>(), ("ID of SON controlled by this node (e.g. " + son_id_example + ", quotes are required)").c_str());
+   cli.add_options()
+         ("son-ids", bpo::value<string>(), ("IDs of multiple SONs controlled by this node (e.g. [" + son_id_example + ", " + son_id_example2 + "], quotes are required)").c_str());
+   cli.add_options()
          ("peerplays-private-key", bpo::value<vector<string>>()->composing()->multitoken()->
                DEFAULT_VALUE_VECTOR(std::make_pair(chain::public_key_type(default_priv_key.get_public_key()), graphene::utilities::key_to_wif(default_priv_key))),
-               "Tuple of [PublicKey, WIF private key] (may specify multiple times)")
-
-         ("bitcoin-node-ip", bpo::value<string>()->default_value("99.79.189.95"), "IP address of Bitcoin node")
-         ("bitcoin-node-zmq-port", bpo::value<uint32_t>()->default_value(11111), "ZMQ port of Bitcoin node")
-         ("bitcoin-node-rpc-port", bpo::value<uint32_t>()->default_value(22222), "RPC port of Bitcoin node")
-         ("bitcoin-node-rpc-user", bpo::value<string>()->default_value("1"), "Bitcoin RPC user")
-         ("bitcoin-node-rpc-password", bpo::value<string>()->default_value("1"), "Bitcoin RPC password")
-         ("bitcoin-wallet", bpo::value<string>(), "Bitcoin wallet")
-         ("bitcoin-wallet-password", bpo::value<string>(), "Bitcoin wallet password")
+               "Tuple of [PublicKey, WIF private key] (may specify multiple times)");
+   cli.add_options()
+         ("bitcoin-node-ip", bpo::value<string>()->default_value("99.79.189.95"), "IP address of Bitcoin node");
+   cli.add_options()
+         ("bitcoin-node-zmq-port", bpo::value<uint32_t>()->default_value(11111), "ZMQ port of Bitcoin node");
+   cli.add_options()
+         ("bitcoin-node-rpc-port", bpo::value<uint32_t>()->default_value(22222), "RPC port of Bitcoin node");
+   cli.add_options()
+         ("bitcoin-node-rpc-user", bpo::value<string>()->default_value("1"), "Bitcoin RPC user");
+   cli.add_options()
+         ("bitcoin-node-rpc-password", bpo::value<string>()->default_value("1"), "Bitcoin RPC password");
+   cli.add_options()
+         ("bitcoin-wallet", bpo::value<string>(), "Bitcoin wallet");
+   cli.add_options()
+         ("bitcoin-wallet-password", bpo::value<string>(), "Bitcoin wallet password");
+   cli.add_options()
          ("bitcoin-private-key", bpo::value<vector<string>>()->composing()->multitoken()->
                DEFAULT_VALUE_VECTOR(std::make_pair("02d0f137e717fb3aab7aff99904001d49a0a636c5e1342f8927a4ba2eaee8e9772", "cVN31uC9sTEr392DLVUEjrtMgLA8Yb3fpYmTRj7bomTm6nn2ANPr")),
-               "Tuple of [Bitcoin public key, Bitcoin private key] (may specify multiple times)")
-         ;
+               "Tuple of [Bitcoin public key, Bitcoin private key] (may specify multiple times)");
    cfg.add(cli);
 }
 

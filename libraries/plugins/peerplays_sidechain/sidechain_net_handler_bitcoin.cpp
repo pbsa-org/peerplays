@@ -386,8 +386,14 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
    rpc_port = options.at("bitcoin-node-rpc-port").as<uint32_t>();
    rpc_user = options.at("bitcoin-node-rpc-user").as<std::string>();
    rpc_password = options.at("bitcoin-node-rpc-password").as<std::string>();
-   wallet = options.at("bitcoin-wallet").as<std::string>();
-   wallet_password = options.at("bitcoin-wallet-password").as<std::string>();
+   wallet = "";
+   if (options.count("bitcoin-wallet")) {
+      wallet = options.at("bitcoin-wallet").as<std::string>();
+   }
+   wallet_password = "";
+   if (options.count("bitcoin-wallet-password")) {
+      wallet_password = options.at("bitcoin-wallet-password").as<std::string>();
+   }
 
    if( options.count("bitcoin-private-key") )
    {
