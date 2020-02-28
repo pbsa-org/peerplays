@@ -26,14 +26,20 @@ public:
 
    std::string addmultisigaddress(const std::vector<std::string> public_keys);
    std::string createrawtransaction(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
+   std::string createwallet(const std::string &wallet_name);
+   std::string encryptwallet(const std::string &passphrase);
    uint64_t estimatesmartfee();
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);
    void importaddress(const std::string &address_or_script);
    std::vector<btc_txout> listunspent();
    std::vector<btc_txout> listunspent_by_address_and_amount(const std::string &address, double transfer_amount);
+   std::string loadwallet(const std::string &filename);
    void sendrawtransaction(const std::string &tx_hex);
    std::string signrawtransactionwithkey(const std::string &tx_hash, const std::string &private_key);
    std::string signrawtransactionwithwallet(const std::string &tx_hash);
+   std::string unloadwallet(const std::string &filename);
+   std::string walletlock();
+   std::string walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
 
 private:
    fc::http::reply send_post_request(std::string body);
