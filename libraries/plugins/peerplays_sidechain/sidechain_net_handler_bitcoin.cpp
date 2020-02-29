@@ -621,8 +621,6 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          }
          string reply_str = create_multisignature_wallet(son_pubkeys_bitcoin);
 
-         ilog(reply_str);
-
          std::stringstream active_pw_ss(reply_str);
          boost::property_tree::ptree active_pw_pt;
          boost::property_tree::read_json(active_pw_ss, active_pw_pt);
@@ -670,12 +668,10 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 }
 
 void sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
-   ilog(__FUNCTION__);
    transfer_deposit_to_primary_wallet(swdo);
 }
 
 void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
-   ilog(__FUNCTION__);
    transfer_withdrawal_from_primary_wallet(swwo);
 }
 
@@ -697,8 +693,6 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const std::string &t
 
 std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet(const std::string &tx_json) {
    std::string reply_str = tx_json;
-
-   ilog(reply_str);
 
    std::stringstream ss_utx(reply_str);
    boost::property_tree::ptree pt;
