@@ -66,7 +66,7 @@ std::string bitcoin_rpc_client::addmultisigaddress(const std::vector<std::string
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -92,8 +92,6 @@ std::string bitcoin_rpc_client::createrawtransaction(const std::vector<btc_txout
    }
    body += std::string("]] }");
 
-   ilog(body);
-
    const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
@@ -109,7 +107,7 @@ std::string bitcoin_rpc_client::createrawtransaction(const std::vector<btc_txout
       if (json.count("result"))
          return ss.str();
    } else if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Failed to create raw transaction: [${body}]! Reply: ${msg}", ("body", body)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return std::string();
 }
@@ -137,7 +135,7 @@ std::string bitcoin_rpc_client::createwallet(const std::string &wallet_name) {
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -165,7 +163,7 @@ std::string bitcoin_rpc_client::encryptwallet(const std::string &passphrase) {
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -220,7 +218,7 @@ std::string bitcoin_rpc_client::getblock(const std::string &block_hash, int32_t 
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -245,7 +243,7 @@ void bitcoin_rpc_client::importaddress(const std::string &address_or_script) {
       idump((address_or_script)(ss.str()));
       return;
    } else if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Failed to import address [${addr}]! Reply: ${msg}", ("addr", address_or_script)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
 }
 
@@ -277,7 +275,7 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent() {
          }
       }
    } else if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Failed to list unspent txo! Reply: ${msg}", ("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return result;
 }
@@ -314,7 +312,7 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent_by_address_and_amount(con
          }
       }
    } else if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Failed to list unspent txo! Reply: ${msg}", ("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return result;
 }
@@ -342,7 +340,7 @@ std::string bitcoin_rpc_client::loadwallet(const std::string &filename) {
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -351,8 +349,6 @@ void bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
    const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"sendrawtransaction\", "
                                  "\"method\": \"sendrawtransaction\", \"params\": [") +
                      std::string("\"") + tx_hex + std::string("\"") + std::string("] }");
-
-   ilog(body);
 
    const auto reply = send_post_request(body);
 
@@ -372,7 +368,7 @@ void bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
       if (error_code == -27) // transaction already in block chain
          return;
 
-      wlog("BTC tx is not sent! Reply: ${msg}", ("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
 }
 
@@ -385,8 +381,6 @@ std::string bitcoin_rpc_client::signrawtransactionwithwallet(const std::string &
                                   "\"method\": \"signrawtransactionwithwallet\", \"params\": [");
    std::string params = "\"" + tx_hash + "\"";
    body = body + params + std::string("]}");
-
-   ilog(body);
 
    const auto reply = send_post_request(body);
 
@@ -404,7 +398,7 @@ std::string bitcoin_rpc_client::signrawtransactionwithwallet(const std::string &
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("BTC sign_raw_transaction_with_wallet failed! Reply: ${msg}", ("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -432,7 +426,7 @@ std::string bitcoin_rpc_client::unloadwallet(const std::string &filename) {
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
@@ -459,12 +453,12 @@ std::string bitcoin_rpc_client::walletlock() {
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
    return "";
 }
 
-std::string bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, uint32_t timeout) {
+bool bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, uint32_t timeout) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletpassphrase\", \"method\": "
                                   "\"walletpassphrase\", \"params\": [\"" +
                                   passphrase + "\", " + std::to_string(timeout) + "] }");
@@ -473,7 +467,7 @@ std::string bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, 
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
-      return std::string();
+      return false;
    }
 
    std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
@@ -481,18 +475,16 @@ std::string bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, 
    boost::property_tree::read_json(ss, json);
 
    if (reply.status == 200) {
-      std::stringstream ss;
-      boost::property_tree::json_parser::write_json(ss, json.get_child("result"));
-      return ss.str();
+      return true;
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
-   return "";
+   return false;
 }
 
-fc::http::reply bitcoin_rpc_client::send_post_request(std::string body) {
+fc::http::reply bitcoin_rpc_client::send_post_request(std::string body, bool show_log) {
    fc::http::connection conn;
    conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), rpc_port));
 
@@ -502,7 +494,16 @@ fc::http::reply bitcoin_rpc_client::send_post_request(std::string body) {
       url = url + "/wallet/" + wallet;
    }
 
-   return conn.request("POST", url, body, fc::http::headers{authorization});
+   fc::http::reply reply = conn.request("POST", url, body, fc::http::headers{authorization});
+
+   if (show_log) {
+      ilog("Request URL: ${url}", ("url", url));
+      ilog("Request:     ${body}", ("body", body));
+      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+      ilog("Response:    ${ss}", ("ss", ss.str()));
+   }
+
+   return reply;
 }
 
 // =============================================================================
@@ -707,14 +708,13 @@ std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet
       return "";
    }
 
-   std::string unsigned_tx_hex = pt.get<std::string>("result");
-
    if (!wallet_password.empty()) {
-      bitcoin_client->walletpassphrase(wallet_password);
+      bitcoin_client->walletpassphrase(wallet_password, 60);
    }
 
+   std::string unsigned_tx_hex = pt.get<std::string>("result");
+
    reply_str = bitcoin_client->signrawtransactionwithwallet(unsigned_tx_hex);
-   ilog(reply_str);
    std::stringstream ss_stx(reply_str);
    boost::property_tree::ptree stx_json;
    boost::property_tree::read_json(ss_stx, stx_json);

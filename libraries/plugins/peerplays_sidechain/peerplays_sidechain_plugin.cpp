@@ -372,11 +372,23 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
    };
 
    const auto &idx = plugin.database().get_index_type<proposal_index>().indices().get<by_id>();
+   vector<proposal_id_type> proposals;
    for (const auto &proposal : idx) {
+      proposals.push_back(proposal.id);
+   }
+
+   for (const auto proposal_id : proposals) {
       for (son_id_type son_id : sons) {
          if (!is_active_son(son_id)) {
             continue;
          }
+
+         const object *obj = plugin.database().find_object(proposal_id);
+         const chain::proposal_object *proposal_ptr = dynamic_cast<const chain::proposal_object *>(obj);
+         if (proposal_ptr == nullptr) {
+            continue;
+         }
+         const proposal_object proposal = *proposal_ptr;
 
          if (proposal.available_active_approvals.find(get_son_object(son_id).son_account) != proposal.available_active_approvals.end()) {
             continue;
