@@ -29,7 +29,7 @@ public:
    void plugin_set_program_options(
          boost::program_options::options_description &cli,
          boost::program_options::options_description &cfg);
-   void plugin_initialize(const boost::program_options::variables_map &options);
+   void plugin_initialize(const boost::program_options::variables_map &opt);
    void plugin_startup();
 
    std::set<chain::son_id_type> &get_sons();
@@ -53,6 +53,8 @@ public:
 private:
    peerplays_sidechain_plugin &plugin;
 
+   boost::program_options::variables_map options;
+
    bool config_ready_son;
    bool config_ready_bitcoin;
    bool config_ready_peerplays;
@@ -60,7 +62,7 @@ private:
    son_id_type current_son_id;
 
    std::unique_ptr<peerplays_sidechain::sidechain_net_manager> net_manager;
-   std::set<chain::son_id_type> _sons;
+   std::set<chain::son_id_type> sons;
    std::map<chain::public_key_type, fc::ecc::private_key> private_keys;
    fc::future<void> _heartbeat_task;
    fc::future<void> _son_processing_task;
@@ -120,16 +122,17 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
    cfg.add(cli);
 }
 
-void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_options::variables_map &options) {
+void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_options::variables_map &opt) {
+   options = opt;
    config_ready_son = (options.count("son-id") || options.count("son-ids")) && options.count("peerplays-private-key");
    if (config_ready_son) {
-      LOAD_VALUE_SET(options, "son-id", _sons, chain::son_id_type)
+      LOAD_VALUE_SET(options, "son-id", sons, chain::son_id_type)
       if (options.count("son-ids"))
-         boost::insert(_sons, fc::json::from_string(options.at("son-ids").as<string>()).as<vector<chain::son_id_type>>(5));
-      config_ready_son = config_ready_son && !_sons.empty();
+         boost::insert(sons, fc::json::from_string(options.at("son-ids").as<string>()).as<vector<chain::son_id_type>>(5));
+      config_ready_son = config_ready_son && !sons.empty();
 
 #ifndef SUPPORT_MULTIPLE_SONS
-      FC_ASSERT(_sons.size() == 1, "Multiple SONs not supported");
+      FC_ASSERT(sons.size() == 1, "Multiple SONs not supported");
 #endif
 
       if (options.count("peerplays-private-key")) {
@@ -149,77 +152,74 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
             }
             private_keys[key_id_to_wif_pair.first] = *private_key;
          }
+         config_ready_son = config_ready_son && !private_keys.empty();
       }
-   } else {
+   }
+   if (!config_ready_son) {
       wlog("Haven't set up SON parameters");
       throw;
    }
-
-   plugin.database().applied_block.connect([&](const signed_block &b) {
-      on_applied_block(b);
-   });
-
-   net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
 
    config_ready_bitcoin = options.count("bitcoin-node-ip") &&
                           options.count("bitcoin-node-zmq-port") && options.count("bitcoin-node-rpc-port") &&
                           options.count("bitcoin-node-rpc-user") && options.count("bitcoin-node-rpc-password") &&
                           /*options.count( "bitcoin-wallet" ) && options.count( "bitcoin-wallet-password" ) &&*/
                           options.count("bitcoin-private-key");
-   if (config_ready_bitcoin) {
-      net_manager->create_handler(sidechain_type::bitcoin, options);
-      ilog("Bitcoin sidechain handler created");
-   } else {
+   if (!config_ready_bitcoin) {
       wlog("Haven't set up Bitcoin sidechain parameters");
    }
 
    //config_ready_ethereum = options.count( "ethereum-node-ip" ) &&
    //        options.count( "ethereum-address" ) && options.count( "ethereum-public-key" ) && options.count( "ethereum-private-key" );
-   //if (config_ready_ethereum) {
-   //   net_manager->create_handler(sidechain_type::ethereum, options);
-   //   ilog("Ethereum sidechain handler created");
-   //} else {
+   //if (!config_ready_ethereum) {
    //   wlog("Haven't set up Ethereum sidechain parameters");
    //}
 
    config_ready_peerplays = true;
-   if (config_ready_peerplays) {
-      net_manager->create_handler(sidechain_type::peerplays, options);
-      ilog("Peerplays sidechain handler created");
-   } else {
+   if (!config_ready_peerplays) {
       wlog("Haven't set up Peerplays sidechain parameters");
    }
 
-   if (!(config_ready_bitcoin /*&& config_ready_ethereum*/)) {
+   if (!(config_ready_bitcoin /*&& config_ready_ethereum*/ && config_ready_peerplays)) {
       wlog("Haven't set up any sidechain parameters");
       throw;
    }
 }
 
 void peerplays_sidechain_plugin_impl::plugin_startup() {
+
+   plugin.database().applied_block.connect([&](const signed_block &b) {
+      on_applied_block(b);
+   });
+
    if (config_ready_son) {
-      ilog("Starting ${n} SON instances", ("n", _sons.size()));
+      ilog("Starting ${n} SON instances", ("n", sons.size()));
 
       schedule_heartbeat_loop();
    } else {
       elog("No sons configured! Please add SON IDs and private keys to configuration.");
    }
 
+   net_manager = std::unique_ptr<sidechain_net_manager>(new sidechain_net_manager(plugin));
+
    if (config_ready_bitcoin) {
+      net_manager->create_handler(sidechain_type::bitcoin, options);
       ilog("Bitcoin sidechain handler running");
    }
 
    //if (config_ready_ethereum) {
+   //   net_manager->create_handler(sidechain_type::ethereum, options);
    //   ilog("Ethereum sidechain handler running");
    //}
 
    if (config_ready_peerplays) {
+      net_manager->create_handler(sidechain_type::peerplays, options);
       ilog("Peerplays sidechain handler running");
    }
 }
 
 std::set<chain::son_id_type> &peerplays_sidechain_plugin_impl::get_sons() {
-   return _sons;
+   return sons;
 }
 
 son_id_type &peerplays_sidechain_plugin_impl::get_current_son_id() {
@@ -282,7 +282,7 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop() {
    schedule_heartbeat_loop();
    chain::database &d = plugin.database();
 
-   for (son_id_type son_id : _sons) {
+   for (son_id_type son_id : sons) {
       if (is_active_son(son_id) || get_son_object(son_id).status == chain::son_status::in_maintenance) {
 
          ilog("peerplays_sidechain_plugin:  sending heartbeat for SON ${son}", ("son", son_id));
@@ -332,7 +332,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
    approve_proposals();
 
    // Tasks that are executed by scheduled and active SON
-   if (_sons.find(next_son_id) != _sons.end()) {
+   if (sons.find(next_son_id) != sons.end()) {
 
       current_son_id = next_son_id;
 
@@ -373,7 +373,7 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
 
    const auto &idx = plugin.database().get_index_type<proposal_index>().indices().get<by_id>();
    for (const auto &proposal : idx) {
-      for (son_id_type son_id : _sons) {
+      for (son_id_type son_id : sons) {
          if (!is_active_son(son_id)) {
             continue;
          }

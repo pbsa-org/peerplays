@@ -39,7 +39,7 @@ public:
    std::string signrawtransactionwithwallet(const std::string &tx_hash);
    std::string unloadwallet(const std::string &filename);
    std::string walletlock();
-   std::string walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
+   std::string walletpassphrase(const std::string &passphrase, uint32_t timeout = 5);
 
 private:
    fc::http::reply send_post_request(std::string body);
@@ -96,8 +96,8 @@ private:
    std::string wallet;
    std::string wallet_password;
 
-   std::unique_ptr<zmq_listener> listener;
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
+   std::unique_ptr<zmq_listener> listener;
 
    std::string create_multisignature_wallet(const std::vector<std::string> public_keys);
    std::string transfer(const std::string &from, const std::string &to, const uint64_t amount);

@@ -66,7 +66,7 @@ std::string bitcoin_rpc_client::addmultisigaddress(const std::vector<std::string
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("BTC multisig address creation failed! Reply: ${msg}", ("msg", ss.str()));
+      wlog("Bitcoin RPC call ${function} failed with reply '${msg}'", ("function", __FUNCTION__)("msg", ss.str()));
    }
    return "";
 }
@@ -589,9 +589,12 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
       FC_ASSERT(false);
    }
 
-   listener = std::unique_ptr<zmq_listener>(new zmq_listener(ip, zmq_port));
    bitcoin_client = std::unique_ptr<bitcoin_rpc_client>(new bitcoin_rpc_client(ip, rpc_port, rpc_user, rpc_password, wallet, wallet_password));
+   if (!wallet.empty()) {
+      bitcoin_client->loadwallet(wallet);
+   }
 
+   listener = std::unique_ptr<zmq_listener>(new zmq_listener(ip, zmq_port));
    listener->event_received.connect([this](const std::string &event_data) {
       std::thread(&sidechain_net_handler_bitcoin::handle_event, this, event_data).detach();
    });
@@ -706,11 +709,19 @@ std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet
 
    std::string unsigned_tx_hex = pt.get<std::string>("result");
 
+   if (!wallet_password.empty()) {
+      bitcoin_client->walletpassphrase(wallet_password);
+   }
+
    reply_str = bitcoin_client->signrawtransactionwithwallet(unsigned_tx_hex);
    ilog(reply_str);
    std::stringstream ss_stx(reply_str);
    boost::property_tree::ptree stx_json;
    boost::property_tree::read_json(ss_stx, stx_json);
+
+   //if (!wallet_password.empty()) {
+   //   bitcoin_client->walletlock();
+   //}
 
    if (!(stx_json.count("error") && stx_json.get_child("error").empty()) || !stx_json.count("result") || !stx_json.get_child("result").count("hex")) {
       return "";
