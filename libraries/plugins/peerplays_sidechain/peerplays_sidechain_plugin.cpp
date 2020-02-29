@@ -338,6 +338,8 @@ void peerplays_sidechain_plugin_impl::son_processing() {
 
       create_son_down_proposals();
 
+      create_son_deregister_proposals();
+
       recreate_primary_wallet();
 
       process_deposits();
@@ -385,6 +387,11 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
             continue;
          }
 
+         if (proposal->proposed_transaction.operations.size() == 1 && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_delete_operation>::value) {
+            approve_proposal(son_id, proposal->id);
+            continue;
+         }
+
          if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_update_operation>::value) {
             approve_proposal(son_id, proposal.id);
             continue;
@@ -408,42 +415,6 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
          if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value) {
             approve_proposal(son_id, proposal.id);
             continue;
-         }
-      }
-   }
-}
-
-void peerplays_sidechain_plugin_impl::create_son_deregister_proposals() {
-   chain::database &d = plugin.database();
-   std::set<son_id_type> sons_to_be_dereg = d.get_sons_to_be_deregistered();
-   chain::son_id_type my_son_id = get_current_son_id();
-
-   if (sons_to_be_dereg.size() > 0) {
-      // We shouldn't raise proposals for the SONs for which a de-reg
-      // proposal is already raised.
-      std::set<son_id_type> sons_being_dereg = d.get_sons_being_deregistered();
-      for (auto &son : sons_to_be_dereg) {
-         // New SON to be deregistered
-         if (sons_being_dereg.find(son) == sons_being_dereg.end() && my_son_id != son) {
-            // Creating the de-reg proposal
-            auto op = d.create_son_deregister_proposal(son, get_son_object(my_son_id).son_account);
-            if (op.valid()) {
-               // Signing and pushing into the txs to be included in the block
-               ilog("peerplays_sidechain_plugin:  sending son deregister proposal for ${p} from ${s}", ("p", son)("s", my_son_id));
-               chain::signed_transaction trx = d.create_signed_transaction(plugin.get_private_key(get_son_object(my_son_id).signing_key), *op);
-               fc::future<bool> fut = fc::async([&]() {
-                  try {
-                     d.push_transaction(trx, database::validation_steps::skip_block_size_check);
-                     if (plugin.app().p2p_node())
-                        plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-                     return true;
-                  } catch (fc::exception e) {
-                     ilog("peerplays_sidechain_plugin_impl:  sending son dereg proposal failed with exception ${e}", ("e", e.what()));
-                     return false;
-                  }
-               });
-               fut.wait(fc::seconds(10));
-            }
          }
       }
    }
@@ -499,6 +470,42 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals() {
             }
          });
          fut.wait(fc::seconds(10));
+      }
+   }
+}
+
+void peerplays_sidechain_plugin_impl::create_son_deregister_proposals() {
+   chain::database &d = plugin.database();
+   std::set<son_id_type> sons_to_be_dereg = d.get_sons_to_be_deregistered();
+   chain::son_id_type my_son_id = get_current_son_id();
+
+   if (sons_to_be_dereg.size() > 0) {
+      // We shouldn't raise proposals for the SONs for which a de-reg
+      // proposal is already raised.
+      std::set<son_id_type> sons_being_dereg = d.get_sons_being_deregistered();
+      for (auto &son : sons_to_be_dereg) {
+         // New SON to be deregistered
+         if (sons_being_dereg.find(son) == sons_being_dereg.end() && my_son_id != son) {
+            // Creating the de-reg proposal
+            auto op = d.create_son_deregister_proposal(son, get_son_object(my_son_id).son_account);
+            if (op.valid()) {
+               // Signing and pushing into the txs to be included in the block
+               ilog("peerplays_sidechain_plugin:  sending son deregister proposal for ${p} from ${s}", ("p", son)("s", my_son_id));
+               chain::signed_transaction trx = d.create_signed_transaction(plugin.get_private_key(get_son_object(my_son_id).signing_key), *op);
+               fc::future<bool> fut = fc::async([&]() {
+                  try {
+                     d.push_transaction(trx, database::validation_steps::skip_block_size_check);
+                     if (plugin.app().p2p_node())
+                        plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+                     return true;
+                  } catch (fc::exception e) {
+                     ilog("peerplays_sidechain_plugin_impl:  sending son dereg proposal failed with exception ${e}", ("e", e.what()));
+                     return false;
+                  }
+               });
+               fut.wait(fc::seconds(10));
+            }
+         }
       }
    }
 }
