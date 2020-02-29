@@ -188,10 +188,6 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
 
 void peerplays_sidechain_plugin_impl::plugin_startup() {
 
-   plugin.database().applied_block.connect([&](const signed_block &b) {
-      on_applied_block(b);
-   });
-
    if (config_ready_son) {
       ilog("Starting ${n} SON instances", ("n", sons.size()));
 
@@ -216,6 +212,10 @@ void peerplays_sidechain_plugin_impl::plugin_startup() {
       net_manager->create_handler(sidechain_type::peerplays, options);
       ilog("Peerplays sidechain handler running");
    }
+
+   plugin.database().applied_block.connect([&](const signed_block &b) {
+      on_applied_block(b);
+   });
 }
 
 std::set<chain::son_id_type> &peerplays_sidechain_plugin_impl::get_sons() {
