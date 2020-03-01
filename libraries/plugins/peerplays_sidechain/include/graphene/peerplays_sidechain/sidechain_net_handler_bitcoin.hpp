@@ -105,7 +105,7 @@ private:
    std::string send_transaction(const std::string &transaction);
    std::string sign_and_send_transaction_with_wallet(const std::string &tx_json);
    std::string create_weighted_multisignature_wallet( const std::vector<std::pair<std::string, uint64_t>>& public_keys );
-   void transfer_all_btc(const std::string &from_address, const std::string &to_address);
+   void transfer_all_btc(const std::string& from_address, const bytes& from_redeem_script, const std::string& to_address);
    std::string transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo);
    std::string transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo);
 

@@ -658,8 +658,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          if (prev_sw != swi.rend()) {
             std::string prev_pw_address = prev_sw->addresses.at(sidechain_type::bitcoin);
             std::string active_pw_address = address;
-
-            transfer_all_btc(prev_pw_address, active_pw_address);
+            bytes prev_redeem_script;
+            transfer_all_btc(prev_pw_address, prev_redeem_script, active_pw_address);
          }
       }
    }
@@ -724,7 +724,8 @@ std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet
    return reply_str;
 }
 
-void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_address, const std::string &to_address) {
+void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_address, const bytes& from_redeem_script, const std::string& to_address)
+{
    uint64_t fee_rate = bitcoin_client->estimatesmartfee();
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
@@ -751,15 +752,25 @@ void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_add
    tx.hasWitness = true;
    tx.nVersion = 2;
    tx.nLockTime = 0;
+   std::vector<uint64_t> amounts;
    for(const auto& utx: unspent_utxo)
    {
       tx.vin.push_back(btc_in(utx.txid_, utx.out_num_));
+      amounts.push_back(uint64_t(utx.amount_ * 100000000.0));
    }
    tx.vout.push_back(btc_out(to_address, uint64_t((total_amount - min_amount) * 100000000.0)));
 
    bitcoin_transaction_send_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
    tx.to_bytes(op.unsigned_tx);
+   // add signatures for owned SONs
+   std::set<son_id_type> sons = plugin.get_sons();
+   for(auto sid: sons)
+   {
+      fc::ecc::private_key k = plugin.get_private_key(sid);
+      std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, k);
+      op.signatures[sid] = signatures;
+   }
 
    const chain::global_property_object& gpo = database.get_global_properties();
    proposal_create_operation proposal_op;
