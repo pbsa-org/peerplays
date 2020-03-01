@@ -695,24 +695,16 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const std::string &t
    return "";
 }
 
-std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet(const std::string &tx_json) {
-   std::string reply_str = tx_json;
-
-   std::stringstream ss_utx(reply_str);
-   boost::property_tree::ptree pt;
-   boost::property_tree::read_json(ss_utx, pt);
-
-   if (!(pt.count("error") && pt.get_child("error").empty()) || !pt.count("result")) {
-      return "";
-   }
-
+std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet ( const std::string& tx_json )
+{
    if (!wallet_password.empty()) {
       bitcoin_client->walletpassphrase(wallet_password, 60);
    }
 
-   std::string unsigned_tx_hex = pt.get<std::string>("result");
+   std::string unsigned_tx_hex = tx_json;
 
-   reply_str = bitcoin_client->signrawtransactionwithwallet(unsigned_tx_hex);
+   std::string reply_str = bitcoin_client->signrawtransactionwithwallet(unsigned_tx_hex);
+   ilog(reply_str);
    std::stringstream ss_stx(reply_str);
    boost::property_tree::ptree stx_json;
    boost::property_tree::read_json(ss_stx, stx_json);
@@ -732,7 +724,7 @@ std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet
    return reply_str;
 }
 
-std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_address, const std::string &to_address) {
+void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_address, const std::string &to_address) {
    uint64_t fee_rate = bitcoin_client->estimatesmartfee();
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
@@ -741,17 +733,17 @@ std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &f
    double total_amount = 0.0;
    std::vector<btc_txout> unspent_utxo = bitcoin_client->listunspent_by_address_and_amount(from_address, 0);
 
-   if (unspent_utxo.size() == 0) {
-      wlog("Failed to find UTXOs to spend for ${pw}", ("pw", from_address));
-      return "";
+   if(unspent_utxo.size() == 0) {
+      wlog("Failed to find UTXOs to spend for ${pw}",("pw", from_address));
+      return;
    } else {
-      for (const auto &utx : unspent_utxo) {
+      for(const auto& utx: unspent_utxo) {
          total_amount += utx.amount_;
       }
 
-      if (min_amount >= total_amount) {
-         wlog("Failed not enough BTC to transfer from ${fa}", ("fa", from_address));
-         return "";
+      if(min_amount >= total_amount) {
+         wlog("Failed not enough BTC to transfer from ${fa}",("fa", from_address));
+         return;
       }
    }
 
@@ -765,11 +757,26 @@ std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &f
    }
    tx.vout.push_back(btc_out(to_address, uint64_t((total_amount - min_amount) * 100000000.0)));
 
-   bytes unsigned_tx;
-   tx.to_bytes(unsigned_tx);
+   bitcoin_transaction_send_operation op;
+   op.payer = GRAPHENE_SON_ACCOUNT;
+   tx.to_bytes(op.unsigned_tx);
 
-   std::string reply_str = fc::to_hex((char*)&unsigned_tx[0], unsigned_tx.size());
-   return sign_and_send_transaction_with_wallet(reply_str);
+   const chain::global_property_object& gpo = database.get_global_properties();
+   proposal_create_operation proposal_op;
+   proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+   proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
+   uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+   proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+
+   signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+   try {
+      database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+      if(plugin.app().p2p_node())
+         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+   } catch(fc::exception e){
+      ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
+      return;
+   }
 }
 
 std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo) {
