@@ -637,6 +637,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          op.son_wallet_id = (*active_sw).id;
          op.sidechain = sidechain_type::bitcoin;
          op.address = address;
+         op.redeem_script = redeem_script;
 
          proposal_create_operation proposal_op;
          proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
@@ -658,7 +659,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          if (prev_sw != swi.rend()) {
             std::string prev_pw_address = prev_sw->addresses.at(sidechain_type::bitcoin);
             std::string active_pw_address = address;
-            bytes prev_redeem_script;
+            bytes prev_redeem_script = prev_sw->redeem_scripts.at(sidechain_type::bitcoin);
             transfer_all_btc(prev_pw_address, prev_redeem_script, active_pw_address);
          }
       }

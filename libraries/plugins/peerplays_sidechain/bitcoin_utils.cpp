@@ -351,7 +351,7 @@ void add_number_to_script(bytes &script, unsigned char data) {
       add_data_to_script(script, {data});
 }
 
-bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int>> key_data) {
+bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data) {
    int total_weight = 0;
    bytes result;
    add_number_to_script(result, 0);
@@ -366,7 +366,7 @@ bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, int>> ke
       result.push_back(OP_ADD);
       result.push_back(OP_ENDIF);
    }
-   int threshold_weight = 2 * total_weight / 3;
+   uint64_t threshold_weight = 2 * total_weight / 3;
    add_number_to_script(result, static_cast<unsigned char>(threshold_weight));
    result.push_back(OP_GREATERTHAN);
    return result;
@@ -768,11 +768,19 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx, const std::vector<
 
 std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t> > &public_keys)
 {
-   std::vector<std::pair<fc::ecc::public_key, int>> key_data;
+   std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
    for(auto p: public_keys)
       key_data.push_back(std::make_pair(fc::ecc::public_key::from_base58(p.first), p.second));
    bytes redeem_script = generate_redeem_script(key_data);
    return p2wsh_address_from_redeem_script(redeem_script);
+}
+
+bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uint64_t> > public_keys)
+{
+   std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
+   for(auto p: public_keys)
+      key_data.push_back(std::make_pair(fc::ecc::public_key::from_base58(p.first), p.second));
+   return generate_redeem_script(key_data);
 }
 
 }} // namespace graphene::peerplays_sidechain
