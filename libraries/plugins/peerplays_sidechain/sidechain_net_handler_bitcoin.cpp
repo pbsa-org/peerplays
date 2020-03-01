@@ -660,7 +660,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             std::string prev_pw_address = prev_sw->addresses.at(sidechain_type::bitcoin);
             std::string active_pw_address = address;
             bytes prev_redeem_script = prev_sw->redeem_scripts.at(sidechain_type::bitcoin);
-            transfer_all_btc(prev_pw_address, prev_redeem_script, active_pw_address);
+            vector<son_info> sons = prev_sw->sons;
+            transfer_all_btc(prev_pw_address, prev_redeem_script, sons, active_pw_address);
          }
       }
    }
@@ -725,7 +726,7 @@ std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet
    return reply_str;
 }
 
-void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_address, const bytes& from_redeem_script, const std::string& to_address)
+void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_address, const bytes& from_redeem_script, const vector<son_info>& from_sons, const std::string& to_address)
 {
    uint64_t fee_rate = bitcoin_client->estimatesmartfee();
    uint64_t min_fee_rate = 1000;
@@ -764,13 +765,20 @@ void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_add
    bitcoin_transaction_send_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
    tx.to_bytes(op.unsigned_tx);
-   // add signatures for owned SONs
-   std::set<son_id_type> sons = plugin.get_sons();
-   for(auto sid: sons)
+   // add signatures
+   std::set<son_id_type> plugin_sons = plugin.get_sons();
+   for(auto si: from_sons)
    {
-      fc::ecc::private_key k = plugin.get_private_key(sid);
-      std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, k);
-      op.signatures[sid] = signatures;
+      if (plugin_sons.find(si.son_id) != plugin_sons.end())
+      {
+         fc::ecc::private_key k = plugin.get_private_key(si.son_id);
+         std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, k);
+         op.signatures[si.son_id] = signatures;
+      }
+      else
+      {
+         op.signatures[si.son_id];
+      }
    }
 
    const chain::global_property_object& gpo = database.get_global_properties();
