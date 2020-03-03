@@ -28,6 +28,9 @@ object_id_type bitcoin_transaction_send_evaluator::do_apply(const bitcoin_transa
    {
       const auto &new_bitcoin_transaction_object = db().create<bitcoin_transaction_object>([&](bitcoin_transaction_object &obj) {
          obj.processed = false;
+         obj.unsigned_tx = op.unsigned_tx;
+         obj.redeem_script = op.redeem_script;
+         obj.in_amounts = op.in_amounts;
          obj.signatures = op.signatures;
       });
       return new_bitcoin_transaction_object.id;
@@ -40,22 +43,26 @@ void_result bitcoin_transaction_sign_evaluator::do_evaluate(const bitcoin_transa
    try
    {
       FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK"); // can be removed after HF date pass
-      const auto &proposal_idx = db().get_index_type<proposal_index>().indices().get<by_id>();
-      const auto &proposal_itr = proposal_idx.find(op.proposal_id);
-      FC_ASSERT(proposal_idx.end() != proposal_itr, "proposal not found");
-      // Checks can this SON approve this proposal
-      auto can_this_son_approve_this_proposal = [&]() {
+      const auto &tx_idx = db().get_index_type<bitcoin_transaction_index>().indices().get<by_id>();
+      const auto &tx_itr = tx_idx.find(op.tx_id);
+      FC_ASSERT(tx_idx.end() != tx_itr, "bitcoin transaction not found");
+
+      // Checks can this SON sign this tx
+      auto can_this_son_sign_this_tx = [&]() {
          const auto &sidx = db().get_index_type<son_index>().indices().get<graphene::chain::by_account>();
          auto son_obj = sidx.find(op.payer);
          if (son_obj == sidx.end())
          {
             return false;
          }
-         // TODO: Check if the SON is included in the PW script.
-         return true;
+         auto it = tx_itr->signatures.find(son_obj->id);
+         if (it == tx_itr->signatures.end())
+            return false;
+         // tx is not signed with this son already
+         return it->second.empty();
       };
 
-      FC_ASSERT(can_this_son_approve_this_proposal(), "Invalid approval received");
+      FC_ASSERT(can_this_son_sign_this_tx(), "Invalid approval received");
       return void_result();
    }
    FC_CAPTURE_AND_RETHROW((op))
@@ -65,44 +72,23 @@ object_id_type bitcoin_transaction_sign_evaluator::do_apply(const bitcoin_transa
 {
    try
    {
-      const auto &proposal = op.proposal_id(db());
+      const auto &bitcoin_tx = op.tx_id(db());
       const auto &sidx = db().get_index_type<son_index>().indices().get<graphene::chain::by_account>();
       auto son_obj = sidx.find(op.payer);
 
-      db().modify(proposal, [&](proposal_object &po) {
-         auto bitcoin_transaction_send_op = po.proposed_transaction.operations[0].get<bitcoin_transaction_send_operation>();
-         bitcoin_transaction_send_op.signatures[son_obj->id] = op.signatures;
-         po.proposed_transaction.operations[0] = bitcoin_transaction_send_op;
+      db().modify(bitcoin_tx, [&](bitcoin_transaction_object &btx) {
+         btx.signatures[son_obj->id] = op.signatures;
       });
 
       db().modify( son_obj->statistics( db() ), [&]( son_statistics_object& sso ) {
          sso.txs_signed += 1;
       } );
 
-      update_proposal(op);
+      return bitcoin_tx.id;
    }
    FC_CAPTURE_AND_RETHROW((op))
 }
 
-void bitcoin_transaction_sign_evaluator::update_proposal(const bitcoin_transaction_sign_operation &op)
-{
-   database &d = db();
-   proposal_update_operation update_op;
-
-   update_op.fee_paying_account = op.payer;
-   update_op.proposal = op.proposal_id;
-   update_op.active_approvals_to_add = {op.payer};
-
-   bool skip_fee_old = trx_state->skip_fee;
-   bool skip_fee_schedule_check_old = trx_state->skip_fee_schedule_check;
-   trx_state->skip_fee = true;
-   trx_state->skip_fee_schedule_check = true;
-
-   d.apply_operation(*trx_state, update_op);
-
-   trx_state->skip_fee = skip_fee_old;
-   trx_state->skip_fee_schedule_check = skip_fee_schedule_check_old;
-}
 
 void_result bitcoin_send_transaction_process_evaluator::do_evaluate(const bitcoin_send_transaction_process_operation &op)
 {

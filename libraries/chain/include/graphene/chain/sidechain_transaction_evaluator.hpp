@@ -20,7 +20,6 @@ public:
 
     void_result do_evaluate(const bitcoin_transaction_sign_operation& o);
     object_id_type do_apply(const bitcoin_transaction_sign_operation& o);
-    void update_proposal( const bitcoin_transaction_sign_operation& o );
 };
 
 class bitcoin_send_transaction_process_evaluator : public evaluator<bitcoin_send_transaction_process_evaluator>

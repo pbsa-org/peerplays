@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
          bitcoin_transaction_sign_operation sign_op;
 
          sign_op.payer = alice_id;
-         sign_op.proposal_id = proposal_id_type(0);
+         //sign_op.proposal_id = proposal_id_type(0);
          sign_op.signatures.push_back(a1);
          sign_op.signatures.push_back(a2);
          sign_op.signatures.push_back(a3);
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
          bitcoin_transaction_sign_operation sign_op;
 
          sign_op.payer = bob_id;
-         sign_op.proposal_id = proposal_id_type(0);
+         //sign_op.proposal_id = proposal_id_type(0);
          sign_op.signatures.push_back(b1);
          sign_op.signatures.push_back(b2);
          sign_op.signatures.push_back(b3);

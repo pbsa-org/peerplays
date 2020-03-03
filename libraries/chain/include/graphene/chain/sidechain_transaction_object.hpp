@@ -17,6 +17,9 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = bitcoin_transaction_object_type;
          // Bitcoin structs go here.
          bool processed = false;
+         peerplays_sidechain::bytes unsigned_tx;
+         peerplays_sidechain::bytes redeem_script;
+         std::vector<uint64_t> in_amounts;
          fc::flat_map<son_id_type, std::vector<peerplays_sidechain::bytes>> signatures;
    };
 
@@ -36,4 +39,4 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::bitcoin_transaction_object, (graphene::db::object),
-                    (processed)(signatures) )
+                    (processed)(unsigned_tx)(redeem_script)(in_amounts)(signatures) )

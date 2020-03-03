@@ -764,6 +764,8 @@ void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_add
 
    bitcoin_transaction_send_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
+   op.redeem_script = from_redeem_script;
+   op.in_amounts = amounts;
    tx.to_bytes(op.unsigned_tx);
    // add signatures
    std::set<son_id_type> plugin_sons = plugin.get_sons();

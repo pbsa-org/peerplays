@@ -14,6 +14,7 @@
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_withdraw_object.hpp>
 #include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
 namespace bpo = boost::program_options;
@@ -540,13 +541,13 @@ void peerplays_sidechain_plugin_impl::create_son_deregister_proposals() {
                bitcoin_transaction_sign_operation op;
                son_object s_obj= get_son_object(son_id);
                op.payer = s_obj.son_account;
-               // op.tx_id = object_id;
+               op.tx_id = tx_object->id;
                fc::ecc::private_key k = get_private_key(son_id);
-               //op.signatures = signatures_for_raw_transaction(unsigned_tx, amounts, redeem_script, k);
+               op.signatures = signatures_for_raw_transaction(tx_object->unsigned_tx, tx_object->in_amounts, tx_object->redeem_script, k);
 
-               signed_transaction trx = database().create_signed_transaction(get_private_key(plugin.get_current_son_id()), op);
+               signed_transaction trx = plugin.database().create_signed_transaction(k, op);
                try {
-                  database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+                  plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
                   if(plugin.app().p2p_node())
                      plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                } catch(fc::exception e){
