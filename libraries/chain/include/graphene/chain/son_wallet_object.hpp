@@ -21,7 +21,6 @@ namespace graphene { namespace chain {
          time_point_sec expires;
 
          flat_map<peerplays_sidechain::sidechain_type, string> addresses;
-         flat_map<peerplays_sidechain::sidechain_type, peerplays_sidechain::bytes> redeem_scripts;
          vector<son_info> sons;
    };
 
@@ -45,4 +44,4 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::son_wallet_object, (graphene::db::object),
-                    (valid_from) (expires) (addresses) (redeem_scripts) (sons) )
+                    (valid_from) (expires) (addresses) (sons) )

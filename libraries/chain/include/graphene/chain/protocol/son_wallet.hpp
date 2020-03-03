@@ -27,7 +27,6 @@ namespace graphene { namespace chain {
         son_wallet_id_type son_wallet_id;
         graphene::peerplays_sidechain::sidechain_type sidechain;
         string address;
-        graphene::peerplays_sidechain::bytes redeem_script;
 
         account_id_type fee_payer()const { return payer; }
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
@@ -38,4 +37,4 @@ namespace graphene { namespace chain {
 FC_REFLECT(graphene::chain::son_wallet_recreate_operation::fee_parameters_type, (fee) )
 FC_REFLECT(graphene::chain::son_wallet_recreate_operation, (fee)(payer)(sons) )
 FC_REFLECT(graphene::chain::son_wallet_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT(graphene::chain::son_wallet_update_operation, (fee)(payer)(son_wallet_id)(sidechain)(address)(redeem_script) )
+FC_REFLECT(graphene::chain::son_wallet_update_operation, (fee)(payer)(son_wallet_id)(sidechain)(address) )

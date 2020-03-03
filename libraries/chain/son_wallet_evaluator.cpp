@@ -72,7 +72,6 @@ object_id_type update_son_wallet_evaluator::do_apply(const son_wallet_update_ope
       if (itr->addresses.find(op.sidechain) == itr->addresses.end()) {
          db().modify(*itr, [&op](son_wallet_object &swo) {
             swo.addresses[op.sidechain] = op.address;
-            swo.redeem_scripts[op.sidechain] = op.redeem_script;
          });
       }
    }

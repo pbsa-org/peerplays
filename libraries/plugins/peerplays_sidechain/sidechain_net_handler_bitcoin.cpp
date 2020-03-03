@@ -637,7 +637,6 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          op.son_wallet_id = (*active_sw).id;
          op.sidechain = sidechain_type::bitcoin;
          op.address = address;
-         op.redeem_script = redeem_script;
 
          proposal_create_operation proposal_op;
          proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
@@ -659,9 +658,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          if (prev_sw != swi.rend()) {
             std::string prev_pw_address = prev_sw->addresses.at(sidechain_type::bitcoin);
             std::string active_pw_address = address;
-            bytes prev_redeem_script = prev_sw->redeem_scripts.at(sidechain_type::bitcoin);
             vector<son_info> sons = prev_sw->sons;
-            transfer_all_btc(prev_pw_address, prev_redeem_script, sons, active_pw_address);
+            transfer_all_btc(prev_pw_address, sons, active_pw_address);
          }
       }
    }
@@ -726,7 +724,7 @@ std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet
    return reply_str;
 }
 
-void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_address, const bytes& from_redeem_script, const vector<son_info>& from_sons, const std::string& to_address)
+void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_address, const vector<son_info>& from_sons, const std::string& to_address)
 {
    uint64_t fee_rate = bitcoin_client->estimatesmartfee();
    uint64_t min_fee_rate = 1000;
@@ -761,6 +759,19 @@ void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string& from_add
       amounts.push_back(uint64_t(utx.amount_ * 100000000.0));
    }
    tx.vout.push_back(btc_out(to_address, uint64_t((total_amount - min_amount) * 100000000.0)));
+
+   std::vector<std::pair<fc::ecc::public_key, uint64_t> > key_data;
+   for(auto si: from_sons)
+   {
+      fc::ecc::public_key pk = si.signing_key;
+      key_data.push_back(std::make_pair(pk, si.total_votes));
+   }
+   std::sort(key_data.begin(), key_data.end(),
+             [](std::pair<fc::ecc::public_key, uint64_t> p1, std::pair<fc::ecc::public_key, uint64_t> p2){
+               return (p1.second > p2.second);
+             }
+   );
+   bytes from_redeem_script = generate_redeem_script(key_data);
 
    bitcoin_transaction_send_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
