@@ -954,19 +954,71 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
    tx.nVersion = 2;
    tx.nLockTime = 0;
    tx.hasWitness = true;
+   std::vector<uint64_t> amounts;
    for(const auto& utxo: unspent_utxo)
+   {
       tx.vin.push_back(btc_in(utxo.txid_, utxo.amount_));
+      amounts.push_back(uint64_t(utxo.amount_ * 100000000.0));
+   }
    tx.vout.push_back(btc_out(swwo.withdraw_address, swwo.withdraw_amount.value));
    if((total_amount - min_amount) > 0.0)
    {
       tx.vout.push_back(btc_out(pw_address, (total_amount - min_amount) * 100000000.0));
    }
 
-   bytes unsigned_tx;
-   tx.to_bytes(unsigned_tx);
+   auto from_sons = obj->sons;
 
-   std::string reply_str = fc::to_hex((char*)&unsigned_tx[0], unsigned_tx.size());
-   return sign_and_send_transaction_with_wallet(reply_str);
+   std::vector<std::pair<fc::ecc::public_key, uint64_t> > key_data;
+   for(auto si: from_sons)
+   {
+      fc::ecc::public_key pk = si.signing_key;
+      key_data.push_back(std::make_pair(pk, si.total_votes));
+   }
+   std::sort(key_data.begin(), key_data.end(),
+             [](std::pair<fc::ecc::public_key, uint64_t> p1, std::pair<fc::ecc::public_key, uint64_t> p2){
+               return (p1.second > p2.second);
+             }
+   );
+   bytes from_redeem_script = generate_redeem_script(key_data);
+
+   bitcoin_transaction_send_operation op;
+   op.payer = GRAPHENE_SON_ACCOUNT;
+   op.redeem_script = from_redeem_script;
+   op.in_amounts = amounts;
+   tx.to_bytes(op.unsigned_tx);
+   // add signatures
+   std::set<son_id_type> plugin_sons = plugin.get_sons();
+   for(auto si: from_sons)
+   {
+      if (plugin_sons.find(si.son_id) != plugin_sons.end())
+      {
+         fc::ecc::private_key k = plugin.get_private_key(si.son_id);
+         std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, k);
+         op.signatures[si.son_id] = signatures;
+      }
+      else
+      {
+         op.signatures[si.son_id];
+      }
+   }
+
+   const chain::global_property_object& gpo = database.get_global_properties();
+   proposal_create_operation proposal_op;
+   proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+   proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
+   uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+   proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+
+   signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+   try {
+      database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+      if(plugin.app().p2p_node())
+         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+   } catch(fc::exception e){
+      ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
+      return "";
+   }
+   return "";
 }
 
 void sidechain_net_handler_bitcoin::publish_btc_tx(const bitcoin_transaction_object &tx_object)
