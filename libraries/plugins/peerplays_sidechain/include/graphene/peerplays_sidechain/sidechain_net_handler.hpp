@@ -28,6 +28,7 @@ public:
    virtual void process_deposit(const son_wallet_deposit_object &swdo) = 0;
    virtual void process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
    virtual void process_signing() = 0;
+   virtual void complete_signing() = 0;
 
 protected:
    peerplays_sidechain_plugin &plugin;

@@ -52,6 +52,7 @@ public:
    void process_deposits();
    void process_withdrawals();
    void process_signing();
+   void complete_signing();
 
 private:
    peerplays_sidechain_plugin &plugin;
@@ -350,11 +351,17 @@ void peerplays_sidechain_plugin_impl::son_processing() {
 
       process_withdrawals();
 
+      complete_signing();
+
    }
 }
 
 void peerplays_sidechain_plugin_impl::process_signing() {
    net_manager->process_signing();
+}
+
+void peerplays_sidechain_plugin_impl::complete_signing() {
+   net_manager->complete_signing();
 }
 
 void peerplays_sidechain_plugin_impl::approve_proposals() {
@@ -439,6 +446,11 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
          }
 
          if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_transaction_send_operation>::value) {
+            approve_proposal(son_id, proposal.id);
+            continue;
+         }
+
+         if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_send_transaction_process_operation>::value) {
             approve_proposal(son_id, proposal.id);
             continue;
          }

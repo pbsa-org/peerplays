@@ -17,6 +17,7 @@ public:
    void process_deposit(const son_wallet_deposit_object &swdo) override;
    void process_withdrawal(const son_wallet_withdraw_object &swwo) override;
    void process_signing() override;
+   void complete_signing() override;
 
 private:
    std::string create_multisignature_wallet(const std::vector<std::string> public_keys) override;

@@ -63,4 +63,10 @@ void sidechain_net_manager::process_signing() {
    }
 }
 
+void sidechain_net_manager::complete_signing() {
+   for (size_t i = 0; i < net_handlers.size(); i++) {
+      net_handlers.at(i)->complete_signing();
+   }
+}
+
 }} // namespace graphene::peerplays_sidechain

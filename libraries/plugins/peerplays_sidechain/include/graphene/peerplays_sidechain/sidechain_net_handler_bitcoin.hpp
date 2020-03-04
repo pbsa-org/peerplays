@@ -87,6 +87,7 @@ public:
    void process_deposit(const son_wallet_deposit_object &swdo) override;
    void process_withdrawal(const son_wallet_withdraw_object &swwo) override;
    void process_signing() override;
+   void complete_signing() override;
 
 private:
    std::string ip;
@@ -109,6 +110,7 @@ private:
    void transfer_all_btc(const std::string& from_address, const vector<son_info>& from_sons, const std::string& to_address);
    std::string transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo);
    std::string transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo);
+   void publish_btc_tx(const bitcoin_transaction_object &tx_object);
 
    void handle_event(const std::string &event_data);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);

@@ -673,12 +673,20 @@ void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw
    transfer_withdrawal_from_primary_wallet(swwo);
 }
 
+static bool has_enough_signatures(const bitcoin_transaction_object &tx_object) {
+   // TODO: Verify with weights calculation
+   bool has_empty = false;
+   for(auto s: tx_object.signatures)
+      has_empty |= s.second.empty();
+   return !has_empty;
+}
+
 void sidechain_net_handler_bitcoin::process_signing() {
    const auto &idx = plugin.database().get_index_type<bitcoin_transaction_index>().indices().get<by_processed>();
    const auto &idx_range = idx.equal_range(false);
-
    std::for_each(idx_range.first, idx_range.second,
                  [&](const bitcoin_transaction_object &tx_object) {
+                     // collect signatures
                      auto sons = plugin.get_sons();
                      for (son_id_type son_id : sons) {
                         auto it = tx_object.signatures.find(son_id);
@@ -704,7 +712,40 @@ void sidechain_net_handler_bitcoin::process_signing() {
                            }
                         }
                      }
-                 });
+   });
+}
+
+void sidechain_net_handler_bitcoin::complete_signing()
+{
+   const auto &idx = plugin.database().get_index_type<bitcoin_transaction_index>().indices().get<by_processed>();
+   const auto &idx_range = idx.equal_range(false);
+   std::for_each(idx_range.first, idx_range.second,
+                 [&](const bitcoin_transaction_object &tx_object) {
+                     // check if all signatures collected
+                     if (has_enough_signatures(tx_object)) {
+                        publish_btc_tx(tx_object);
+                        bitcoin_send_transaction_process_operation op;
+                        op.payer = GRAPHENE_SON_ACCOUNT;
+                        op.bitcoin_transaction_id = tx_object.id;
+
+                        const chain::global_property_object& gpo = database.get_global_properties();
+                        proposal_create_operation proposal_op;
+                        proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+                        proposal_op.proposed_ops.emplace_back( op_wrapper( op ) );
+                        uint32_t lifetime = ( gpo.parameters.block_interval * gpo.active_witnesses.size() ) * 3;
+                        proposal_op.expiration_time = time_point_sec( database.head_block_time().sec_since_epoch() + lifetime );
+
+                        signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+                        try {
+                           database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+                           if(plugin.app().p2p_node())
+                              plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+                        } catch(fc::exception e){
+                           ilog("sidechain_net_handler_bitcoin:  sending proposal for bitcoin send operation failed with exception ${e}",("e", e.what()));
+                           return;
+                        }
+                     }
+   });
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisignature_wallet(const std::vector<std::string> public_keys) {
@@ -926,6 +967,17 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
 
    std::string reply_str = fc::to_hex((char*)&unsigned_tx[0], unsigned_tx.size());
    return sign_and_send_transaction_with_wallet(reply_str);
+}
+
+void sidechain_net_handler_bitcoin::publish_btc_tx(const bitcoin_transaction_object &tx_object)
+{
+   std::vector<std::vector<bytes>> signatures;
+   signatures.resize(tx_object.signatures.size());
+   std::transform(tx_object.signatures.begin(), tx_object.signatures.end(),
+                  signatures.begin(), [](const std::pair<son_id_type, std::vector<bytes>>& p) { return p.second; }
+   );
+   bytes signed_tx = add_signatures_to_unsigned_tx(tx_object.unsigned_tx, signatures, tx_object.redeem_script);
+   bitcoin_client->sendrawtransaction(fc::to_hex((const char*)&signed_tx[0], signed_tx.size()));
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {

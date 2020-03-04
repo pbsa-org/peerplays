@@ -20,6 +20,7 @@ public:
    void process_deposits();
    void process_withdrawals();
    void process_signing();
+   void complete_signing();
 
 private:
    peerplays_sidechain_plugin &plugin;
