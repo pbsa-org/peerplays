@@ -51,6 +51,7 @@ public:
    void recreate_primary_wallet();
    void process_deposits();
    void process_withdrawals();
+   void process_signing();
 
 private:
    peerplays_sidechain_plugin &plugin;
@@ -332,6 +333,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
    // Tasks that are executed by all active SONs, no matter if scheduled
    // E.g. sending approvals and signing
    approve_proposals();
+   process_signing();
 
    // Tasks that are executed by scheduled and active SON
    if (sons.find(next_son_id) != sons.end()) {
@@ -347,7 +349,12 @@ void peerplays_sidechain_plugin_impl::son_processing() {
       process_deposits();
 
       process_withdrawals();
+
    }
+}
+
+void peerplays_sidechain_plugin_impl::process_signing() {
+   net_manager->process_signing();
 }
 
 void peerplays_sidechain_plugin_impl::approve_proposals() {
@@ -427,6 +434,11 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
          }
 
          if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value) {
+            approve_proposal(son_id, proposal.id);
+            continue;
+         }
+
+         if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_transaction_send_operation>::value) {
             approve_proposal(son_id, proposal.id);
             continue;
          }
@@ -518,42 +530,6 @@ void peerplays_sidechain_plugin_impl::create_son_deregister_proposals() {
                   }
                });
                fut.wait(fc::seconds(10));
-            }
-
-            if(proposal->proposed_transaction.operations.size() == 1
-            && proposal->proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_transaction_send_operation>::value) {
-               approve_proposal( son_id, proposal->id );
-               continue;
-            }
-         }
-      }
-
-      if( object_id.is<chain::bitcoin_transaction_object>() ) {
-         const object* obj = plugin.database().find_object(object_id);
-         const chain::bitcoin_transaction_object* tx_object = dynamic_cast<const chain::bitcoin_transaction_object*>(obj);
-
-         for (son_id_type son_id : _sons) {
-            auto it = tx_object->signatures.find(son_id);
-            if (it == tx_object->signatures.end())
-               continue;
-            if (it->second.empty())
-            {
-               bitcoin_transaction_sign_operation op;
-               son_object s_obj= get_son_object(son_id);
-               op.payer = s_obj.son_account;
-               op.tx_id = tx_object->id;
-               fc::ecc::private_key k = get_private_key(son_id);
-               op.signatures = signatures_for_raw_transaction(tx_object->unsigned_tx, tx_object->in_amounts, tx_object->redeem_script, k);
-
-               signed_transaction trx = plugin.database().create_signed_transaction(k, op);
-               try {
-                  plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
-                  if(plugin.app().p2p_node())
-                     plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-               } catch(fc::exception e){
-                  ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}",("e", e.what()));
-                  return;
-               }
             }
          }
       }

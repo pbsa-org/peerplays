@@ -19,6 +19,7 @@ public:
    void recreate_primary_wallet();
    void process_deposits();
    void process_withdrawals();
+   void process_signing();
 
 private:
    peerplays_sidechain_plugin &plugin;

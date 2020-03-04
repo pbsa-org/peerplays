@@ -16,6 +16,7 @@
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/sidechain_transaction_object.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 
@@ -628,7 +629,6 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          }
 
          string address = create_weighted_multisignature_wallet(son_pubkeys_bitcoin);
-         bytes redeem_script = get_weighted_multisig_redeem_script(son_pubkeys_bitcoin);
 
          ilog(address);
 
@@ -671,6 +671,40 @@ void sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 
 void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
    transfer_withdrawal_from_primary_wallet(swwo);
+}
+
+void sidechain_net_handler_bitcoin::process_signing() {
+   const auto &idx = plugin.database().get_index_type<bitcoin_transaction_index>().indices().get<by_processed>();
+   const auto &idx_range = idx.equal_range(false);
+
+   std::for_each(idx_range.first, idx_range.second,
+                 [&](const bitcoin_transaction_object &tx_object) {
+                     auto sons = plugin.get_sons();
+                     for (son_id_type son_id : sons) {
+                        auto it = tx_object.signatures.find(son_id);
+                        if (it == tx_object.signatures.end())
+                           continue;
+                        if (it->second.empty())
+                        {
+                           bitcoin_transaction_sign_operation op;
+                           son_object s_obj= plugin.get_son_object(son_id);
+                           op.payer = s_obj.son_account;
+                           op.tx_id = tx_object.id;
+                           fc::ecc::private_key k = plugin.get_private_key(son_id);
+                           op.signatures = signatures_for_raw_transaction(tx_object.unsigned_tx, tx_object.in_amounts, tx_object.redeem_script, k);
+
+                           signed_transaction trx = plugin.database().create_signed_transaction(k, op);
+                           try {
+                              plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+                              if(plugin.app().p2p_node())
+                                 plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+                           } catch(fc::exception e){
+                              ilog("sidechain_net_handler: bitcoin transaction signing failed with exception ${e}",("e", e.what()));
+                              return;
+                           }
+                        }
+                     }
+                 });
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisignature_wallet(const std::vector<std::string> public_keys) {

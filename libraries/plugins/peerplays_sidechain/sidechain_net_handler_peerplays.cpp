@@ -39,6 +39,9 @@ void sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_o
 void sidechain_net_handler_peerplays::process_withdrawal(const son_wallet_withdraw_object &swwo) {
 }
 
+void sidechain_net_handler_peerplays::process_signing() {
+}
+
 std::string sidechain_net_handler_peerplays::create_multisignature_wallet(const std::vector<std::string> public_keys) {
    return "";
 }

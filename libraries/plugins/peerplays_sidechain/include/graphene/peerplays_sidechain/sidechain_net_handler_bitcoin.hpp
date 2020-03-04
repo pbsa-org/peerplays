@@ -83,9 +83,10 @@ public:
    sidechain_net_handler_bitcoin(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options);
    virtual ~sidechain_net_handler_bitcoin();
 
-   void recreate_primary_wallet();
-   void process_deposit(const son_wallet_deposit_object &swdo);
-   void process_withdrawal(const son_wallet_withdraw_object &swwo);
+   void recreate_primary_wallet() override;
+   void process_deposit(const son_wallet_deposit_object &swdo) override;
+   void process_withdrawal(const son_wallet_withdraw_object &swwo) override;
+   void process_signing() override;
 
 private:
    std::string ip;
@@ -99,10 +100,10 @@ private:
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    std::unique_ptr<zmq_listener> listener;
 
-   std::string create_multisignature_wallet(const std::vector<std::string> public_keys);
-   std::string transfer(const std::string &from, const std::string &to, const uint64_t amount);
-   std::string sign_transaction(const std::string &transaction);
-   std::string send_transaction(const std::string &transaction);
+   std::string create_multisignature_wallet(const std::vector<std::string> public_keys) override;
+   std::string transfer(const std::string &from, const std::string &to, const uint64_t amount) override;
+   std::string sign_transaction(const std::string &transaction) override;
+   std::string send_transaction(const std::string &transaction) override;
    std::string sign_and_send_transaction_with_wallet(const std::string &tx_json);
    std::string create_weighted_multisignature_wallet( const std::vector<std::pair<std::string, uint64_t>>& public_keys );
    void transfer_all_btc(const std::string& from_address, const vector<son_info>& from_sons, const std::string& to_address);
