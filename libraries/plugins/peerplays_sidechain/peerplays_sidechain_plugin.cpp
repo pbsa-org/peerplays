@@ -445,11 +445,6 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
             continue;
          }
 
-         if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_transaction_send_operation>::value) {
-            approve_proposal(son_id, proposal.id);
-            continue;
-         }
-
          if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::bitcoin_send_transaction_process_operation>::value) {
             approve_proposal(son_id, proposal.id);
             continue;
