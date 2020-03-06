@@ -190,10 +190,19 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
 
       const global_property_object &gpo = db.get_global_properties();
 
+      const auto& sidx = db.get_index_type<son_index>().indices().get<graphene::chain::by_account>();
+      const auto son_obj1 = sidx.find( alice_id );
+      BOOST_REQUIRE(son_obj1 != sidx.end());
+      const auto son_obj2 = sidx.find( bob_id );
+      BOOST_REQUIRE(son_obj2 != sidx.end());
+
+
       {
          BOOST_TEST_MESSAGE("Send bitcoin_transaction_send_operation");
 
          bitcoin_transaction_send_operation send_op;
+         send_op.signatures[son_obj1->id];
+         send_op.signatures[son_obj2->id];
 
          send_op.payer = GRAPHENE_SON_ACCOUNT;
 
@@ -250,12 +259,8 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
       auto pobj = idx.find(proposal_id_type(0));
       BOOST_REQUIRE(pobj != idx.end());
 
-      const auto& sidx = db.get_index_type<son_index>().indices().get<graphene::chain::by_account>();
-      const auto son_obj1 = sidx.find( alice_id );
-      BOOST_REQUIRE(son_obj1 != sidx.end());
-
       auto bitcoin_transaction_send_op = pobj->proposed_transaction.operations[0].get<bitcoin_transaction_send_operation>();
-      BOOST_REQUIRE(bitcoin_transaction_send_op.signatures.size() == 1);
+      BOOST_REQUIRE(bitcoin_transaction_send_op.signatures.size() == 2);
       BOOST_REQUIRE(bitcoin_transaction_send_op.signatures[son_obj1->id][0] == a1);
       BOOST_REQUIRE(bitcoin_transaction_send_op.signatures[son_obj1->id][1] == a2);
       BOOST_REQUIRE(bitcoin_transaction_send_op.signatures[son_obj1->id][2] == a3);
@@ -270,7 +275,7 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
          bitcoin_transaction_sign_operation sign_op;
 
          sign_op.payer = bob_id;
-         //sign_op.proposal_id = proposal_id_type(0);
+         sign_op.proposal_id = proposal_id_type(0);
          sign_op.signatures.push_back(b1);
          sign_op.signatures.push_back(b2);
          sign_op.signatures.push_back(b3);
@@ -285,9 +290,6 @@ BOOST_AUTO_TEST_CASE(bitcoin_transaction_send_test)
       generate_block();
 
       BOOST_REQUIRE(idx.size() == 0);
-
-      const auto son_obj2 = sidx.find( bob_id );
-      BOOST_REQUIRE(son_obj2 != sidx.end());
 
       BOOST_REQUIRE(btidx.size() == 1);
 
