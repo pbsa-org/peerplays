@@ -26,7 +26,19 @@ object_id_type bitcoin_transaction_send_evaluator::do_apply(const bitcoin_transa
 {
    try
    {
-      const auto &new_bitcoin_transaction_object = db().create<bitcoin_transaction_object>([&](bitcoin_transaction_object &obj) {
+      database& database = db();
+      // count initial signatures for a statistics
+      for(const auto& p: op.signatures)
+      {
+         if(p.second.empty())
+            continue;
+         son_object so = p.first(database);
+         database.modify( so.statistics(database), [&]( son_statistics_object& sso ) {
+            sso.txs_signed += 1;
+         } );
+      }
+      // create bitcoin transaction object
+      const auto &new_bitcoin_transaction_object = database.create<bitcoin_transaction_object>([&](bitcoin_transaction_object &obj) {
          obj.processed = false;
          obj.unsigned_tx = op.unsigned_tx;
          obj.redeem_script = op.redeem_script;
