@@ -544,13 +544,12 @@ void zmq_listener::handle_zmq() {
    socket.connect("tcp://" + ip + ":" + std::to_string(zmq_port));
 
    while (true) {
-      try{
+      try {
          auto msg = receive_multipart();
          const auto header = std::string(static_cast<char *>(msg[0].data()), msg[0].size());
          const auto block_hash = boost::algorithm::hex(std::string(static_cast<char *>(msg[1].data()), msg[1].size()));
-
          event_received(block_hash);
-      } catch (zmq::error_t& e){
+      } catch (zmq::error_t& e) {
       }
    }
 }
