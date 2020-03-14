@@ -377,15 +377,14 @@ const char *charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 
 /** The Bech32 character set for decoding. */
 const int8_t charset_rev[128] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    15, -1, 10, 17, 21, 20, 26, 30,  7,  5, -1, -1, -1, -1, -1, -1,
-    -1, 29, -1, 24, 13, 25,  9,  8, 23, -1, 18, 22, 31, 27, 19, -1,
-     1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1,
-    -1, 29, -1, 24, 13, 25,  9,  8, 23, -1, 18, 22, 31, 27, 19, -1,
-     1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1
-};
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      15, -1, 10, 17, 21, 20, 26, 30, 7, 5, -1, -1, -1, -1, -1, -1,
+      -1, 29, -1, 24, 13, 25, 9, 8, 23, -1, 18, 22, 31, 27, 19, -1,
+      1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1,
+      -1, 29, -1, 24, 13, 25, 9, 8, 23, -1, 18, 22, 31, 27, 19, -1,
+      1, 0, 3, 16, 11, 28, 12, 14, 6, 4, 2, -1, -1, -1, -1, -1};
 
 /** Concatenate two byte arrays. */
 bytes cat(bytes x, const bytes &y) {
@@ -422,18 +421,17 @@ uint32_t polymod(const bytes &values) {
 }
 
 /** Expand a HRP for use in checksum computation. */
-bytes bech32_expand_hrp(const std::string& hrp)
-{
-    bytes ret;
-    ret.reserve(hrp.size() + 90);
-    ret.resize(hrp.size() * 2 + 1);
-    for (size_t i = 0; i < hrp.size(); ++i) {
-        unsigned char c = hrp[i];
-        ret[i] = c >> 5;
-        ret[i + hrp.size() + 1] = c & 0x1f;
-    }
-    ret[hrp.size()] = 0;
-    return ret;
+bytes bech32_expand_hrp(const std::string &hrp) {
+   bytes ret;
+   ret.reserve(hrp.size() + 90);
+   ret.resize(hrp.size() * 2 + 1);
+   for (size_t i = 0; i < hrp.size(); ++i) {
+      unsigned char c = hrp[i];
+      ret[i] = c >> 5;
+      ret[i + hrp.size() + 1] = c & 0x1f;
+   }
+   ret[hrp.size()] = 0;
+   return ret;
 }
 
 /** Create a checksum. */
@@ -450,17 +448,16 @@ bytes bech32_checksum(const std::string &hrp, const bytes &values) {
 }
 
 /** Verify a checksum. */
-bool bech32_verify_checksum(const std::string& hrp, const bytes& values)
-{
-    // PolyMod computes what value to xor into the final values to make the checksum 0. However,
-    // if we required that the checksum was 0, it would be the case that appending a 0 to a valid
-    // list of values would result in a new valid list. For that reason, Bech32 requires the
-    // resulting checksum to be 1 instead.
-    return polymod(cat(bech32_expand_hrp(hrp), values)) == 1;
+bool bech32_verify_checksum(const std::string &hrp, const bytes &values) {
+   // PolyMod computes what value to xor into the final values to make the checksum 0. However,
+   // if we required that the checksum was 0, it would be the case that appending a 0 to a valid
+   // list of values would result in a new valid list. For that reason, Bech32 requires the
+   // resulting checksum to be 1 instead.
+   return polymod(cat(bech32_expand_hrp(hrp), values)) == 1;
 }
 
 /** Encode a Bech32 string. */
-std::string bech32_encode(const std::string& hrp, const bytes& values) {
+std::string bech32_encode(const std::string &hrp, const bytes &values) {
    bytes checksum = bech32_checksum(hrp, values);
    bytes combined = cat(values, checksum);
    std::string ret = hrp + '1';
@@ -472,10 +469,10 @@ std::string bech32_encode(const std::string& hrp, const bytes& values) {
 }
 
 /** Decode a Bech32 string. */
-bytes bech32_decode(const std::string& str) {
+bytes bech32_decode(const std::string &str) {
    if (str.size() > 90)
       FC_THROW("Invalid bech32 string ${a}", ("a", str));
-   for (unsigned char c: str) {
+   for (unsigned char c : str) {
       if (c < 33 || c > 126)
          FC_THROW("Invalid bech32 string ${a}", ("a", str));
       if (c >= 'A' && c <= 'Z')
@@ -524,32 +521,28 @@ bool convertbits(bytes &out, const bytes &in) {
 }
 
 /** Encode a SegWit address. */
-std::string segwit_addr_encode(const std::string& hrp, uint8_t witver, const bytes& witprog)
-{
-    bytes enc;
-    enc.push_back(witver);
-    convertbits<8, 5, true>(enc, witprog);
-    std::string ret = bech32_encode(hrp, enc);
-    return ret;
+std::string segwit_addr_encode(const std::string &hrp, uint8_t witver, const bytes &witprog) {
+   bytes enc;
+   enc.push_back(witver);
+   convertbits<8, 5, true>(enc, witprog);
+   std::string ret = bech32_encode(hrp, enc);
+   return ret;
 }
 
 /** Decode a SegWit address. */
-bytes segwit_addr_decode(const std::string& addr)
-{
+bytes segwit_addr_decode(const std::string &addr) {
    bytes dec = bech32_decode(addr);
-       if (dec.size() < 1)
-          FC_THROW("Invalid bech32 address ${a}", ("a", addr));
-       bytes conv;
-       if (!convertbits<5, 8, false>(conv, bytes(dec.begin() + 1, dec.end())) ||
-           conv.size() < 2 || conv.size() > 40 || dec[0] > 16 || (dec[0] == 0 &&
-           conv.size() != 20 && conv.size() != 32)) {
-           FC_THROW("Invalid bech32 address ${a}", ("a", addr));
-       }
-       return conv;
+   if (dec.size() < 1)
+      FC_THROW("Invalid bech32 address ${a}", ("a", addr));
+   bytes conv;
+   if (!convertbits<5, 8, false>(conv, bytes(dec.begin() + 1, dec.end())) ||
+       conv.size() < 2 || conv.size() > 40 || dec[0] > 16 || (dec[0] == 0 && conv.size() != 20 && conv.size() != 32)) {
+      FC_THROW("Invalid bech32 address ${a}", ("a", addr));
+   }
+   return conv;
 }
 
-std::string p2wsh_address_from_redeem_script(const bytes& script, bitcoin_network network)
-{
+std::string p2wsh_address_from_redeem_script(const bytes &script, bitcoin_network network) {
    // calc script hash
    fc::sha256 sh = fc::sha256::hash(reinterpret_cast<const char *>(&script[0]), script.size());
    bytes wp(sh.data(), sh.data() + sh.data_size());
@@ -766,19 +759,17 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx, const std::vector<
    return ret;
 }
 
-std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t> > &public_keys)
-{
+std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t>> &public_keys) {
    std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
-   for(auto p: public_keys)
+   for (auto p : public_keys)
       key_data.push_back(std::make_pair(fc::ecc::public_key::from_base58(p.first), p.second));
    bytes redeem_script = generate_redeem_script(key_data);
    return p2wsh_address_from_redeem_script(redeem_script);
 }
 
-bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uint64_t> > public_keys)
-{
+bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uint64_t>> public_keys) {
    std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
-   for(auto p: public_keys)
+   for (auto p : public_keys)
       key_data.push_back(std::make_pair(fc::ecc::public_key::from_base58(p.first), p.second));
    return generate_redeem_script(key_data);
 }

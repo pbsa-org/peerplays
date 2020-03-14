@@ -13,8 +13,8 @@
 #include <graphene/chain/sidechain_transaction_object.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_withdraw_object.hpp>
-#include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
+#include <graphene/peerplays_sidechain/sidechain_net_manager.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
 namespace bpo = boost::program_options;
@@ -352,7 +352,6 @@ void peerplays_sidechain_plugin_impl::son_processing() {
       process_withdrawals();
 
       complete_signing();
-
    }
 }
 
