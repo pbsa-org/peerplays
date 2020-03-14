@@ -631,7 +631,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                         si.total_votes));
          }
 
-         string address = create_weighted_multisignature_wallet(son_pubkeys_bitcoin);
+         string address = get_weighted_multisig_address(son_pubkeys_bitcoin);
+         bitcoin_client->importaddress(address);
 
          ilog(address);
 
@@ -752,28 +753,6 @@ void sidechain_net_handler_bitcoin::complete_signing() {
                        }
                     }
                  });
-}
-
-std::string sidechain_net_handler_bitcoin::create_multisignature_wallet(const std::vector<std::string> public_keys) {
-   return bitcoin_client->addmultisigaddress(public_keys);
-}
-
-std::string sidechain_net_handler_bitcoin::create_weighted_multisignature_wallet(const std::vector<std::pair<std::string, uint64_t>> &public_keys) {
-   string address = get_weighted_multisig_address(public_keys);
-   bitcoin_client->importaddress(address);
-   return address;
-}
-
-std::string sidechain_net_handler_bitcoin::transfer(const std::string &from, const std::string &to, const uint64_t amount) {
-   return "";
-}
-
-std::string sidechain_net_handler_bitcoin::sign_transaction(const std::string &transaction) {
-   return "";
-}
-
-std::string sidechain_net_handler_bitcoin::send_transaction(const std::string &transaction) {
-   return "";
 }
 
 std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet(const std::string &tx_json) {

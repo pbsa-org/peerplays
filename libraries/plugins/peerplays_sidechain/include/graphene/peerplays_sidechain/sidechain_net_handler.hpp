@@ -37,11 +37,6 @@ protected:
 
    std::map<std::string, std::string> private_keys;
 
-   virtual std::string create_multisignature_wallet(const std::vector<std::string> public_keys) = 0;
-   virtual std::string transfer(const std::string &from, const std::string &to, const uint64_t amount) = 0;
-   virtual std::string sign_transaction(const std::string &transaction) = 0;
-   virtual std::string send_transaction(const std::string &transaction) = 0;
-
 private:
 };
 
