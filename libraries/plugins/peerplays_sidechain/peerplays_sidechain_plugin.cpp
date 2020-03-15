@@ -289,7 +289,7 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop() {
    for (son_id_type son_id : sons) {
       if (is_active_son(son_id) || get_son_object(son_id).status == chain::son_status::in_maintenance) {
 
-         ilog("peerplays_sidechain_plugin:  sending heartbeat for SON ${son}", ("son", son_id));
+         ilog("sending heartbeat for SON ${son}", ("son", son_id));
          chain::son_heartbeat_operation op;
          op.owner_account = get_son_object(son_id).son_account;
          op.son_id = son_id;
@@ -302,7 +302,7 @@ void peerplays_sidechain_plugin_impl::heartbeat_loop() {
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                return true;
             } catch (fc::exception e) {
-               ilog("peerplays_sidechain_plugin_impl:  sending heartbeat failed with exception ${e}", ("e", e.what()));
+               ilog("sending heartbeat failed with exception ${e}", ("e", e.what()));
                return false;
             }
          });
@@ -329,7 +329,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
    }
 
    chain::son_id_type next_son_id = plugin.database().get_scheduled_son(1);
-   ilog("peerplays_sidechain_plugin_impl:  Scheduled SON ${son}", ("son", next_son_id));
+   ilog("Scheduled SON ${son}", ("son", next_son_id));
 
    // Tasks that are executed by all active SONs, no matter if scheduled
    // E.g. sending approvals and signing
@@ -355,14 +355,6 @@ void peerplays_sidechain_plugin_impl::son_processing() {
    }
 }
 
-void peerplays_sidechain_plugin_impl::process_signing() {
-   net_manager->process_signing();
-}
-
-void peerplays_sidechain_plugin_impl::complete_signing() {
-   net_manager->complete_signing();
-}
-
 void peerplays_sidechain_plugin_impl::approve_proposals() {
 
    auto approve_proposal = [&](const chain::son_id_type &son_id, const chain::proposal_id_type &proposal_id) {
@@ -379,7 +371,7 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
                plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             return true;
          } catch (fc::exception e) {
-            ilog("peerplays_sidechain_plugin_impl:  sending approval failed with exception ${e}", ("e", e.what()));
+            ilog("sending approval failed with exception ${e}", ("e", e.what()));
             return false;
          }
       });
@@ -497,7 +489,7 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals() {
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                return true;
             } catch (fc::exception e) {
-               ilog("peerplays_sidechain_plugin_impl:  sending son down proposal failed with exception ${e}", ("e", e.what()));
+               ilog("sending son down proposal failed with exception ${e}", ("e", e.what()));
                return false;
             }
          });
@@ -531,7 +523,7 @@ void peerplays_sidechain_plugin_impl::create_son_deregister_proposals() {
                         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                      return true;
                   } catch (fc::exception e) {
-                     ilog("peerplays_sidechain_plugin_impl:  sending son dereg proposal failed with exception ${e}", ("e", e.what()));
+                     ilog("sending son dereg proposal failed with exception ${e}", ("e", e.what()));
                      return false;
                   }
                });
@@ -552,6 +544,14 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
 
 void peerplays_sidechain_plugin_impl::process_withdrawals() {
    net_manager->process_withdrawals();
+}
+
+void peerplays_sidechain_plugin_impl::process_signing() {
+   net_manager->process_signing();
+}
+
+void peerplays_sidechain_plugin_impl::complete_signing() {
+   net_manager->complete_signing();
 }
 
 void peerplays_sidechain_plugin_impl::on_applied_block(const signed_block &b) {

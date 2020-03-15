@@ -36,10 +36,6 @@ bitcoin_rpc_client::bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::stri
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
 }
 
-bool bitcoin_rpc_client::connection_is_not_defined() const {
-   return ip.empty() || rpc_port == 0 || user.empty() || password.empty();
-}
-
 std::string bitcoin_rpc_client::addmultisigaddress(const std::vector<std::string> public_keys) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"addmultisigaddress\", "
                                   "\"method\": \"addmultisigaddress\", \"params\": [");

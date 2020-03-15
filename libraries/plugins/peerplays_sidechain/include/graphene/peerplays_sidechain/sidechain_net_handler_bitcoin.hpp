@@ -22,7 +22,6 @@ public:
 class bitcoin_rpc_client {
 public:
    bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password);
-   bool connection_is_not_defined() const;
 
    std::string addmultisigaddress(const std::vector<std::string> public_keys);
    std::string createrawtransaction(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
@@ -59,9 +58,6 @@ private:
 class zmq_listener {
 public:
    zmq_listener(std::string _ip, uint32_t _zmq);
-   bool connection_is_not_defined() const {
-      return zmq_port == 0;
-   }
 
    fc::signal<void(const std::string &)> event_received;
 
