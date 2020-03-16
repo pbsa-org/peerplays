@@ -21,6 +21,8 @@
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 
+#include <graphene/utilities/key_conversion.hpp>
+
 namespace graphene { namespace peerplays_sidechain {
 
 // =============================================================================
@@ -858,8 +860,12 @@ void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_add
    std::set<son_id_type> plugin_sons = plugin.get_sons();
    for (auto si : from_sons) {
       if (plugin_sons.find(si.son_id) != plugin_sons.end()) {
-         fc::ecc::private_key k = plugin.get_private_key(si.son_id);
-         std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, k);
+         std::string son_btc_pub_key = si.sidechain_public_keys[peerplays_sidechain::sidechain_type::bitcoin];
+         std::string str_priv_key = get_private_key(son_btc_pub_key);
+         fc::optional<fc::ecc::private_key> k = graphene::utilities::wif_to_key(str_priv_key);
+         if (!k)
+            FC_THROW("Invalid bitcoi private key");
+         std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, *k);
          op.signatures[si.son_id] = signatures;
       } else {
          op.signatures[si.son_id];
@@ -983,8 +989,12 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
    std::set<son_id_type> plugin_sons = plugin.get_sons();
    for (auto si : from_sons) {
       if (plugin_sons.find(si.son_id) != plugin_sons.end()) {
-         fc::ecc::private_key k = plugin.get_private_key(si.son_id);
-         std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, k);
+         std::string son_btc_pub_key = si.sidechain_public_keys[peerplays_sidechain::sidechain_type::bitcoin];
+         std::string str_priv_key = get_private_key(son_btc_pub_key);
+         fc::optional<fc::ecc::private_key> k = graphene::utilities::wif_to_key(str_priv_key);
+         if (!k)
+            FC_THROW("Invalid bitcoi private key");
+         std::vector<bytes> signatures = signatures_for_raw_transaction(op.unsigned_tx, amounts, from_redeem_script, *k);
          op.signatures[si.son_id] = signatures;
       } else {
          op.signatures[si.son_id];
