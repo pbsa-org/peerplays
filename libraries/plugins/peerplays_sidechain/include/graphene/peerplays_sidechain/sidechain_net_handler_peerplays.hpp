@@ -20,11 +20,6 @@ public:
    void complete_signing() override;
 
 private:
-   std::string create_multisignature_wallet(const std::vector<std::string> public_keys) override;
-   std::string transfer(const std::string &from, const std::string &to, const uint64_t amount) override;
-   std::string sign_transaction(const std::string &transaction) override;
-   std::string send_transaction(const std::string &transaction) override;
-
    void on_applied_block(const signed_block &b);
 };
 
