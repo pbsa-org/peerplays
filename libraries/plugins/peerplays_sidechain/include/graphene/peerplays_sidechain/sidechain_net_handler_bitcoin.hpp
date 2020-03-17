@@ -25,10 +25,14 @@ public:
    bool connection_is_not_defined() const;
 
    std::string addmultisigaddress(const std::vector<std::string> public_keys);
+   std::string createpsbt(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
    std::string createrawtransaction(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
    std::string createwallet(const std::string &wallet_name);
+   std::string decodepsbt(std::string const &tx_psbt);
+   std::string decoderawtransaction(std::string const &tx_hex);
    std::string encryptwallet(const std::string &passphrase);
    uint64_t estimatesmartfee();
+   std::string finalizepsbt(std::string const &tx_psbt);
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);
    void importaddress(const std::string &address_or_script);
    std::vector<btc_txout> listunspent();
@@ -39,6 +43,7 @@ public:
    std::string signrawtransactionwithwallet(const std::string &tx_hash);
    std::string unloadwallet(const std::string &filename);
    std::string walletlock();
+   std::string walletprocesspsbt(std::string const &tx_psbt);
    bool walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
 
 private:
@@ -104,6 +109,7 @@ private:
    std::string sign_transaction(const std::string &transaction);
    std::string send_transaction(const std::string &transaction);
    std::string sign_and_send_transaction_with_wallet(const std::string &tx_json);
+   std::string processpsbt(const std::string &tx_psbt);
    std::string transfer_all_btc(const std::string &from_address, const std::string &to_address);
    std::string transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo);
    std::string transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo);
