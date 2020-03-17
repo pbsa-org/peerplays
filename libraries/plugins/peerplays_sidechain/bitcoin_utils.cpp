@@ -759,7 +759,7 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx, const std::vector<
    return ret;
 }
 
-std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t>> &public_keys) {
+std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t>> &public_keys, bitcoin_network network) {
    std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
    for (auto p : public_keys) {
       fc::ecc::public_key_data kd;
@@ -770,7 +770,7 @@ std::string get_weighted_multisig_address(const std::vector<std::pair<std::strin
       key_data.push_back(std::make_pair(fc::ecc::public_key(kd), p.second));
    }
    bytes redeem_script = generate_redeem_script(key_data);
-   return p2wsh_address_from_redeem_script(redeem_script);
+   return p2wsh_address_from_redeem_script(redeem_script, network);
 }
 
 bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uint64_t>> public_keys) {

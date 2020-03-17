@@ -11,11 +11,11 @@ enum bitcoin_network {
 };
 
 bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data);
-std::string p2wsh_address_from_redeem_script(const bytes &script, bitcoin_network network = mainnet);
+std::string p2wsh_address_from_redeem_script(const bytes &script, bitcoin_network network = testnet);
 bytes lock_script_for_redeem_script(const bytes &script);
 bytes lock_script_from_pw_address(const std::string &address);
 
-std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t>> &public_keys);
+std::string get_weighted_multisig_address(const std::vector<std::pair<std::string, uint64_t>> &public_keys, bitcoin_network network = testnet);
 bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uint64_t>> public_keys);
 
 std::vector<bytes> signatures_for_raw_transaction(const bytes &unsigned_tx,
