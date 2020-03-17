@@ -551,8 +551,9 @@ std::string p2wsh_address_from_redeem_script(const bytes &script, bitcoin_networ
    case (mainnet):
       return segwit_addr_encode("bc", 0, wp);
    case (testnet):
-   case (regtest):
       return segwit_addr_encode("tb", 0, wp);
+   case (regtest):
+      return segwit_addr_encode("bcrt", 0, wp);
    default:
       FC_THROW("Unknown bitcoin network type");
    }
@@ -774,7 +775,11 @@ std::string get_weighted_multisig_address(const std::vector<std::pair<std::strin
 bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uint64_t>> public_keys) {
    std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
    for (auto p : public_keys)
-      key_data.push_back(std::make_pair(fc::ecc::public_key::from_base58(p.first), p.second));
+   {
+      fc::ecc::public_key_data kd;
+      fc::from_hex(p.first, kd.begin(), kd.size());
+      key_data.push_back(std::make_pair(fc::ecc::public_key(kd), p.second));
+   }
    return generate_redeem_script(key_data);
 }
 
