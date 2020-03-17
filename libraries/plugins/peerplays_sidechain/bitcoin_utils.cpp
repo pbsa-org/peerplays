@@ -1,5 +1,6 @@
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/hex.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/sha256.hpp>
 #include <fc/io/raw.hpp>
@@ -763,10 +764,7 @@ std::string get_weighted_multisig_address(const std::vector<std::pair<std::strin
    std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
    for (auto p : public_keys) {
       fc::ecc::public_key_data kd;
-      for (uint32_t i = 0; i < p.first.length(); i += 2) {
-         std::string byte_str = p.first.substr(i, 2);
-         kd.data[i / 2] = (char)std::strtol(byte_str.c_str(), NULL, 16);
-      }
+      fc::from_hex(p.first, kd.begin(), kd.size());
       key_data.push_back(std::make_pair(fc::ecc::public_key(kd), p.second));
    }
    bytes redeem_script = generate_redeem_script(key_data);
