@@ -453,7 +453,14 @@
       "gpos_period": 15552000,
       "gpos_subperiod": 2592000,
       "gpos_period_start": 1584385200,
-      "gpos_vesting_lockin_period": 2592000
+      "gpos_vesting_lockin_period": 2592000,
+      "son_vesting_amount": 5000000,
+      "son_vesting_period": 172800,
+      "son_pay_daily_max": 20000000,
+      "son_pay_time": 86400,
+      "son_deregister_time": 43200,
+      "son_heartbeat_frequency": 180,
+      "son_down_time": 360
     }
   },
   "initial_bts_accounts": [],
