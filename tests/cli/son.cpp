@@ -332,6 +332,7 @@ BOOST_FIXTURE_TEST_CASE( select_top_fifteen_sons, cli_fixture )
       BOOST_TEST_MESSAGE("Voting for SONs");
       for(unsigned int i = 0; i < son_number + 1; i++)
       {
+         // It is mandatory to vest balance under GPOS policy to vote for SON account
           con.wallet_api_ptr->transfer(
               "nathan", "sonaccount" + fc::to_pretty_string(i), "1000", "1.3.0", "Here are some CORE tokens for your new account", true );
           con.wallet_api_ptr->create_vesting_balance("sonaccount" + fc::to_pretty_string(i), "500", "1.3.0", vesting_balance_type::gpos, true);
@@ -626,6 +627,7 @@ BOOST_FIXTURE_TEST_CASE( cli_list_active_sons, cli_fixture )
                          "http://son" + fc::to_pretty_string(i),
                          sidechain_public_keys,
                          false);
+         // It is mandatory to vest balance under GPOS policy to vote for SON account
           con.wallet_api_ptr->transfer(
               "nathan", "sonaccount" + fc::to_pretty_string(i), "1000", "1.3.0", "Here are some CORE tokens for your new account", true );
           con.wallet_api_ptr->create_vesting_balance("sonaccount" + fc::to_pretty_string(i), "500", "1.3.0", vesting_balance_type::gpos, true);
