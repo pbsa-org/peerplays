@@ -22,7 +22,6 @@ public:
 class bitcoin_rpc_client {
 public:
    bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password);
-   bool connection_is_not_defined() const;
 
    std::string addmultisigaddress(const std::vector<std::string> public_keys);
    std::string createpsbt(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
@@ -64,9 +63,6 @@ private:
 class zmq_listener {
 public:
    zmq_listener(std::string _ip, uint32_t _zmq);
-   bool connection_is_not_defined() const {
-      return zmq_port == 0;
-   }
 
    fc::signal<void(const std::string &)> event_received;
 
@@ -104,10 +100,6 @@ private:
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    std::unique_ptr<zmq_listener> listener;
 
-   std::string create_multisignature_wallet(const std::vector<std::string> public_keys);
-   std::string transfer(const std::string &from, const std::string &to, const uint64_t amount);
-   std::string sign_transaction(const std::string &transaction);
-   std::string send_transaction(const std::string &transaction);
    std::string sign_and_send_transaction_with_wallet(const std::string &tx_json);
    std::string processpsbt(const std::string &tx_psbt);
    std::string transfer_all_btc(const std::string &from_address, const std::string &to_address);

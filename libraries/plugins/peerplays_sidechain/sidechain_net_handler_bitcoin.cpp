@@ -32,10 +32,6 @@ bitcoin_rpc_client::bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::stri
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
 }
 
-bool bitcoin_rpc_client::connection_is_not_defined() const {
-   return ip.empty() || rpc_port == 0 || user.empty() || password.empty();
-}
-
 std::string bitcoin_rpc_client::addmultisigaddress(const std::vector<std::string> public_keys) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"addmultisigaddress\", "
                                   "\"method\": \"addmultisigaddress\", \"params\": [");
@@ -789,7 +785,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          for (const son_info &si : active_sons) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
          }
-         string reply_str = create_multisignature_wallet(son_pubkeys_bitcoin);
+         string reply_str = bitcoin_client->addmultisigaddress(son_pubkeys_bitcoin);
 
          std::stringstream active_pw_ss(reply_str);
          boost::property_tree::ptree active_pw_pt;
@@ -843,22 +839,6 @@ void sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 
 void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
    transfer_withdrawal_from_primary_wallet(swwo);
-}
-
-std::string sidechain_net_handler_bitcoin::create_multisignature_wallet(const std::vector<std::string> public_keys) {
-   return bitcoin_client->addmultisigaddress(public_keys);
-}
-
-std::string sidechain_net_handler_bitcoin::transfer(const std::string &from, const std::string &to, const uint64_t amount) {
-   return "";
-}
-
-std::string sidechain_net_handler_bitcoin::sign_transaction(const std::string &transaction) {
-   return "";
-}
-
-std::string sidechain_net_handler_bitcoin::send_transaction(const std::string &transaction) {
-   return "";
 }
 
 std::string sidechain_net_handler_bitcoin::sign_and_send_transaction_with_wallet(const std::string &tx_json) {

@@ -39,22 +39,6 @@ void sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_o
 void sidechain_net_handler_peerplays::process_withdrawal(const son_wallet_withdraw_object &swwo) {
 }
 
-std::string sidechain_net_handler_peerplays::create_multisignature_wallet(const std::vector<std::string> public_keys) {
-   return "";
-}
-
-std::string sidechain_net_handler_peerplays::transfer(const std::string &from, const std::string &to, const uint64_t amount) {
-   return "";
-}
-
-std::string sidechain_net_handler_peerplays::sign_transaction(const std::string &transaction) {
-   return "";
-}
-
-std::string sidechain_net_handler_peerplays::send_transaction(const std::string &transaction) {
-   return "";
-}
-
 void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {
    for (const auto &trx : b.transactions) {
       size_t operation_index = -1;

@@ -18,11 +18,6 @@ public:
    void process_withdrawal(const son_wallet_withdraw_object &swwo);
 
 private:
-   std::string create_multisignature_wallet(const std::vector<std::string> public_keys);
-   std::string transfer(const std::string &from, const std::string &to, const uint64_t amount);
-   std::string sign_transaction(const std::string &transaction);
-   std::string send_transaction(const std::string &transaction);
-
    void on_applied_block(const signed_block &b);
 };
 
