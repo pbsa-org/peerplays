@@ -23,10 +23,11 @@ public:
    void sidechain_event_data_received(const sidechain_event_data &sed);
    void process_deposits();
    void process_withdrawals();
+   void save_transaction();
 
-   virtual void recreate_primary_wallet() = 0;
-   virtual void process_deposit(const son_wallet_deposit_object &swdo) = 0;
-   virtual void process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
+   virtual std::string recreate_primary_wallet() = 0;
+   virtual std::string process_deposit(const son_wallet_deposit_object &swdo) = 0;
+   virtual std::string process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
 
 protected:
    peerplays_sidechain_plugin &plugin;

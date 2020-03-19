@@ -30,13 +30,16 @@ sidechain_net_handler_peerplays::sidechain_net_handler_peerplays(peerplays_sidec
 sidechain_net_handler_peerplays::~sidechain_net_handler_peerplays() {
 }
 
-void sidechain_net_handler_peerplays::recreate_primary_wallet() {
+std::string sidechain_net_handler_peerplays::recreate_primary_wallet() {
+   return "";
 }
 
-void sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_object &swdo) {
+std::string sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_object &swdo) {
+   return "";
 }
 
-void sidechain_net_handler_peerplays::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+std::string sidechain_net_handler_peerplays::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+   return "";
 }
 
 void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {

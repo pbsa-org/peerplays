@@ -67,6 +67,7 @@ private:
    fc::future<void> _heartbeat_task;
    fc::future<void> _son_processing_task;
 
+   bool first_block_skipped;
    void on_applied_block(const signed_block &b);
 };
 
@@ -76,7 +77,8 @@ peerplays_sidechain_plugin_impl::peerplays_sidechain_plugin_impl(peerplays_sidec
       config_ready_bitcoin(false),
       config_ready_peerplays(false),
       current_son_id(son_id_type(std::numeric_limits<uint32_t>().max())),
-      net_manager(nullptr) {
+      net_manager(nullptr),
+      first_block_skipped(false) {
 }
 
 peerplays_sidechain_plugin_impl::~peerplays_sidechain_plugin_impl() {
@@ -428,6 +430,8 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
             approve_proposal(son_id, proposal.id);
             continue;
          }
+
+         approve_proposal(son_id, proposal.id);
       }
    }
 }
@@ -535,7 +539,11 @@ void peerplays_sidechain_plugin_impl::process_withdrawals() {
 }
 
 void peerplays_sidechain_plugin_impl::on_applied_block(const signed_block &b) {
-   schedule_son_processing();
+   if (first_block_skipped) {
+      schedule_son_processing();
+   } else {
+      first_block_skipped = true;
+   }
 }
 
 } // end namespace detail

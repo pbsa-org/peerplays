@@ -12,6 +12,7 @@
 #include <fc/network/ip.hpp>
 
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/protocol/sidechain_transaction.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_info.hpp>
@@ -771,7 +772,8 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
-void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
+std::string sidechain_net_handler_bitcoin::recreate_primary_wallet() {
+   std::string tx = "";
    const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
    const auto &active_sw = swi.rbegin();
    if (active_sw != swi.rend()) {
@@ -815,7 +817,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch (fc::exception e) {
                ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}", ("e", e.what()));
-               return;
+               return "";
             }
 
             const auto &prev_sw = std::next(active_sw);
@@ -827,19 +829,25 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                std::string active_pw_address = active_pw_pt.get_child("result").get<std::string>("address");
                std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
 
-               transfer_all_btc(prev_pw_address, active_pw_address);
+               tx = transfer_all_btc(prev_pw_address, active_pw_address);
+               sign_transaction(tx);
             }
          }
       }
    }
+   return tx;
 }
 
-void sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
-   transfer_deposit_to_primary_wallet(swdo);
+std::string sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
+   std::string tx = transfer_deposit_to_primary_wallet(swdo);
+   sign_transaction(tx);
+   return tx;
 }
 
-void sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
-   transfer_withdrawal_from_primary_wallet(swwo);
+std::string sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+   std::string tx = transfer_withdrawal_from_primary_wallet(swwo);
+   sign_transaction(tx);
+   return tx;
 }
 
 // Creates transaction in any format
@@ -1048,8 +1056,7 @@ std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &f
    fc::flat_map<std::string, double> outputs;
    outputs[to_address] = total_amount - min_amount;
 
-   std::string tx = create_transaction(inputs, outputs);
-   return sign_transaction(tx);
+   return create_transaction(inputs, outputs);
 }
 
 std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo) {
@@ -1088,8 +1095,7 @@ std::string sidechain_net_handler_bitcoin::transfer_deposit_to_primary_wallet(co
 
    outputs[pw_address] = transfer_amount;
 
-   std::string tx = create_transaction(inputs, outputs);
-   return sign_transaction(tx);
+   return create_transaction(inputs, outputs);
 }
 
 std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo) {
@@ -1135,8 +1141,7 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
       outs[pw_address] = total_amount - min_amount;
    }
 
-   std::string tx = create_transaction(unspent_utxo, outs);
-   return sign_transaction(tx);
+   return create_transaction(unspent_utxo, outs);
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
