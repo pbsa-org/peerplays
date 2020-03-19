@@ -15,7 +15,7 @@ public:
    sidechain_net_handler(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options);
    virtual ~sidechain_net_handler();
 
-   graphene::peerplays_sidechain::sidechain_type get_sidechain();
+   sidechain_type get_sidechain();
    std::vector<std::string> get_sidechain_deposit_addresses();
    std::vector<std::string> get_sidechain_withdraw_addresses();
    std::string get_private_key(std::string public_key);
@@ -23,16 +23,21 @@ public:
    void sidechain_event_data_received(const sidechain_event_data &sed);
    void process_deposits();
    void process_withdrawals();
+   void process_sidechain_transactions();
+   void send_sidechain_transactions();
+
    void save_transaction();
 
    virtual std::string recreate_primary_wallet() = 0;
    virtual std::string process_deposit(const son_wallet_deposit_object &swdo) = 0;
    virtual std::string process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
+   virtual std::string process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) = 0;
+   virtual bool send_sidechain_transaction(const sidechain_transaction_object &sto) = 0;
 
 protected:
    peerplays_sidechain_plugin &plugin;
    graphene::chain::database &database;
-   graphene::peerplays_sidechain::sidechain_type sidechain;
+   sidechain_type sidechain;
 
    std::map<std::string, std::string> private_keys;
 

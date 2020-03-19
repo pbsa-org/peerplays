@@ -5,6 +5,7 @@
 #include <graphene/chain/son_object.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
+
 using namespace chain;
 
 namespace detail {

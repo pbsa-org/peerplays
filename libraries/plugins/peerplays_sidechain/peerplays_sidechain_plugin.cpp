@@ -49,6 +49,8 @@ public:
    void recreate_primary_wallet();
    void process_deposits();
    void process_withdrawals();
+   void process_sidechain_transactions();
+   void send_sidechain_transactions();
 
 private:
    peerplays_sidechain_plugin &plugin;
@@ -347,6 +349,8 @@ void peerplays_sidechain_plugin_impl::son_processing() {
       process_deposits();
 
       process_withdrawals();
+
+      process_sidechain_transactions();
    }
 }
 
@@ -536,6 +540,14 @@ void peerplays_sidechain_plugin_impl::process_deposits() {
 
 void peerplays_sidechain_plugin_impl::process_withdrawals() {
    net_manager->process_withdrawals();
+}
+
+void peerplays_sidechain_plugin_impl::process_sidechain_transactions() {
+   net_manager->process_sidechain_transactions();
+}
+
+void peerplays_sidechain_plugin_impl::send_sidechain_transactions() {
+   net_manager->send_sidechain_transactions();
 }
 
 void peerplays_sidechain_plugin_impl::on_applied_block(const signed_block &b) {

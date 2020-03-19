@@ -1,13 +1,13 @@
 #include <graphene/peerplays_sidechain/sidechain_net_handler.hpp>
 
 #include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/sidechain_transaction_object.hpp>
 #include <graphene/chain/son_wallet_deposit_object.hpp>
 #include <graphene/chain/son_wallet_withdraw_object.hpp>
 
 #include <fc/log/logger.hpp>
 
-namespace graphene {
-namespace peerplays_sidechain {
+namespace graphene { namespace peerplays_sidechain {
 
 sidechain_net_handler::sidechain_net_handler(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       plugin(_plugin),
@@ -17,7 +17,7 @@ sidechain_net_handler::sidechain_net_handler(peerplays_sidechain_plugin &_plugin
 sidechain_net_handler::~sidechain_net_handler() {
 }
 
-graphene::peerplays_sidechain::sidechain_type sidechain_net_handler::get_sidechain() {
+sidechain_type sidechain_net_handler::get_sidechain() {
    return sidechain;
 }
 
@@ -178,9 +178,9 @@ void sidechain_net_handler::process_deposits() {
       const chain::global_property_object &gpo = database.get_global_properties();
 
       auto active_sons = gpo.active_sons;
-      std::vector<std::pair<son_id_type, bool>> signatures;
+      std::vector<son_id_type> signers;
       for (const son_info &si : active_sons) {
-         signatures.push_back(std::make_pair(si.son_id, false));
+         signers.push_back(si.son_id);
       }
 
       sidechain_transaction_create_operation stc_op;
@@ -190,7 +190,7 @@ void sidechain_net_handler::process_deposits() {
       //stc_op.son_wallet_withdraw_id = ; // not set, not needed
       stc_op.sidechain = sidechain;
       stc_op.transaction = sidechain_tx;
-      stc_op.signatures = signatures;
+      stc_op.signers = signers;
 
       son_wallet_deposit_process_operation swdp_op;
       swdp_op.payer = GRAPHENE_SON_ACCOUNT;
@@ -232,9 +232,9 @@ void sidechain_net_handler::process_withdrawals() {
       const chain::global_property_object &gpo = database.get_global_properties();
 
       auto active_sons = gpo.active_sons;
-      std::vector<std::pair<son_id_type, bool>> signatures;
+      std::vector<son_id_type> signers;
       for (const son_info &si : active_sons) {
-         signatures.push_back(std::make_pair(si.son_id, false));
+         signers.push_back(si.son_id);
       }
 
       sidechain_transaction_create_operation stc_op;
@@ -244,7 +244,7 @@ void sidechain_net_handler::process_withdrawals() {
       stc_op.son_wallet_withdraw_id = swwo.id;
       stc_op.sidechain = sidechain;
       stc_op.transaction = sidechain_tx;
-      stc_op.signatures = signatures;
+      stc_op.signers = signers;
 
       son_wallet_withdraw_process_operation swwp_op;
       swwp_op.payer = GRAPHENE_SON_ACCOUNT;
@@ -269,6 +269,69 @@ void sidechain_net_handler::process_withdrawals() {
    });
 }
 
+void sidechain_net_handler::process_sidechain_transactions() {
+   const auto &idx = plugin.database().get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete>();
+   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
+
+   std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
+      ilog("Sidechain transaction to process: ${sto}", ("sto", sto));
+
+      bool complete = false;
+      std::string processed_sidechain_tx = process_sidechain_transaction(sto, complete);
+
+      if (processed_sidechain_tx.empty()) {
+         ilog("Sidechain transaction not processed: ${sto}", ("sto", sto));
+         return;
+      }
+
+      sidechain_transaction_sign_operation sts_op;
+      sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      sts_op.sidechain_transaction_id = sto.id;
+      sts_op.transaction = processed_sidechain_tx;
+      sts_op.complete = complete;
+
+      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+      trx.validate();
+      try {
+         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         if (plugin.app().p2p_node())
+            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      } catch (fc::exception e) {
+         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+      }
+   });
+}
+
+void sidechain_net_handler::send_sidechain_transactions() {
+   const auto &idx = plugin.database().get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete_and_sent>();
+   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
+
+   std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
+      ilog("Sidechain transaction to send: ${sto}", ("sto", sto));
+
+      bool sent = send_sidechain_transaction(sto);
+
+      if (!sent) {
+         ilog("Sidechain transaction not sent: ${sto}", ("sto", sto));
+         return;
+      }
+
+      sidechain_transaction_send_operation sts_op;
+      sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      sts_op.sidechain_transaction_id = sto.id;
+
+      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+      trx.validate();
+      try {
+         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         if (plugin.app().p2p_node())
+            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      } catch (fc::exception e) {
+         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+      }
+   });
+}
+
 std::string sidechain_net_handler::recreate_primary_wallet() {
    FC_ASSERT(false, "recreate_primary_wallet not implemented");
 }
@@ -280,5 +343,13 @@ std::string sidechain_net_handler::process_deposit(const son_wallet_deposit_obje
 std::string sidechain_net_handler::process_withdrawal(const son_wallet_withdraw_object &swwo) {
    FC_ASSERT(false, "process_withdrawal not implemented");
 }
+
+std::string sidechain_net_handler::process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) {
+   FC_ASSERT(false, "process_sidechain_transaction not implemented");
 }
-} // namespace graphene::peerplays_sidechain
+
+bool sidechain_net_handler::send_sidechain_transaction(const sidechain_transaction_object &sto) {
+   FC_ASSERT(false, "send_sidechain_transaction not implemented");
+}
+
+}} // namespace graphene::peerplays_sidechain

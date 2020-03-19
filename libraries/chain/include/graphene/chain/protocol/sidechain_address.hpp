@@ -1,7 +1,7 @@
 #pragma once
 #include <graphene/chain/protocol/base.hpp>
 
-#include <graphene/peerplays_sidechain/defs.hpp>
+#include <graphene/chain/sidechain_defs.hpp>
 
 namespace graphene { namespace chain {
 
@@ -11,7 +11,7 @@ namespace graphene { namespace chain {
 
         asset fee;
         account_id_type sidechain_address_account;
-        graphene::peerplays_sidechain::sidechain_type sidechain;
+        sidechain_type sidechain;
         string deposit_address;
         string withdraw_address;
 
@@ -26,7 +26,7 @@ namespace graphene { namespace chain {
         asset fee;
         sidechain_address_id_type sidechain_address_id;
         account_id_type sidechain_address_account;
-        graphene::peerplays_sidechain::sidechain_type sidechain;
+        sidechain_type sidechain;
         optional<string> deposit_address;
         optional<string> withdraw_address;
 
@@ -41,7 +41,7 @@ namespace graphene { namespace chain {
         asset fee;
         sidechain_address_id_type sidechain_address_id;
         account_id_type sidechain_address_account;
-        graphene::peerplays_sidechain::sidechain_type sidechain;
+        sidechain_type sidechain;
 
         account_id_type fee_payer()const { return sidechain_address_account; }
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }

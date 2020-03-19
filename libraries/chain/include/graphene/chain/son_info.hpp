@@ -1,6 +1,6 @@
 #pragma once
 #include <graphene/chain/protocol/types.hpp>
-#include <graphene/peerplays_sidechain/defs.hpp>
+#include <graphene/chain/sidechain_defs.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -14,7 +14,7 @@ namespace graphene { namespace chain {
       son_id_type son_id;
       uint64_t total_votes = 0;
       public_key_type signing_key;
-      flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys;
+      flat_map<sidechain_type, string> sidechain_public_keys;
 
       bool operator==(const son_info& rhs) {
          bool son_sets_equal =

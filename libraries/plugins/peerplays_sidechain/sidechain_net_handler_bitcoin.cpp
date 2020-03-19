@@ -15,6 +15,7 @@
 #include <graphene/chain/protocol/sidechain_transaction.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/sidechain_transaction_object.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 
@@ -483,7 +484,7 @@ std::string bitcoin_rpc_client::loadwallet(const std::string &filename) {
    return "";
 }
 
-void bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
+bool bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
    const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"sendrawtransaction\", "
                                  "\"method\": \"sendrawtransaction\", \"params\": [") +
                      std::string("\"") + tx_hex + std::string("\"") + std::string("] }");
@@ -492,7 +493,7 @@ void bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
-      return;
+      return false;
    }
 
    std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
@@ -500,14 +501,14 @@ void bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
    boost::property_tree::read_json(ss, json);
 
    if (reply.status == 200) {
-      return;
+      return true;
    } else if (json.count("error") && !json.get_child("error").empty()) {
       const auto error_code = json.get_child("error").get_child("code").get_value<int>();
       if (error_code == -27) // transaction already in block chain
-         return;
-
+         return true;
       wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
    }
+   return false;
 }
 
 std::string bitcoin_rpc_client::signrawtransactionwithkey(const std::string &tx_hash, const std::string &private_key) {
@@ -830,7 +831,8 @@ std::string sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
 
                tx = transfer_all_btc(prev_pw_address, active_pw_address);
-               sign_transaction(tx);
+               bool complete = false;
+               sign_transaction(tx, complete);
             }
          }
       }
@@ -839,15 +841,19 @@ std::string sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 }
 
 std::string sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
-   std::string tx = transfer_deposit_to_primary_wallet(swdo);
-   sign_transaction(tx);
-   return tx;
+   return transfer_deposit_to_primary_wallet(swdo);
 }
 
 std::string sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
-   std::string tx = transfer_withdrawal_from_primary_wallet(swwo);
-   sign_transaction(tx);
-   return tx;
+   return transfer_withdrawal_from_primary_wallet(swwo);
+}
+
+std::string sidechain_net_handler_bitcoin::process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) {
+   return sign_transaction(sto.transaction, complete);
+}
+
+bool sidechain_net_handler_bitcoin::send_sidechain_transaction(const sidechain_transaction_object &sto) {
+   return send_transaction(sto.transaction);
 }
 
 // Creates transaction in any format
@@ -862,16 +868,16 @@ std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<
 
 // Adds signature to transaction
 // Function to actually add signature should return transaction with added signature string, or empty string in case of failure
-std::string sidechain_net_handler_bitcoin::sign_transaction(const std::string &tx) {
+std::string sidechain_net_handler_bitcoin::sign_transaction(const std::string &tx, bool &complete) {
    std::string new_tx = "";
-   //new_tx = sign_transaction_raw(tx);
-   new_tx = sign_transaction_psbt(tx);
-   //new_tx = sign_transaction_standalone(tx);
+   //new_tx = sign_transaction_raw(tx, complete);
+   new_tx = sign_transaction_psbt(tx, complete);
+   //new_tx = sign_transaction_standalone(tx, complete);
    return new_tx;
 }
 
-void sidechain_net_handler_bitcoin::send_transaction(const std::string &tx) {
-   bitcoin_client->sendrawtransaction(tx);
+bool sidechain_net_handler_bitcoin::send_transaction(const std::string &tx) {
+   return bitcoin_client->sendrawtransaction(tx);
 }
 
 std::string sidechain_net_handler_bitcoin::create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
@@ -943,7 +949,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    return "";
 }
 
-std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const std::string &tx) {
+std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const std::string &tx, bool &complete) {
    if (tx.empty()) {
       wlog("Signing failed, tx string is empty");
       return "";
@@ -970,13 +976,13 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const std::strin
 
    if (complete_raw) {
       std::string decoded_raw = bitcoin_client->decoderawtransaction(new_tx_raw);
-      send_transaction(new_tx_raw);
-      return "";
+      complete = true;
+      return new_tx_raw;
    }
    return new_tx_raw;
 }
 
-std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const std::string &tx) {
+std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const std::string &tx, bool &complete) {
    if (tx.empty()) {
       wlog("Signing failed, tx string is empty");
       return "";
@@ -1019,14 +1025,15 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const std::stri
 
       if (complete_raw) {
          std::string decoded_raw = bitcoin_client->decoderawtransaction(new_tx_raw);
-         send_transaction(new_tx_raw);
-         return "";
+         complete = true;
+         return new_tx_raw;
       }
    }
    return new_tx_psbt;
 }
 
-std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const std::string &tx) {
+std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const std::string &tx, bool &complete) {
+   complete = true;
    return "";
 }
 

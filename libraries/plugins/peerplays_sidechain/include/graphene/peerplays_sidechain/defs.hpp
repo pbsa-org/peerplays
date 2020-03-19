@@ -10,15 +10,9 @@
 
 #include <graphene/chain/protocol/asset.hpp>
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/sidechain_defs.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
-
-enum class sidechain_type {
-   bitcoin,
-   ethereum,
-   eos,
-   peerplays
-};
 
 using bytes = std::vector<unsigned char>;
 
@@ -63,7 +57,7 @@ struct info_for_vin {
 
 struct sidechain_event_data {
    fc::time_point_sec timestamp;
-   sidechain_type sidechain;
+   chain::sidechain_type sidechain;
    std::string sidechain_uid;
    std::string sidechain_transaction_id;
    std::string sidechain_from;
@@ -76,5 +70,3 @@ struct sidechain_event_data {
 };
 
 }} // namespace graphene::peerplays_sidechain
-
-FC_REFLECT_ENUM(graphene::peerplays_sidechain::sidechain_type, (bitcoin)(ethereum)(eos)(peerplays))

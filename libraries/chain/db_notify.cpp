@@ -333,12 +333,12 @@ struct get_impacted_account_visitor
    void operator()( const sidechain_transaction_create_operation& op ) {
       _impacted.insert( op.payer );
    }
-//   void operator()( const sidechain_transaction_sign_operation& op ) {
-//      _impacted.insert( op.payer );
-//   }
-//   void operator()( const sidechain_transaction_send_operation& op ) {
-//      _impacted.insert( op.payer );
-//   }
+   void operator()( const sidechain_transaction_sign_operation& op ) {
+      _impacted.insert( op.payer );
+   }
+   void operator()( const sidechain_transaction_send_operation& op ) {
+      _impacted.insert( op.payer );
+   }
 };
 
 void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
@@ -442,6 +442,8 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            const auto& aobj = dynamic_cast<const sidechain_address_object*>(obj);
            assert( aobj != nullptr );
            accounts.insert( aobj->sidechain_address_account );
+           break;
+        } case sidechain_transaction_object_type:{
            break;
         }
       }

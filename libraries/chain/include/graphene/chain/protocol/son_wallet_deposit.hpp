@@ -14,7 +14,7 @@ namespace graphene { namespace chain {
 
         son_id_type son_id;
         fc::time_point_sec timestamp;
-        peerplays_sidechain::sidechain_type sidechain;
+        sidechain_type sidechain;
         std::string sidechain_uid;
         std::string sidechain_transaction_id;
         std::string sidechain_from;

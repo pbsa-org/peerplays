@@ -6,7 +6,7 @@
 //#include <graphene/chain/sidechain_transaction_object.hpp>
 //#include <graphene/chain/proposal_object.hpp>
 //#include <graphene/chain/son_object.hpp>
-//#include <graphene/peerplays_sidechain/defs.hpp>
+//#include <graphene/chain/sidechain_defs.hpp>
 //
 //using namespace graphene;
 //using namespace graphene::chain;
@@ -76,8 +76,8 @@
 //
 //      // alice becomes son
 //      {
-//         flat_map<graphene::peerplays_sidechain::sidechain_type, string> sidechain_public_keys;
-//         sidechain_public_keys[graphene::peerplays_sidechain::sidechain_type::bitcoin] = "bitcoin address";
+//         flat_map<sidechain_type, string> sidechain_public_keys;
+//         sidechain_public_keys[sidechain_type::bitcoin] = "bitcoin address";
 //
 //         son_create_operation op;
 //         op.owner_account = alice_id;
@@ -131,8 +131,8 @@
 //
 //      // bob becomes son
 //      {
-//         flat_map<graphene::peerplays_sidechain::sidechain_type, string> sidechain_public_keys;
-//         sidechain_public_keys[graphene::peerplays_sidechain::sidechain_type::bitcoin] = "bitcoin address";
+//         flat_map<sidechain_type, string> sidechain_public_keys;
+//         sidechain_public_keys[sidechain_type::bitcoin] = "bitcoin address";
 //
 //         son_create_operation op;
 //         op.owner_account = bob_id;

@@ -42,6 +42,15 @@ std::string sidechain_net_handler_peerplays::process_withdrawal(const son_wallet
    return "";
 }
 
+std::string sidechain_net_handler_peerplays::process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) {
+   complete = true;
+   return "";
+}
+
+bool sidechain_net_handler_peerplays::send_sidechain_transaction(const sidechain_transaction_object &sto) {
+   return true;
+}
+
 void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {
    for (const auto &trx : b.transactions) {
       size_t operation_index = -1;

@@ -37,7 +37,7 @@ public:
    std::vector<btc_txout> listunspent();
    std::vector<btc_txout> listunspent_by_address_and_amount(const std::string &address, double transfer_amount);
    std::string loadwallet(const std::string &filename);
-   void sendrawtransaction(const std::string &tx_hex);
+   bool sendrawtransaction(const std::string &tx_hex);
    std::string signrawtransactionwithkey(const std::string &tx_hash, const std::string &private_key);
    std::string signrawtransactionwithwallet(const std::string &tx_hash);
    std::string unloadwallet(const std::string &filename);
@@ -87,6 +87,8 @@ public:
    std::string recreate_primary_wallet();
    std::string process_deposit(const son_wallet_deposit_object &swdo);
    std::string process_withdrawal(const son_wallet_withdraw_object &swwo);
+   std::string process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete);
+   bool send_sidechain_transaction(const sidechain_transaction_object &sto);
 
 private:
    std::string ip;
@@ -101,16 +103,16 @@ private:
    std::unique_ptr<zmq_listener> listener;
 
    std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
-   std::string sign_transaction(const std::string &tx);
-   void send_transaction(const std::string &tx);
+   std::string sign_transaction(const std::string &tx, bool &complete);
+   bool send_transaction(const std::string &tx);
 
    std::string create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string create_transaction_psbt(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string create_transaction_standalone(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
 
-   std::string sign_transaction_raw(const std::string &tx);
-   std::string sign_transaction_psbt(const std::string &tx);
-   std::string sign_transaction_standalone(const std::string &tx);
+   std::string sign_transaction_raw(const std::string &tx, bool &complete);
+   std::string sign_transaction_psbt(const std::string &tx, bool &complete);
+   std::string sign_transaction_standalone(const std::string &tx, bool &complete);
 
    std::string transfer_all_btc(const std::string &from_address, const std::string &to_address);
    std::string transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo);
