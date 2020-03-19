@@ -815,16 +815,16 @@ void sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_add
    }
    tx.vout.push_back(btc_out(to_address, uint64_t((total_amount - min_amount) * 100000000.0)));
 
-   std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
+   std::vector<std::pair<std::string, uint64_t>> key_data;
    for (auto si : from_sons) {
-      fc::ecc::public_key pk = si.signing_key;
+      std::string pk = si.sidechain_public_keys.at(sidechain_type::bitcoin);
       key_data.push_back(std::make_pair(pk, si.total_votes));
    }
    std::sort(key_data.begin(), key_data.end(),
-             [](std::pair<fc::ecc::public_key, uint64_t> p1, std::pair<fc::ecc::public_key, uint64_t> p2) {
+             [](std::pair<std::string, uint64_t> p1, std::pair<std::string, uint64_t> p2) {
                 return (p1.second > p2.second);
              });
-   bytes from_redeem_script = generate_redeem_script(key_data);
+   bytes from_redeem_script = get_weighted_multisig_redeem_script(key_data);
 
    bitcoin_transaction_send_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
@@ -944,16 +944,16 @@ std::string sidechain_net_handler_bitcoin::transfer_withdrawal_from_primary_wall
 
    auto from_sons = obj->sons;
 
-   std::vector<std::pair<fc::ecc::public_key, uint64_t>> key_data;
+   std::vector<std::pair<std::string, uint64_t>> key_data;
    for (auto si : from_sons) {
-      fc::ecc::public_key pk = si.signing_key;
+      std::string pk = si.sidechain_public_keys.at(sidechain_type::bitcoin);
       key_data.push_back(std::make_pair(pk, si.total_votes));
    }
    std::sort(key_data.begin(), key_data.end(),
-             [](std::pair<fc::ecc::public_key, uint64_t> p1, std::pair<fc::ecc::public_key, uint64_t> p2) {
+             [](std::pair<std::string, uint64_t> p1, std::pair<std::string, uint64_t> p2) {
                 return (p1.second > p2.second);
              });
-   bytes from_redeem_script = generate_redeem_script(key_data);
+   bytes from_redeem_script = get_weighted_multisig_redeem_script(key_data);
 
    bitcoin_transaction_send_operation op;
    op.payer = GRAPHENE_SON_ACCOUNT;
