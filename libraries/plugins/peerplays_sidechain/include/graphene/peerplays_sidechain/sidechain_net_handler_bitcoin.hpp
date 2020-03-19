@@ -100,8 +100,18 @@ private:
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    std::unique_ptr<zmq_listener> listener;
 
-   std::string sign_and_send_transaction_with_wallet(const std::string &tx_json);
-   std::string processpsbt(const std::string &tx_psbt);
+   std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
+   std::string sign_transaction(const std::string &tx);
+   void send_transaction(const std::string &tx);
+
+   std::string create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
+   std::string create_transaction_psbt(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
+   std::string create_transaction_standalone(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
+
+   std::string sign_transaction_raw(const std::string &tx);
+   std::string sign_transaction_psbt(const std::string &tx);
+   std::string sign_transaction_standalone(const std::string &tx);
+
    std::string transfer_all_btc(const std::string &from_address, const std::string &to_address);
    std::string transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo);
    std::string transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo);
