@@ -14,12 +14,12 @@ namespace graphene { namespace chain {
 
         son_id_type son_id;
         fc::time_point_sec timestamp;
-        sidechain_type sidechain;
+        peerplays_sidechain::sidechain_type sidechain;
         std::string peerplays_uid;
         std::string peerplays_transaction_id;
         chain::account_id_type peerplays_from;
         chain::asset peerplays_asset;
-        sidechain_type withdraw_sidechain;
+        peerplays_sidechain::sidechain_type withdraw_sidechain;
         std::string withdraw_address;
         std::string withdraw_currency;
         safe<int64_t> withdraw_amount;

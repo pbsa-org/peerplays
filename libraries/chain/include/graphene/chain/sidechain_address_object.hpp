@@ -20,12 +20,12 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = sidechain_address_object_type;
 
          account_id_type sidechain_address_account;
-         sidechain_type sidechain;
+         graphene::peerplays_sidechain::sidechain_type sidechain;
          string deposit_address;
          string withdraw_address;
 
          sidechain_address_object() :
-            sidechain(sidechain_type::bitcoin),
+            sidechain(graphene::peerplays_sidechain::sidechain_type::bitcoin),
             deposit_address(""),
             withdraw_address("") {}
    };
@@ -44,17 +44,17 @@ namespace graphene { namespace chain {
             member<sidechain_address_object, account_id_type, &sidechain_address_object::sidechain_address_account>
          >,
          ordered_non_unique< tag<by_sidechain>,
-            member<sidechain_address_object, sidechain_type, &sidechain_address_object::sidechain>
+            member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>
          >,
          ordered_unique< tag<by_account_and_sidechain>,
             composite_key<sidechain_address_object,
                member<sidechain_address_object, account_id_type, &sidechain_address_object::sidechain_address_account>,
-               member<sidechain_address_object, sidechain_type, &sidechain_address_object::sidechain>
+               member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>
             >
          >,
          ordered_unique< tag<by_sidechain_and_deposit_address>,
             composite_key<sidechain_address_object,
-               member<sidechain_address_object, sidechain_type, &sidechain_address_object::sidechain>,
+               member<sidechain_address_object, peerplays_sidechain::sidechain_type, &sidechain_address_object::sidechain>,
                member<sidechain_address_object, std::string, &sidechain_address_object::deposit_address>
             >
          >

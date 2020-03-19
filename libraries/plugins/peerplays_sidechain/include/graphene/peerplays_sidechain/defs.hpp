@@ -57,7 +57,7 @@ struct info_for_vin {
 
 struct sidechain_event_data {
    fc::time_point_sec timestamp;
-   chain::sidechain_type sidechain;
+   sidechain_type sidechain;
    std::string sidechain_uid;
    std::string sidechain_transaction_id;
    std::string sidechain_from;

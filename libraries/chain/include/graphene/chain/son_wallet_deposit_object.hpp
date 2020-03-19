@@ -17,7 +17,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = son_wallet_deposit_object_type;
 
          time_point_sec timestamp;
-         sidechain_type sidechain;
+         peerplays_sidechain::sidechain_type sidechain;
          std::string sidechain_uid;
          std::string sidechain_transaction_id;
          std::string sidechain_from;
@@ -45,7 +45,7 @@ namespace graphene { namespace chain {
             member<object, object_id_type, &object::id>
          >,
          ordered_non_unique< tag<by_sidechain>,
-            member<son_wallet_deposit_object, sidechain_type, &son_wallet_deposit_object::sidechain>
+            member<son_wallet_deposit_object, peerplays_sidechain::sidechain_type, &son_wallet_deposit_object::sidechain>
          >,
          ordered_unique< tag<by_sidechain_uid>,
             member<son_wallet_deposit_object, std::string, &son_wallet_deposit_object::sidechain_uid>
@@ -55,7 +55,7 @@ namespace graphene { namespace chain {
          >,
          ordered_non_unique< tag<by_sidechain_and_processed>,
             composite_key<son_wallet_deposit_object,
-               member<son_wallet_deposit_object, sidechain_type, &son_wallet_deposit_object::sidechain>,
+               member<son_wallet_deposit_object, peerplays_sidechain::sidechain_type, &son_wallet_deposit_object::sidechain>,
                member<son_wallet_deposit_object, bool, &son_wallet_deposit_object::processed>
             >
          >
