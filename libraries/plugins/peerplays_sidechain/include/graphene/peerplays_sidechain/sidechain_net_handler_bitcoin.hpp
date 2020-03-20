@@ -103,6 +103,7 @@ private:
 
    fc::future<void> on_changed_objects_task;
 
+   std::string create_multisig_address(const std::vector<std::string> &son_pubkeys_bitcoin);
    std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs, const std::string& extra_data);
    std::string sign_transaction(const sidechain_transaction_object &sto, bool &complete);
    bool send_transaction(const sidechain_transaction_object &sto, std::string &sidechain_transaction);

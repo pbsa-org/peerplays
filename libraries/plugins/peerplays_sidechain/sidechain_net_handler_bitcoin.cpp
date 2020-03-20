@@ -857,77 +857,87 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          for (const son_info &si : active_sons) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
          }
-
-         if (!wallet_password.empty()) {
-            bitcoin_client->walletpassphrase(wallet_password, 5);
+         std::string full_address_info = create_multisig_address(son_pubkeys_bitcoin);
+         if(!full_address_info.size())
+         {
+            elog("Failed to create multisig address");
+            return;
          }
-         uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
-         string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
+         std::stringstream address_info_ss(full_address_info);
+         boost::property_tree::ptree address_info_pt;
+         boost::property_tree::read_json(address_info_ss, address_info_pt);
 
-         std::stringstream active_pw_ss(reply_str);
-         boost::property_tree::ptree active_pw_pt;
-         boost::property_tree::read_json(active_pw_ss, active_pw_pt);
-         if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
+         std::string address = address_info_pt.get_child("result").get<std::string>("address");
 
-            std::stringstream res;
-            boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
+         son_wallet_update_operation op;
+         op.payer = gpo.parameters.son_account();
+         op.son_wallet_id = active_sw->id;
+         op.sidechain = sidechain_type::bitcoin;
+         op.address = full_address_info;
 
-            son_wallet_update_operation op;
-            op.payer = gpo.parameters.son_account();
-            op.son_wallet_id = active_sw->id;
-            op.sidechain = sidechain_type::bitcoin;
-            op.address = res.str();
+         proposal_create_operation proposal_op;
+         proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
+         proposal_op.proposed_ops.emplace_back(op);
+         uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+         proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
-            proposal_create_operation proposal_op;
-            proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
-            proposal_op.proposed_ops.emplace_back(op);
-            uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
-            proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
+         signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+         try {
+            database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+            if (plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+         } catch (fc::exception e) {
+            elog("Sending proposal for son wallet update operation failed with exception ${e}", ("e", e.what()));
+            return;
+         }
 
-            signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
-            try {
-               database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-               if (plugin.app().p2p_node())
-                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-            } catch (fc::exception e) {
-               elog("Sending proposal for son wallet update operation failed with exception ${e}", ("e", e.what()));
+         const auto &prev_sw = std::next(active_sw);
+         if (prev_sw != swi.rend()) {
+            std::stringstream prev_sw_ss(prev_sw->addresses.at(sidechain_type::bitcoin));
+            boost::property_tree::ptree prev_sw_pt;
+            boost::property_tree::read_json(prev_sw_ss, prev_sw_pt);
+
+            std::string active_pw_address = address;
+            std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
+
+            if (prev_pw_address == active_pw_address) {
+               elog("BTC previous and new primary wallet addresses are same. No funds moving needed [from ${prev_sw} to ${active_sw}]", ("prev_sw", prev_sw->id)("active_sw", active_sw->id));
                return;
             }
 
-            const auto &prev_sw = std::next(active_sw);
-            if (prev_sw != swi.rend()) {
-               std::stringstream prev_sw_ss(prev_sw->addresses.at(sidechain_type::bitcoin));
-               boost::property_tree::ptree prev_sw_pt;
-               boost::property_tree::read_json(prev_sw_ss, prev_sw_pt);
+            uint64_t fee_rate = bitcoin_client->estimatesmartfee();
+            uint64_t min_fee_rate = 1000;
+            fee_rate = std::max(fee_rate, min_fee_rate);
 
-               std::string active_pw_address = active_pw_pt.get_child("result").get<std::string>("address");
-               std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
+            double min_amount = ((double)fee_rate / 100000000.0); // Account only for relay fee for now
+            double total_amount = 0.0;
+            std::vector<btc_txout> inputs = bitcoin_client->listunspent_by_address_and_amount(prev_pw_address, 0);
 
-               if (prev_pw_address == active_pw_address) {
-                  elog("BTC previous and new primary wallet addresses are same. No funds moving needed [from ${prev_sw} to ${active_sw}]", ("prev_sw", prev_sw->id)("active_sw", active_sw->id));
-                  return;
+            if (inputs.size() == 0) {
+               elog("Failed to find UTXOs to spend for ${pw}", ("pw", prev_pw_address));
+               return;
+            } else {
+               for (const auto &utx : inputs) {
+                  total_amount += utx.amount_;
                }
 
-               uint64_t fee_rate = bitcoin_client->estimatesmartfee();
-               uint64_t min_fee_rate = 1000;
-               fee_rate = std::max(fee_rate, min_fee_rate);
-
-               double min_amount = ((double)fee_rate / 100000000.0); // Account only for relay fee for now
-               double total_amount = 0.0;
-               std::vector<btc_txout> inputs = bitcoin_client->listunspent_by_address_and_amount(prev_pw_address, 0);
-
-               if (inputs.size() == 0) {
-                  elog("Failed to find UTXOs to spend for ${pw}", ("pw", prev_pw_address));
+               if (min_amount >= total_amount) {
+                  elog("Failed not enough BTC to transfer from ${fa}", ("fa", prev_pw_address));
                   return;
-               } else {
-                  for (const auto &utx : inputs) {
-                     total_amount += utx.amount_;
-                  }
+               }
+            }
 
-                  if (min_amount >= total_amount) {
-                     elog("Failed not enough BTC to transfer from ${fa}", ("fa", prev_pw_address));
-                     return;
-                  }
+            fc::flat_map<std::string, double> outputs;
+            outputs[active_pw_address] = total_amount - min_amount;
+
+            std::string tx_str = create_transaction(inputs, outputs, "");
+
+            if (!tx_str.empty()) {
+
+               auto signer_sons = prev_sw->sons;
+               std::vector<son_id_type> signers;
+               for (const son_info &si : signer_sons) {
+                  signers.push_back(si.son_id);
                }
 
                fc::flat_map<std::string, double> outputs;
@@ -1135,6 +1145,28 @@ bool sidechain_net_handler_bitcoin::send_sidechain_transaction(const sidechain_t
    sidechain_transaction = "";
 
    return send_transaction(sto, sidechain_transaction);
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::string> &son_pubkeys_bitcoin)
+{
+   if (!wallet_password.empty()) {
+      bitcoin_client->walletpassphrase(wallet_password, 5);
+   }
+
+   uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+   string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
+
+   std::stringstream active_pw_ss(reply_str);
+   boost::property_tree::ptree active_pw_pt;
+   boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+   if (!active_pw_pt.count("error") || !active_pw_pt.get_child("error").empty()) {
+      elog("Failed to recreate primary wallet");
+      return "";
+   }
+
+   std::stringstream res;
+   boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
+   return res.str();
 }
 
 // Creates transaction in any format
