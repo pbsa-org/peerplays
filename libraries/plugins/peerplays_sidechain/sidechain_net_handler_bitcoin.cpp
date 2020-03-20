@@ -660,10 +660,10 @@ fc::http::reply bitcoin_rpc_client::send_post_request(std::string body, bool sho
 
    show_log = true; // Log all requests temporary
    if (show_log) {
-      ilog(" ### Request URL:    ${url} ###", ("url", url));
-      ilog(" ### Request:        ${body} ###", ("body", body));
+      ilog("### Request URL:    ${url}", ("url", url));
+      ilog("### Request:        ${body}", ("body", body));
       std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-      ilog(" ### Response:       ${ss} ###", ("ss", ss.str()));
+      ilog("### Response:       ${ss}", ("ss", ss.str()));
    }
 
    return reply;

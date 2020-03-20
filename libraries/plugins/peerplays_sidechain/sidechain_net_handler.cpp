@@ -269,8 +269,6 @@ void sidechain_net_handler::process_sidechain_transactions() {
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
-      ilog("Sidechain transaction to process: ${sto}", ("sto", sto));
-
       son_id_type invalid_signer = son_id_type(0xFFFFFFFF);
       son_id_type next_signer = invalid_signer;
       for (auto &signer : sto.signers) {
@@ -281,6 +279,8 @@ void sidechain_net_handler::process_sidechain_transactions() {
       }
 
       if ((next_signer != invalid_signer) && (next_signer == plugin.get_current_son_id())) {
+         ilog("Sidechain transaction to process: ${sto}", ("sto", sto));
+
          bool complete = false;
          std::string processed_sidechain_tx = process_sidechain_transaction(sto, complete);
 
