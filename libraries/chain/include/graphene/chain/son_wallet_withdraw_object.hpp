@@ -1,4 +1,5 @@
 #pragma once
+#include <graphene/chain/protocol/asset.hpp>
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/sidechain_defs.hpp>
 

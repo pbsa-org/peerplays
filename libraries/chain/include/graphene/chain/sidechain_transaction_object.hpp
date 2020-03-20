@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/multi_index/composite_key.hpp>
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/sidechain_defs.hpp>
 

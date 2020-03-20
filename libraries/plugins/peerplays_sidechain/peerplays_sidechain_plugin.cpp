@@ -351,6 +351,8 @@ void peerplays_sidechain_plugin_impl::son_processing() {
       process_withdrawals();
 
       process_sidechain_transactions();
+
+      send_sidechain_transactions();
    }
 }
 

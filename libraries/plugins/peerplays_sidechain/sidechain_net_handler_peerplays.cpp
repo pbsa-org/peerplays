@@ -13,7 +13,6 @@
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
-#include <graphene/chain/sidechain_address_object.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 
@@ -35,16 +34,45 @@ std::string sidechain_net_handler_peerplays::recreate_primary_wallet() {
 }
 
 std::string sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_object &swdo) {
-   return "";
+
+   std::string res = "";
+
+   const chain::global_property_object &gpo = database.get_global_properties();
+
+   transfer_operation t_op;
+   t_op.fee = asset(2000000);
+   t_op.from = swdo.peerplays_to; // GRAPHENE_SON_ACCOUNT
+   t_op.to = swdo.peerplays_from;
+   t_op.amount = swdo.peerplays_asset;
+
+   proposal_create_operation proposal_op;
+   proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+   proposal_op.proposed_ops.emplace_back(op_wrapper(t_op));
+   uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+   proposal_op.expiration_time = time_point_sec(plugin.database().head_block_time().sec_since_epoch() + lifetime);
+
+   signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+   trx.validate();
+   try {
+      plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+      if (plugin.app().p2p_node())
+         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      res = trx.id().str();
+   } catch (fc::exception e) {
+      ilog("sidechain_net_handler_peerplays:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+   }
+
+   return res;
 }
 
 std::string sidechain_net_handler_peerplays::process_withdrawal(const son_wallet_withdraw_object &swwo) {
-   return "";
+   return "Withdraw not supported";
 }
 
 std::string sidechain_net_handler_peerplays::process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) {
    complete = true;
-   return "";
+   return sto.transaction;
+   ;
 }
 
 bool sidechain_net_handler_peerplays::send_sidechain_transaction(const sidechain_transaction_object &sto) {

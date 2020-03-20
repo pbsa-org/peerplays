@@ -7,8 +7,6 @@
 
 #include <fc/network/http/connection.hpp>
 #include <fc/signals.hpp>
-#include <graphene/chain/son_wallet_deposit_object.hpp>
-#include <graphene/chain/son_wallet_withdraw_object.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 

@@ -1,10 +1,5 @@
 #include <graphene/peerplays_sidechain/sidechain_net_handler.hpp>
 
-#include <graphene/chain/sidechain_address_object.hpp>
-#include <graphene/chain/sidechain_transaction_object.hpp>
-#include <graphene/chain/son_wallet_deposit_object.hpp>
-#include <graphene/chain/son_wallet_withdraw_object.hpp>
-
 #include <fc/log/logger.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
@@ -210,7 +205,7 @@ void sidechain_net_handler::process_deposits() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+         ilog("sidechain_net_handler:  sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
@@ -264,7 +259,7 @@ void sidechain_net_handler::process_withdrawals() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+         ilog("sidechain_net_handler:  sending proposal for withdrawal sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
@@ -297,7 +292,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+         ilog("sidechain_net_handler:  sending proposal for sidechain transaction sign operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
@@ -327,7 +322,7 @@ void sidechain_net_handler::send_sidechain_transactions() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+         ilog("sidechain_net_handler:  sending proposal for sidechain transaction send operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
