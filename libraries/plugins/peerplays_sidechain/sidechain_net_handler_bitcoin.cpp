@@ -480,7 +480,7 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent() {
 std::vector<btc_txout> bitcoin_rpc_client::listunspent_by_address_and_amount(const std::string &address, double minimum_amount) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"pp_plugin\", \"method\": "
                                   "\"listunspent\", \"params\": [");
-   body += std::string("1,999999,[\"");
+   body += std::string("0,999999,[\"");
    body += address;
    body += std::string("\"],true,{\"minimumAmount\":");
    body += std::to_string(minimum_amount);
