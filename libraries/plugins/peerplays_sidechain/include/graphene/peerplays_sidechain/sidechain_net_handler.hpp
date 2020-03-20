@@ -31,7 +31,7 @@ public:
    void process_sidechain_transactions();
    void send_sidechain_transactions();
 
-   virtual std::string recreate_primary_wallet() = 0;
+   virtual void recreate_primary_wallet() = 0;
    virtual std::string process_deposit(const son_wallet_deposit_object &swdo) = 0;
    virtual std::string process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
    virtual std::string process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) = 0;

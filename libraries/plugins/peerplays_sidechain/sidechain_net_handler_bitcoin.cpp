@@ -770,8 +770,7 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 }
 
-std::string sidechain_net_handler_bitcoin::recreate_primary_wallet() {
-   std::string tx = "";
+void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
    const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
    const auto &active_sw = swi.rbegin();
    if (active_sw != swi.rend()) {
@@ -815,7 +814,7 @@ std::string sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch (fc::exception e) {
                ilog("sidechain_net_handler:  sending proposal for son wallet update operation failed with exception ${e}", ("e", e.what()));
-               return "";
+               return;
             }
 
             const auto &prev_sw = std::next(active_sw);
@@ -827,14 +826,49 @@ std::string sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                std::string active_pw_address = active_pw_pt.get_child("result").get<std::string>("address");
                std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
 
-               tx = transfer_all_btc(prev_pw_address, active_pw_address);
-               bool complete = false;
-               sign_transaction(tx, complete);
+               std::string sidechain_tx = transfer_all_btc(prev_pw_address, active_pw_address);
+
+               if (sidechain_tx.empty()) {
+                  ilog("BTC Primary wallet funds not transfered from ${prev_sw} to ${active_sw}", ("prev_sw", *prev_sw)("active_sw", *active_sw));
+                  return;
+               }
+
+               const chain::global_property_object &gpo = database.get_global_properties();
+
+               auto active_sons = gpo.active_sons;
+               std::vector<son_id_type> signers;
+               for (const son_info &si : active_sons) {
+                  signers.push_back(si.son_id);
+               }
+
+               sidechain_transaction_create_operation stc_op;
+               stc_op.payer = GRAPHENE_SON_ACCOUNT;
+               stc_op.son_wallet_id = (*prev_sw).id;
+               //stc_op.son_wallet_deposit_id = ; // not set, not needed
+               //stc_op.son_wallet_withdraw_id = ; // not set, not needed
+               stc_op.sidechain = sidechain;
+               stc_op.transaction = sidechain_tx;
+               stc_op.signers = signers;
+
+               proposal_create_operation proposal_op;
+               proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+               proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
+               uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+               proposal_op.expiration_time = time_point_sec(plugin.database().head_block_time().sec_since_epoch() + lifetime);
+
+               signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+               trx.validate();
+               try {
+                  plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+                  if (plugin.app().p2p_node())
+                     plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+               } catch (fc::exception e) {
+                  ilog("sidechain_net_handler:  sending proposal for withdrawal sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+               }
             }
          }
       }
    }
-   return tx;
 }
 
 std::string sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {

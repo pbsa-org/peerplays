@@ -327,7 +327,7 @@ void sidechain_net_handler::send_sidechain_transactions() {
    });
 }
 
-std::string sidechain_net_handler::recreate_primary_wallet() {
+void sidechain_net_handler::recreate_primary_wallet() {
    FC_ASSERT(false, "recreate_primary_wallet not implemented");
 }
 
