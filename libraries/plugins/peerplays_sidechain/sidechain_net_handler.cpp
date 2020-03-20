@@ -271,28 +271,39 @@ void sidechain_net_handler::process_sidechain_transactions() {
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
       ilog("Sidechain transaction to process: ${sto}", ("sto", sto));
 
-      bool complete = false;
-      std::string processed_sidechain_tx = process_sidechain_transaction(sto, complete);
-
-      if (processed_sidechain_tx.empty()) {
-         ilog("Sidechain transaction not processed: ${sto}", ("sto", sto));
-         return;
+      son_id_type invalid_signer = son_id_type(0xFFFFFFFF);
+      son_id_type next_signer = invalid_signer;
+      for (auto &signer : sto.signers) {
+         if (signer.second == false) {
+            next_signer = signer.first;
+            break;
+         }
       }
 
-      sidechain_transaction_sign_operation sts_op;
-      sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
-      sts_op.sidechain_transaction_id = sto.id;
-      sts_op.transaction = processed_sidechain_tx;
-      sts_op.complete = complete;
+      if ((next_signer != invalid_signer) && (next_signer == plugin.get_current_son_id())) {
+         bool complete = false;
+         std::string processed_sidechain_tx = process_sidechain_transaction(sto, complete);
 
-      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
-      trx.validate();
-      try {
-         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
-         if (plugin.app().p2p_node())
-            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-      } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for sidechain transaction sign operation failed with exception ${e}", ("e", e.what()));
+         if (processed_sidechain_tx.empty()) {
+            ilog("Sidechain transaction not processed: ${sto}", ("sto", sto));
+            return;
+         }
+
+         sidechain_transaction_sign_operation sts_op;
+         sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+         sts_op.sidechain_transaction_id = sto.id;
+         sts_op.transaction = processed_sidechain_tx;
+         sts_op.complete = complete;
+
+         signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+         trx.validate();
+         try {
+            plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+            if (plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+         } catch (fc::exception e) {
+            ilog("sidechain_net_handler:  sending proposal for sidechain transaction sign operation failed with exception ${e}", ("e", e.what()));
+         }
       }
    });
 }
