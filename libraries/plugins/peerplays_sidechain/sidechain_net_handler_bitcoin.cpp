@@ -1,4 +1,5 @@
 #include <graphene/peerplays_sidechain/sidechain_net_handler_bitcoin.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 
 #include <algorithm>
 #include <thread>
@@ -8,6 +9,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <fc/crypto/base64.hpp>
+#include <fc/crypto/hex.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
@@ -931,7 +933,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                fc::flat_map<std::string, double> outputs;
                outputs[active_pw_address] = total_amount - min_amount;
 
-               std::string tx_str = create_transaction(inputs, outputs);
+               std::string tx_str = create_transaction(inputs, outputs, "");
 
                if (!tx_str.empty()) {
 
@@ -1000,7 +1002,7 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 
    outputs[pw_address] = transfer_amount;
 
-   std::string tx_str = create_transaction(inputs, outputs);
+   std::string tx_str = create_transaction(inputs, outputs, "");
 
    if (!tx_str.empty()) {
       const chain::global_property_object &gpo = database.get_global_properties();
@@ -1076,7 +1078,7 @@ bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw
       outputs[pw_address] = total_amount - min_amount;
    }
 
-   std::string tx_str = create_transaction(inputs, outputs);
+   std::string tx_str = create_transaction(inputs, outputs, "");
 
    if (!tx_str.empty()) {
       const chain::global_property_object &gpo = database.get_global_properties();
@@ -1137,11 +1139,11 @@ bool sidechain_net_handler_bitcoin::send_sidechain_transaction(const sidechain_t
 
 // Creates transaction in any format
 // Function to actually create transaction should return transaction string, or empty string in case of failure
-std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
+std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs, const std::string& extra_data) {
    std::string new_tx = "";
    //new_tx = create_transaction_raw(inputs, outputs);
    new_tx = create_transaction_psbt(inputs, outputs);
-   //new_tx = create_transaction_standalone(inputs, outputs);
+   //new_tx = create_transaction_standalone(inputs, outputs, extra_data);
    return new_tx;
 }
 
@@ -1170,65 +1172,27 @@ std::string sidechain_net_handler_bitcoin::create_transaction_psbt(const std::ve
    return bitcoin_client->createpsbt(inputs, outputs);
 }
 
-std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
-   // Examples
-
-   // Transaction with no inputs and outputs
-   //bitcoin-core.cli -rpcuser=1 -rpcpassword=1 -rpcwallet="" createrawtransaction '[]' '[]'
-   //02000000000000000000
-   //bitcoin-core.cli -rpcuser=1 -rpcpassword=1 -rpcwallet="" decoderawtransaction 02000000000000000000
-   //{
-   //  "txid": "4ebd325a4b394cff8c57e8317ccf5a8d0e2bdf1b8526f8aad6c8e43d8240621a",
-   //  "hash": "4ebd325a4b394cff8c57e8317ccf5a8d0e2bdf1b8526f8aad6c8e43d8240621a",
-   //  "version": 2,
-   //  "size": 10,
-   //  "vsize": 10,
-   //  "weight": 40,
-   //  "locktime": 0,
-   //  "vin": [
-   //  ],
-   //  "vout": [
-   //  ]
-   //}
-
-   // Transaction with input and output
-   //{
-   //  "txid": "ff60f48f767bbf70d79efc1347b5554b481f14fda68709839091286e035e669b",
-   //  "hash": "ff60f48f767bbf70d79efc1347b5554b481f14fda68709839091286e035e669b",
-   //  "version": 2,
-   //  "size": 83,
-   //  "vsize": 83,
-   //  "weight": 332,
-   //  "locktime": 0,
-   //  "vin": [
-   //    {
-   //      "txid": "3d322dc2640239a2e68e182b254d19c88e5172a61947f94a105c3f57618092ff",
-   //      "vout": 0,
-   //      "scriptSig": {
-   //        "asm": "",
-   //        "hex": ""
-   //      },
-   //      "sequence": 4294967295
-   //    }
-   //  ],
-   //  "vout": [
-   //    {
-   //      "value": 1.00000000,
-   //      "n": 0,
-   //      "scriptPubKey": {
-   //        "asm": "OP_HASH160 b87c323018cae236eb03a1f63000c85b672270f6 OP_EQUAL",
-   //        "hex": "a914b87c323018cae236eb03a1f63000c85b672270f687",
-   //        "reqSigs": 1,
-   //        "type": "scripthash",
-   //        "addresses": [
-   //          "2NA4h6sc9oZ4ogfNKU9Wp6fkqPZLZPqqpgf"
-   //        ]
-   //      }
-   //    }
-   //  ]
-   //}
-
-   return "";
+std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs, const std::string& redeem_script) {
+   btc_tx tx;
+   tx.nVersion = 2;
+   tx.nLockTime = 0;
+   tx.hasWitness = true;
+   for(const auto& in: inputs)
+   {
+      btc_in bin(in.txid_, in.out_num_, in.amount_);
+      tx.vin.push_back(bin);
+   }
+   for(const auto& out: outputs)
+      tx.vout.push_back(btc_out(out.first, out.second));
+   bytes buf;
+   tx.to_bytes(buf);
+   if (!redeem_script.empty()) {
+      bytes redeem_script_bin;
+      redeem_script_bin.resize(redeem_script.size() / 2);
+      fc::from_hex(redeem_script, (char*)&redeem_script_bin[0], redeem_script_bin.size());
+      buf = add_dummy_signatures_for_pw_transfer(buf, redeem_script_bin, 15);
+   }
+   return fc::to_hex((char*)&buf[0], buf.size());
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto, bool &complete) {
