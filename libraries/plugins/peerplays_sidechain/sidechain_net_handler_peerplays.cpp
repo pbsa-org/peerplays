@@ -59,7 +59,7 @@ std::string sidechain_net_handler_peerplays::process_deposit(const son_wallet_de
          plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       res = trx.id().str();
    } catch (fc::exception e) {
-      ilog("sidechain_net_handler_peerplays:  sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
+      elog("Sending proposal for transfer operation failed with exception ${e}", ("e", e.what()));
    }
 
    return res;

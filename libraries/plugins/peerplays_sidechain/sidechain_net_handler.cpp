@@ -100,7 +100,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                if (plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch (fc::exception e) {
-               ilog("sidechain_net_handler:  sending proposal for son wallet deposit create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
+               elog("Sending proposal for son wallet deposit create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
             }
          }
       }
@@ -146,7 +146,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                if (plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch (fc::exception e) {
-               ilog("sidechain_net_handler:  sending proposal for son wallet withdraw create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
+               elog("Sending proposal for son wallet withdraw create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
             }
          }
       }
@@ -166,7 +166,7 @@ void sidechain_net_handler::process_deposits() {
       std::string sidechain_tx = process_deposit(swdo);
 
       if (sidechain_tx.empty()) {
-         ilog("Deposit not processed: ${swdo}", ("swdo", swdo));
+         wlog("Deposit not processed: ${swdo}", ("swdo", swdo));
          return;
       }
 
@@ -205,7 +205,7 @@ void sidechain_net_handler::process_deposits() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+         elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
@@ -220,7 +220,7 @@ void sidechain_net_handler::process_withdrawals() {
       std::string sidechain_tx = process_withdrawal(swwo);
 
       if (sidechain_tx.empty()) {
-         ilog("Withdraw not processed: ${swwo}", ("swwo", swwo));
+         wlog("Withdraw not processed: ${swwo}", ("swwo", swwo));
          return;
       }
 
@@ -259,7 +259,7 @@ void sidechain_net_handler::process_withdrawals() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for withdrawal sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+         elog("Sending proposal for withdraw sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
@@ -285,7 +285,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
          std::string processed_sidechain_tx = process_sidechain_transaction(sto, complete);
 
          if (processed_sidechain_tx.empty()) {
-            ilog("Sidechain transaction not processed: ${sto}", ("sto", sto));
+            wlog("Sidechain transaction not processed: ${sto}", ("sto", sto));
             return;
          }
 
@@ -302,7 +302,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
             if (plugin.app().p2p_node())
                plugin.app().p2p_node()->broadcast(net::trx_message(trx));
          } catch (fc::exception e) {
-            ilog("sidechain_net_handler:  sending proposal for sidechain transaction sign operation failed with exception ${e}", ("e", e.what()));
+            elog("Sending proposal for sidechain transaction sign operation failed with exception ${e}", ("e", e.what()));
          }
       }
    });
@@ -318,7 +318,7 @@ void sidechain_net_handler::send_sidechain_transactions() {
       bool sent = send_sidechain_transaction(sto);
 
       if (!sent) {
-         ilog("Sidechain transaction not sent: ${sto}", ("sto", sto));
+         wlog("Sidechain transaction not sent: ${sto}", ("sto", sto));
          return;
       }
 
@@ -333,7 +333,7 @@ void sidechain_net_handler::send_sidechain_transactions() {
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
-         ilog("sidechain_net_handler:  sending proposal for sidechain transaction send operation failed with exception ${e}", ("e", e.what()));
+         elog("Sending proposal for sidechain transaction send operation failed with exception ${e}", ("e", e.what()));
       }
    });
 }
