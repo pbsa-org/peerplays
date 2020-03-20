@@ -854,10 +854,13 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
          auto active_sons = gpo.active_sons;
          vector<string> son_pubkeys_bitcoin;
+         vector<uint64_t> son_votes;
          for (const son_info &si : active_sons) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+            son_votes.push_back(si.total_votes);
          }
-         std::string full_address_info = create_multisig_address(son_pubkeys_bitcoin);
+
+         std::string full_address_info = create_multisig_address(son_pubkeys_bitcoin, son_votes);
          if(!full_address_info.size())
          {
             elog("Failed to create multisig address");
@@ -1147,26 +1150,13 @@ bool sidechain_net_handler_bitcoin::send_sidechain_transaction(const sidechain_t
    return send_transaction(sto, sidechain_transaction);
 }
 
-std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::string> &son_pubkeys_bitcoin)
+std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::string> &son_pubkeys_bitcoin, const std::vector<uint64_t>& son_votes)
 {
-   if (!wallet_password.empty()) {
-      bitcoin_client->walletpassphrase(wallet_password, 5);
-   }
-
-   uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
-   string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
-
-   std::stringstream active_pw_ss(reply_str);
-   boost::property_tree::ptree active_pw_pt;
-   boost::property_tree::read_json(active_pw_ss, active_pw_pt);
-   if (!active_pw_pt.count("error") || !active_pw_pt.get_child("error").empty()) {
-      elog("Failed to recreate primary wallet");
-      return "";
-   }
-
-   std::stringstream res;
-   boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
-   return res.str();
+   std::string new_address = "";
+   //new_tx = create_multisig_address_raw(son_pubkeys);
+   new_address = create_multisig_address_psbt(son_pubkeys_bitcoin);
+   //new_tx = create_multisig_address_standalone(son_pubkeys_bitcoin, son_votes);
+   return new_address;
 }
 
 // Creates transaction in any format
@@ -1194,6 +1184,70 @@ bool sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction
    sidechain_transaction = "";
    //return send_transaction_raw(sto, sidechain_transaction);
    return send_transaction_psbt(sto, sidechain_transaction);
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address_raw(const std::vector<std::string> &son_pubkeys)
+{
+   if (!wallet_password.empty()) {
+      bitcoin_client->walletpassphrase(wallet_password, 5);
+   }
+
+   uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
+   string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys);
+
+   std::stringstream active_pw_ss(reply_str);
+   boost::property_tree::ptree active_pw_pt;
+   boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+   if (!active_pw_pt.count("error") || !active_pw_pt.get_child("error").empty()) {
+      elog("Failed to recreate primary wallet");
+      return "";
+   }
+
+   std::stringstream res;
+   boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
+   return res.str();
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address_psbt(const std::vector<std::string> &son_pubkeys)
+{
+   if (!wallet_password.empty()) {
+      bitcoin_client->walletpassphrase(wallet_password, 5);
+   }
+
+   uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
+   string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys);
+
+   std::stringstream active_pw_ss(reply_str);
+   boost::property_tree::ptree active_pw_pt;
+   boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+   if (!active_pw_pt.count("error") || !active_pw_pt.get_child("error").empty()) {
+      elog("Failed to recreate primary wallet");
+      return "";
+   }
+
+   std::stringstream res;
+   boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
+   return res.str();
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(const std::vector<std::string> &son_pubkeys, const std::vector<uint64_t> &son_votes)
+{
+   FC_ASSERT(son_pubkeys.size() == son_votes.size());
+
+   vector<pair<std::string, uint64_t>> son_data;
+   for(unsigned idx = 0; idx < son_pubkeys.size(); ++idx)
+      son_data.push_back(make_pair(son_pubkeys[idx], son_votes[idx]));
+   sort(son_data.begin(), son_data.end(),
+        [](const pair<string, uint64_t>& p1, const pair<string, uint64_t>& p2) -> bool
+         { return p1.second > p2.second; }
+   );
+
+   std::string address = get_weighted_multisig_address(son_data);
+   bytes redeem_script = get_weighted_multisig_redeem_script(son_data);
+
+   return "{\"address\":\"" + address + "\",\"redeemScript\":\"" +
+         fc::to_hex((char*)&redeem_script[0], redeem_script.size()) +
+         "\"}";
 }
 
 std::string sidechain_net_handler_bitcoin::create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
