@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    for(auto& key: priv_old)
       pub_old.push_back(key.get_public_key());
    // old key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_old;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_old;
    for(unsigned i = 0; i < 15; ++i)
       weights_old.push_back(std::make_pair(pub_old[i], i + 1));
    // redeem script for old PW
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(pw_transfer)
    for(auto& key: priv_new)
       pub_new.push_back(key.get_public_key());
    // new key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_new;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_new;
    for(unsigned i = 0; i < 15; ++i)
       weights_new.push_back(std::make_pair(pub_new[i], 16 - i));
    // redeem script for new PW
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(pw_separate_sign)
    for(auto& key: priv_old)
       pub_old.push_back(key.get_public_key());
    // old key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_old;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_old;
    for(unsigned i = 0; i < 15; ++i)
       weights_old.push_back(std::make_pair(pub_old[i], i + 1));
    // redeem script for old PW
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(pw_separate_sign)
    for(auto& key: priv_new)
       pub_new.push_back(key.get_public_key());
    // new key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_new;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_new;
    for(unsigned i = 0; i < 15; ++i)
       weights_new.push_back(std::make_pair(pub_new[i], 16 - i));
    // redeem script for new PW
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(pw_separate_sign2)
    for(auto& key: priv_old)
       pub_old.push_back(key.get_public_key());
    // old key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_old;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_old;
    for(unsigned i = 0; i < 15; ++i)
       weights_old.push_back(std::make_pair(pub_old[i], i + 1));
    // redeem script for old PW
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(pw_separate_sign2)
    for(auto& key: priv_new)
       pub_new.push_back(key.get_public_key());
    // new key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_new;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_new;
    for(unsigned i = 0; i < 15; ++i)
       weights_new.push_back(std::make_pair(pub_new[i], 16 - i));
    // redeem script for new PW
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(pw_partially_sign)
    for(auto& key: priv_old)
       pub_old.push_back(key.get_public_key());
    // old key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_old;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_old;
    for(unsigned i = 0; i < 15; ++i)
       weights_old.push_back(std::make_pair(pub_old[i], i + 1));
    // redeem script for old PW
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE(pw_partially_sign)
    for(auto& key: priv_new)
       pub_new.push_back(key.get_public_key());
    // new key weights
-   std::vector<std::pair<fc::ecc::public_key, int> > weights_new;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights_new;
    for(unsigned i = 0; i < 15; ++i)
       weights_new.push_back(std::make_pair(pub_new[i], 16 - i));
    // redeem script for new PW

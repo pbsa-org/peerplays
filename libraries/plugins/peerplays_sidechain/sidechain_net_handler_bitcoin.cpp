@@ -19,6 +19,7 @@
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
+#include <graphene/utilities/key_conversion.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -1483,24 +1484,23 @@ std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<
 // Function to actually add signature should return transaction with added signature string, or empty string in case of failure
 std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_transaction_object &sto) {
    std::string new_tx = "";
-   //new_tx = sign_transaction_raw(sto, complete);
+   //new_tx = sign_transaction_raw(sto);
    if (sto.object_id.type() == 30) {
-      new_tx = sign_transaction_psbt(sto, complete);
+      new_tx = sign_transaction_psbt(sto);
    } else {
-      new_tx = sign_transaction_standalone(sto, complete);
+      new_tx = sign_transaction_standalone(sto);
    }
-   //new_tx = sign_transaction_standalone(sto, complete);
+   //new_tx = sign_transaction_standalone(sto);
    return new_tx;
 }
 
-bool sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
-   sidechain_transaction = "";
-   //return send_transaction_raw(sto, sidechain_transaction);
-   //return send_transaction_psbt(sto, sidechain_transaction);
+std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction_object &sto) {
+   //return send_transaction_raw(sto);
+   //return send_transaction_psbt(sto);
    if (sto.object_id.type() == 30) {
-      return send_transaction_psbt(sto, sidechain_transaction);
+      return send_transaction_psbt(sto);
    } else {
-      return send_transaction_standalone(sto, sidechain_transaction);
+      return send_transaction_standalone(sto);
    }
 }
 
@@ -1598,99 +1598,6 @@ libbitcoin::machine::operation script_num(uint32_t val)
    return result;
 }
 
-libbitcoin::chain::script get_weighted_multisig_witness_script(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys)
-{
-   using namespace libbitcoin;
-   using namespace libbitcoin::chain;
-   using namespace libbitcoin::machine;
-   using namespace libbitcoin::wallet;
-
-   // Online visualizer/debugger
-   // https://siminchen.github.io/bitcoinIDE/build/editor.html
-   //
-   // 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-   // 03456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef275 OP_CHECKSIG
-   // OP_IF OP_1 OP_ELSE 0 OP_ENDIF
-   // OP_SWAP
-   // 02d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f4 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 0228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe9866 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f666 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 02ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 0317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 0266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf84 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 0229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e5 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 03df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c1 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 02bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 0287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae8 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // OP_SWAP
-   // 02053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd73 OP_CHECKSIG
-   // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 11 OP_GREATERTHANOREQUAL
-
-   libbitcoin::machine::operation::list witness_script_ops;
-
-   uint16_t idx = 0;
-   uint32_t total_weight = 0;
-   for (auto son_pubkey : son_pubkeys) {
-      ec_public key = ec_public(son_pubkey.first);
-      data_chunk key_data = to_chunk(key.point());
-      uint16_t weight = son_pubkey.second;
-
-      total_weight = total_weight + weight;
-
-      witness_script_ops.emplace_back(key_data);
-      witness_script_ops.emplace_back(opcode::checksig);
-
-      witness_script_ops.emplace_back(opcode::if_);
-      witness_script_ops.emplace_back(script_num(weight));
-      if (idx == 0) {
-         witness_script_ops.emplace_back(opcode::else_);
-         witness_script_ops.emplace_back(opcode::push_size_0);
-      } else {
-         witness_script_ops.emplace_back(opcode::add);
-      }
-      witness_script_ops.emplace_back(opcode::endif);
-
-      if (idx < son_pubkeys.size() - 1) {
-         witness_script_ops.emplace_back(opcode::swap);
-      }
-
-      idx = idx + 1;
-   }
-   witness_script_ops.emplace_back(script_num(total_weight * 2 / 3));
-   witness_script_ops.emplace_back(opcode::greaterthanorequal);
-
-   return script(witness_script_ops);
-}
-
 void read_tx_data_from_string(const std::string &string_buf, std::vector<unsigned char> &tx, std::vector<uint64_t> &in_amounts)
 {
    std::stringstream ss(string_buf);
@@ -1718,80 +1625,13 @@ std::string save_tx_data_to_string(const std::vector<unsigned char> &tx, const s
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
-
-   //using namespace libbitcoin;
-   //using namespace libbitcoin::chain;
-   //using namespace libbitcoin::machine;
-   //using namespace libbitcoin::wallet;
-   //
-   //uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
-   //point_list keys;
-   //for (auto son_pubkey : son_pubkeys) {
-   //   keys.push_back(ec_public(son_pubkey.first));
-   //}
-   //script witness_script = script::to_pay_multisig_pattern(nrequired, keys);
-   //
-   //// sha256 of witness script
-   //data_chunk multisig_hash = to_chunk(sha256_hash(witness_script.to_data(0)));
-   //
-   //// redeem script
-   //libbitcoin::machine::operation::list redeemscript_ops{libbitcoin::machine::operation(opcode(0)), libbitcoin::machine::operation(multisig_hash)};
-   //script redeem_script = script(redeemscript_ops);
-   //
-   //// address
-   //payment_address address = payment_address(redeem_script, payment_address_p2sh);
-   //
-   //std::stringstream ss;
-   //
-   //
-   //ss << "{\"result\": {\"address\": \"" << address.encoded() << "\", \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\"" << "}, \"error\":null}";
-   //std::string res = ss.str();
-   //
-   //std::cout << "Redeem Script Hash: " << encode_base16(address.hash()) << std::endl;
-   //std::cout << "Payment Address: " << address.encoded() << std::endl;
-   //std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
-   //std::cout << "Witness Script: " << witness_script.to_string(0) << std::endl;
-   //std::cout << "Witness Script: " << encode_base16(witness_script.to_data(0)) << std::endl;
-   //
-   //std::cout << res << std::endl;
-   ////create_multisig_address_psbt(son_pubkeys);
-   //
-   //return res;
-
-   using namespace libbitcoin;
-   using namespace libbitcoin::chain;
-   using namespace libbitcoin::machine;
-   using namespace libbitcoin::wallet;
-
-   script witness_script = get_weighted_multisig_witness_script(son_pubkeys);
-
-   std::cout << "Witness Script is valid: " << witness_script.is_valid() << std::endl;
-   std::cout << "Witness Script operations are valid: " << witness_script.is_valid_operations() << std::endl;
-
-   // sha256 of witness script
-   data_chunk multisig_hash = to_chunk(sha256_hash(witness_script.to_data(0)));
-
-   // redeem script
-   libbitcoin::machine::operation::list redeemscript_ops{libbitcoin::machine::operation(opcode(0)), libbitcoin::machine::operation(multisig_hash)};
-   script redeem_script = script(redeemscript_ops);
-
-   // address
-   payment_address address = payment_address(redeem_script, payment_address_p2sh);
+   bytes redeem_script = get_weighted_multisig_redeem_script(son_pubkeys);
+   std::string address = get_weighted_multisig_address(son_pubkeys);
 
    std::stringstream ss;
-
-   ss << "{\"result\": {\"address\": \"" << address.encoded() << "\", \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\""
+   ss << "{\"result\": {\"address\": \"" << address << "\", \"redeemScript\": \"" << bytes_to_hex(redeem_script) << "\""
       << "}, \"error\":null}";
    std::string res = ss.str();
-
-   std::cout << "Redeem Script Hash: " << encode_base16(address.hash()) << std::endl;
-   std::cout << "Payment Address: " << address.encoded() << std::endl;
-   std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
-   std::cout << "Witness Script: " << witness_script.to_string(0) << std::endl;
-   std::cout << "Witness Script: " << encode_base16(witness_script.to_data(0)) << std::endl;
-
-   std::cout << res << std::endl;
-   //create_multisig_address_psbt(son_pubkeys);
 
    return res;
 }
@@ -1805,88 +1645,22 @@ std::string sidechain_net_handler_bitcoin::create_transaction_psbt(const std::ve
 }
 
 std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
-   // Examples
-
-   // Transaction with no inputs and outputs
-   //bitcoin-core.cli -rpcuser=1 -rpcpassword=1 -rpcwallet="" createrawtransaction '[]' '[]'
-   //02000000000000000000
-   //bitcoin-core.cli -rpcuser=1 -rpcpassword=1 -rpcwallet="" decoderawtransaction 02000000000000000000
-   //{
-   //  "txid": "4ebd325a4b394cff8c57e8317ccf5a8d0e2bdf1b8526f8aad6c8e43d8240621a",
-   //  "hash": "4ebd325a4b394cff8c57e8317ccf5a8d0e2bdf1b8526f8aad6c8e43d8240621a",
-   //  "version": 2,
-   //  "size": 10,
-   //  "vsize": 10,
-   //  "weight": 40,
-   //  "locktime": 0,
-   //  "vin": [
-   //  ],
-   //  "vout": [
-   //  ]
-   //}
-
-   // Transaction with input and output
-   //{
-   //  "txid": "ff60f48f767bbf70d79efc1347b5554b481f14fda68709839091286e035e669b",
-   //  "hash": "ff60f48f767bbf70d79efc1347b5554b481f14fda68709839091286e035e669b",
-   //  "version": 2,
-   //  "size": 83,
-   //  "vsize": 83,
-   //  "weight": 332,
-   //  "locktime": 0,
-   //  "vin": [
-   //    {
-   //      "txid": "3d322dc2640239a2e68e182b254d19c88e5172a61947f94a105c3f57618092ff",
-   //      "vout": 0,
-   //      "scriptSig": {
-   //        "asm": "",
-   //        "hex": ""
-   //      },
-   //      "sequence": 4294967295
-   //    }
-   //  ],
-   //  "vout": [
-   //    {
-   //      "value": 1.00000000,
-   //      "n": 0,
-   //      "scriptPubKey": {
-   //        "asm": "OP_HASH160 b87c323018cae236eb03a1f63000c85b672270f6 OP_EQUAL",
-   //        "hex": "a914b87c323018cae236eb03a1f63000c85b672270f687",
-   //        "reqSigs": 1,
-   //        "type": "scripthash",
-   //        "addresses": [
-   //          "2NA4h6sc9oZ4ogfNKU9Wp6fkqPZLZPqqpgf"
-   //        ]
-   //      }
-   //    }
-   //  ]
-   //}
-   libbitcoin::chain::transaction tx;
-   tx.set_version(2u);
+   btc_tx tx;
+   tx.nVersion = 2;
+   tx.nLockTime = 0;
+   tx.hasWitness = true;
    std::vector<uint64_t> in_amounts;
    for (auto in : inputs) {
-      libbitcoin::chain::input bin;
-      libbitcoin::hash_digest tx_id;
-      libbitcoin::decode_hash(tx_id, in.txid_);
-      bin.set_previous_output(libbitcoin::chain::output_point(tx_id, in.out_num_));
-      bin.set_sequence(libbitcoin::max_input_sequence);
-      tx.inputs().push_back(bin);
+      tx.vin.push_back(btc_in(in.txid_, in.out_num_));
       in_amounts.push_back(in.amount_);
    }
    for (auto out : outputs) {
-      libbitcoin::chain::output bout;
-      uint64_t satoshis = out.second * 100000000.0;
-      bout.set_value(satoshis);
-      libbitcoin::wallet::payment_address addr(out.first);
-      if (addr.version() == payment_address_p2sh) {
-         bout.set_script(libbitcoin::chain::script::to_pay_script_hash_pattern(addr));
-      } else {
-         bout.set_script(libbitcoin::chain::script::to_pay_key_hash_pattern(addr));
-      }
-      tx.outputs().push_back(bout);
+      tx.vout.push_back(btc_out(out.first, uint64_t(out.second * 100000000.0)));
    }
 
-   std::string tx_raw = save_tx_data_to_string(tx.to_data(), in_amounts);
+   bytes tx_buf;
+   tx.to_bytes(tx_buf);
+   std::string tx_raw = save_tx_data_to_string(tx_buf, in_amounts);
 
    return tx_raw;
 }
@@ -1984,40 +1758,29 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const sidechain
 std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sidechain_transaction_object &sto) {
 
    std::string pubkey = plugin.get_current_son_object().sidechain_public_keys.at(sidechain);
-   uint16_t weight = 0;
    std::string prvkey = get_private_key(pubkey);
-   using namespace libbitcoin;
-   using namespace libbitcoin::machine;
-   using namespace libbitcoin::wallet;
 
-
-   libbitcoin::data_chunk data;
-   libbitcoin::ec_secret key;
-   libbitcoin::decode_base16(key, prvkey);
+   bytes unsigned_tx;
    std::vector<uint64_t> in_amounts;
-   read_tx_data_from_string(sto.transaction, data, in_amounts);
-   libbitcoin::chain::transaction tx;
-   if (!tx.from_data(data)) {
-      elog("Failed to decode transaction ${tx}", ("tx", sto.transaction));
-      return "";
-   }
+   read_tx_data_from_string(sto.transaction, unsigned_tx, in_amounts);
 
    std::vector<std::pair<std::string, uint16_t>> son_pubkeys;
    for (auto& son: sto.signers) {
       std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
       son_pubkeys.push_back(std::make_pair(pub_key, son.weight));
-      if (son.son_id == plugin.get_current_son_id())
-         weight = son.weight;
    }
-   libbitcoin::chain::script witness_script = get_weighted_multisig_witness_script(son_pubkeys);
-   vector<endorsement> sigs;
-   sigs.resize(tx.inputs().size());
-   for (unsigned int itr = 0; itr < sigs.size(); itr++) {
-      libbitcoin::chain::script::create_endorsement(sigs.at(itr), key, witness_script, tx, itr, sighash_algorithm::all, script_version::zero, in_amounts[itr]);
+   bytes witness_script = get_weighted_multisig_redeem_script(son_pubkeys);
+
+   fc::optional<fc::ecc::private_key> btc_private_key = graphene::utilities::wif_to_key(prvkey);
+   if (!btc_private_key)
+   {
+      elog("Invalid private key ${pk}", ("pk", prvkey));
+      return "";
    }
+   vector<bytes> sigs = signatures_for_raw_transaction(unsigned_tx, in_amounts, witness_script, *btc_private_key);
 
    std::string tx_signature = write_byte_arrays_to_string(sigs);
-   complete = (sto.current_weight + weight > sto.threshold);
+   ilog("signatures: ${s}", ("s", tx_signature));
    return tx_signature;
 }
 
@@ -2067,52 +1830,33 @@ std::string sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain
    return "";
 }
 
-bool sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
-   sidechain_transaction = "";
-
-   libbitcoin::data_chunk tx_buf;
+std::string sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto) {
+   bytes unsigned_tx;
    std::vector<uint64_t> in_amounts;
-   read_tx_data_from_string(sto.transaction, tx_buf, in_amounts);
-   libbitcoin::chain::transaction tx;
-   if (!tx.from_data(tx_buf)) {
-      elog("Failed to decode transaction ${tx}", ("tx", sto.transaction));
-      return "";
-   }
+   read_tx_data_from_string(sto.transaction, unsigned_tx, in_amounts);
 
    std::vector<std::pair<std::string, uint16_t>> son_pubkeys;
    for (auto& son: sto.signers) {
       std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
       son_pubkeys.push_back(std::make_pair(pub_key, son.weight));
    }
-   libbitcoin::chain::script witness_script = get_weighted_multisig_witness_script(son_pubkeys);
+   bytes witness_script = get_weighted_multisig_redeem_script(son_pubkeys);
 
-   std::vector<libbitcoin::data_stack> scripts;
-   for (uint32_t idx = 0; idx < tx.inputs().size(); idx++)
-      scripts.push_back({witness_script.to_data(0)});
-
-   for (auto sig_data: sto.signatures) {
-      if (sig_data.second.size()) {
-         std::vector<libbitcoin::data_chunk> sigs = read_byte_arrays_from_string(sig_data.second);
-         FC_ASSERT(sigs.size() == scripts.size());
-         // place signatures in reverse order
-         for (uint32_t idx = 0; idx < scripts.size(); idx++)
-         {
-            auto& s = scripts.at(idx);
-            s.insert(s.begin(), sigs[idx]);
-         }
-      } else {
-         for (uint32_t idx = 0; idx < scripts.size(); idx++)
-         {
-            auto& s = scripts.at(idx);
-            s.insert(s.begin(), libbitcoin::data_chunk());
-         }
-      }
+   uint32_t inputs_number = in_amounts.size();
+   vector<bytes> dummy;
+   dummy.resize(inputs_number);
+   vector<vector<bytes>> signatures;
+   for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
+      if(sto.signatures[idx].second.empty())
+         signatures.push_back(dummy);
+      else
+         signatures.push_back(read_byte_arrays_from_string(sto.signatures[idx].second));
    }
-
-   for (uint32_t idx = 0; idx < tx.inputs().size(); idx++)
-      tx.inputs()[idx].set_witness(scripts[idx]);
-
-   return bitcoin_client->sendrawtransaction(libbitcoin::encode_base16(tx.to_data()));
+   bytes signed_tx = add_signatures_to_unsigned_tx(unsigned_tx, signatures, witness_script);
+   std::string txstr = bytes_to_hex(signed_tx);
+   std::string res = bitcoin_client->sendrawtransaction(txstr);
+   ilog("send_transaction_standalone: ${tx}, [${res}]", ("tx", txstr)("res", res));
+   return res;
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {

@@ -142,9 +142,9 @@ private:
    std::string sign_transaction_psbt(const sidechain_transaction_object &sto);
    std::string sign_transaction_standalone(const sidechain_transaction_object &sto);
 
-   bool send_transaction_raw(const sidechain_transaction_object &sto, std::string &sidechain_transaction);
-   bool send_transaction_psbt(const sidechain_transaction_object &sto, std::string &sidechain_transaction);
-   bool send_transaction_standalone(const sidechain_transaction_object &sto, std::string &sidechain_transaction);
+   std::string send_transaction_raw(const sidechain_transaction_object &sto);
+   std::string send_transaction_psbt(const sidechain_transaction_object &sto);
+   std::string send_transaction_standalone(const sidechain_transaction_object &sto);
 
    void handle_event(const std::string &event_data);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);
