@@ -28,6 +28,18 @@ BOOST_AUTO_TEST_CASE(tx_serialization)
    BOOST_CHECK(bintx == buff);
 }
 
+BOOST_AUTO_TEST_CASE(tx_data_serialization)
+{
+   bytes source_tx({0, 1, 2, 3, 4, 5});
+   std::vector<uint64_t> source_ins({6, 7, 8, 9, 10});
+   std::string buf = save_tx_data_to_string(source_tx, source_ins);
+   bytes destination_tx;
+   std::vector<uint64_t> destination_ins;
+   read_tx_data_from_string(buf, destination_tx, destination_ins);
+   BOOST_REQUIRE(source_tx == destination_tx);
+   BOOST_REQUIRE(source_ins == destination_ins);
+}
+
 BOOST_AUTO_TEST_CASE(pw_transfer)
 {
    // key set for the old Primary Wallet

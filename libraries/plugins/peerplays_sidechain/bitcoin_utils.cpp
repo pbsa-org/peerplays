@@ -7,6 +7,8 @@
 #include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 #include <secp256k1.h>
 
+#include <boost/property_tree/json_parser.hpp>
+
 namespace graphene { namespace peerplays_sidechain {
 
 static const unsigned char OP_0 = 0x00;
@@ -781,6 +783,32 @@ bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uin
       key_data.push_back(std::make_pair(fc::ecc::public_key(kd), p.second));
    }
    return generate_redeem_script(key_data);
+}
+
+void read_tx_data_from_string(const std::string &string_buf, bytes &tx, std::vector<uint64_t> &in_amounts)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+   std::string tx_hex = json.get<std::string>("tx_hex");
+   tx.clear();
+   tx.resize(tx_hex.size() / 2);
+   fc::from_hex(tx_hex, (char*)&tx[0], tx.size());
+   in_amounts.clear();
+   for(auto &v: json.get_child("in_amounts"))
+      in_amounts.push_back(fc::to_uint64(v.second.data()));
+}
+
+std::string save_tx_data_to_string(const bytes &tx, const std::vector<uint64_t> &in_amounts)
+{
+   std::string res = "{\"tx_hex\":\"" + fc::to_hex((const char*)&tx[0], tx.size()) + "\",\"in_amounts\":[";
+   for (unsigned int idx = 0; idx < in_amounts.size(); ++idx) {
+      res += fc::to_string(in_amounts[idx]);
+      if (idx != in_amounts.size() - 1)
+         res += ",";
+   }
+   res += "]}";
+   return res;
 }
 
 }} // namespace graphene::peerplays_sidechain

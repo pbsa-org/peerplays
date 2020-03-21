@@ -68,6 +68,10 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx,
                                     const std::vector<std::vector<bytes>> &signatures,
                                     const bytes &redeem_script);
 
+void read_tx_data_from_string(const std::string &string_buf, bytes& tx, std::vector<uint64_t>& in_amounts);
+std::string save_tx_data_to_string(const bytes& tx, const std::vector<uint64_t>& in_amounts);
+
+
 struct btc_outpoint {
    fc::uint256 hash;
    uint32_t n;
