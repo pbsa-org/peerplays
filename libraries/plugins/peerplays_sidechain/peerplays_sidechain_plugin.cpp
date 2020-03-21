@@ -339,17 +339,9 @@ void peerplays_sidechain_plugin_impl::son_processing() {
       return; // Not synced
    }
 
-   uint32_t slot = 1; //plugin.database().get_slot_at_time(now);
-   if (slot == 0) {
-      return; // Not time yet
-   }
-
-   //assert(now > plugin.database().head_block_time());
-
-   chain::son_id_type scheduled_son_id = plugin.database().get_scheduled_son(slot);
-   fc::time_point_sec scheduled_time = plugin.database().get_slot_time(slot);
-   ilog("Slot: ${slot} Scheduled SON: ${scheduled_son_id} Scheduled time: ${scheduled_time} Now: ${now} ",
-        ("slot", slot)("scheduled_son_id", scheduled_son_id)("scheduled_time", scheduled_time)("now", now));
+   chain::son_id_type scheduled_son_id = plugin.database().get_scheduled_son(1);
+   ilog("Scheduled SON: ${scheduled_son_id} Now: ${now} ",
+        ("scheduled_son_id", scheduled_son_id) ("now", now) );
 
    for (son_id_type son_id : plugin.get_sons()) {
 
