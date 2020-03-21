@@ -31,10 +31,10 @@ bitcoin_rpc_client::bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::stri
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
 }
 
-std::string bitcoin_rpc_client::addmultisigaddress(const std::vector<std::string> public_keys) {
+std::string bitcoin_rpc_client::addmultisigaddress(const uint32_t nrequired, const std::vector<std::string> public_keys) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"addmultisigaddress\", "
                                   "\"method\": \"addmultisigaddress\", \"params\": [");
-   std::string params = "2, [";
+   std::string params = std::to_string(nrequired) + ", [";
    std::string pubkeys = "";
    for (std::string pubkey : public_keys) {
       if (!pubkeys.empty()) {
@@ -786,7 +786,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          for (const son_info &si : active_sons) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
          }
-         string reply_str = bitcoin_client->addmultisigaddress(son_pubkeys_bitcoin);
+         uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+         string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
 
          std::stringstream active_pw_ss(reply_str);
          boost::property_tree::ptree active_pw_pt;

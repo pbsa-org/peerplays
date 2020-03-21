@@ -21,7 +21,7 @@ class bitcoin_rpc_client {
 public:
    bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password);
 
-   std::string addmultisigaddress(const std::vector<std::string> public_keys);
+   std::string addmultisigaddress(const uint32_t nrequired, const std::vector<std::string> public_keys);
    std::string createpsbt(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
    std::string createrawtransaction(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
    std::string createwallet(const std::string &wallet_name);
