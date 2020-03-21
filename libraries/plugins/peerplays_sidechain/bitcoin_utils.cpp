@@ -6,6 +6,8 @@
 #include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 #include <secp256k1.h>
 
+#include <boost/property_tree/json_parser.hpp>
+
 namespace graphene { namespace peerplays_sidechain {
 
 static const unsigned char OP_0 = 0x00;
@@ -676,5 +678,6 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx, const std::vector<
    tx.to_bytes(ret);
    return ret;
 }
+
 
 }} // namespace graphene::peerplays_sidechain

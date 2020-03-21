@@ -1620,6 +1620,32 @@ libbitcoin::chain::script get_unlock_script(const std::vector<std::pair<std::str
    return script(witness_script_ops);
 }
 
+void read_tx_data_from_string(const std::string &string_buf, std::vector<unsigned char> &tx, std::vector<uint64_t> &in_amounts)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+   std::string tx_hex = json.get<std::string>("tx_hex");
+   tx.clear();
+   tx.resize(tx_hex.size() / 2);
+   fc::from_hex(tx_hex, (char*)&tx[0], tx.size());
+   in_amounts.clear();
+   for(auto &v: json.get_child("in_amounts"))
+      in_amounts.push_back(fc::to_uint64(v.second.data()));
+}
+
+std::string save_tx_data_to_string(const std::vector<unsigned char> &tx, const std::vector<uint64_t> &in_amounts)
+{
+   std::string res = "{\"tx_hex\":\"" + fc::to_hex((const char*)&tx[0], tx.size()) + "\",\"in_amounts\":[";
+   for (unsigned int idx = 0; idx < in_amounts.size(); ++idx) {
+      res += fc::to_string(in_amounts[idx]);
+      if (idx != in_amounts.size() - 1)
+         res += ",";
+   }
+   res += "]}";
+   return res;
+}
+
 std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
 
    //using namespace libbitcoin;
@@ -1911,6 +1937,7 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
 
    std::vector<std::pair<std::string, uint16_t>> son_pubkeys;
    libbitcoin::chain::script witness_script = get_unlock_script(son_pubkeys);
+
 
    std::string tx_signature = "";
 
