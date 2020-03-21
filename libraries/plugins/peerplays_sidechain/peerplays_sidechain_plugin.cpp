@@ -358,10 +358,8 @@ void peerplays_sidechain_plugin_impl::son_processing() {
          current_son_id = son_id;
 
          // Tasks that are executed by all active SONs, no matter if scheduled
-         // E.g. sending approvals and signing
+         // E.g. sending approvals and signing (only signing that can be done in parallel)
          approve_proposals();
-
-         process_sidechain_transactions();
 
          // Tasks that are executed by scheduled and active SON
          if (current_son_id == scheduled_son_id) {
@@ -375,6 +373,8 @@ void peerplays_sidechain_plugin_impl::son_processing() {
             process_deposits();
 
             process_withdrawals();
+
+            process_sidechain_transactions();
 
             send_sidechain_transactions();
          }
