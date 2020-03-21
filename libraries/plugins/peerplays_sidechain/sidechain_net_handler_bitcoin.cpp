@@ -1086,6 +1086,11 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const std
 }
 
 std::string sidechain_net_handler_bitcoin::transfer_all_btc(const std::string &from_address, const std::string &to_address) {
+
+   if (from_address == to_address) {
+      return "";
+   }
+
    uint64_t fee_rate = bitcoin_client->estimatesmartfee();
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
