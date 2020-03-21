@@ -341,7 +341,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
 
    chain::son_id_type scheduled_son_id = plugin.database().get_scheduled_son(1);
    ilog("Scheduled SON: ${scheduled_son_id} Now: ${now} ",
-        ("scheduled_son_id", scheduled_son_id) ("now", now) );
+        ("scheduled_son_id", scheduled_son_id)("now", now));
 
    for (son_id_type son_id : plugin.get_sons()) {
 
