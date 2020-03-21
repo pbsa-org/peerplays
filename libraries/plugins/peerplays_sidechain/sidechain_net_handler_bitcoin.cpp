@@ -883,19 +883,19 @@ std::string sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_w
 
 std::string sidechain_net_handler_bitcoin::process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete) {
 
-   //// Uncomment to get signing in order from sto.signers
-   //son_id_type invalid_signer = son_id_type(0xFFFFFFFF);
-   //son_id_type next_signer = invalid_signer;
-   //for (auto &signer : sto.signers) {
-   //   if (signer.second == false) {
-   //      next_signer = signer.first;
-   //      break;
-   //   }
-   //}
-   //
-   //if ((next_signer == invalid_signer) || (next_signer != plugin.get_current_son_id())) {
-   //   return "";
-   //}
+   // Uncomment to get signing in order from sto.signers
+   son_id_type invalid_signer = son_id_type(0xFFFFFFFF);
+   son_id_type next_signer = invalid_signer;
+   for (auto &signer : sto.signers) {
+      if (signer.second == false) {
+         next_signer = signer.first;
+         break;
+      }
+   }
+
+   if ((next_signer == invalid_signer) || (next_signer != plugin.get_current_son_id())) {
+      return "";
+   }
 
    return sign_transaction(sto.transaction, complete);
 }
