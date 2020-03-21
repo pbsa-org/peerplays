@@ -115,9 +115,9 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
    cli.add_options()("son-ids", bpo::value<string>(), ("IDs of multiple SONs controlled by this node (e.g. [" + son_id_example + ", " + son_id_example2 + "], quotes are required)").c_str());
    cli.add_options()("peerplays-private-key", bpo::value<vector<string>>()->composing()->multitoken()->DEFAULT_VALUE_VECTOR(std::make_pair(chain::public_key_type(default_priv_key.get_public_key()), graphene::utilities::key_to_wif(default_priv_key))),
                      "Tuple of [PublicKey, WIF private key] (may specify multiple times)");
-   cli.add_options()("bitcoin-node-ip", bpo::value<string>()->default_value("99.79.189.95"), "IP address of Bitcoin node");
+   cli.add_options()("bitcoin-node-ip", bpo::value<string>()->default_value("127.0.0.1"), "IP address of Bitcoin node");
    cli.add_options()("bitcoin-node-zmq-port", bpo::value<uint32_t>()->default_value(11111), "ZMQ port of Bitcoin node");
-   cli.add_options()("bitcoin-node-rpc-port", bpo::value<uint32_t>()->default_value(22222), "RPC port of Bitcoin node");
+   cli.add_options()("bitcoin-node-rpc-port", bpo::value<uint32_t>()->default_value(8332), "RPC port of Bitcoin node");
    cli.add_options()("bitcoin-node-rpc-user", bpo::value<string>()->default_value("1"), "Bitcoin RPC user");
    cli.add_options()("bitcoin-node-rpc-password", bpo::value<string>()->default_value("1"), "Bitcoin RPC password");
    cli.add_options()("bitcoin-wallet", bpo::value<string>(), "Bitcoin wallet");
@@ -360,6 +360,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
          // Tasks that are executed by all active SONs, no matter if scheduled
          // E.g. sending approvals and signing
          approve_proposals();
+
          process_sidechain_transactions();
 
          // Tasks that are executed by scheduled and active SON
