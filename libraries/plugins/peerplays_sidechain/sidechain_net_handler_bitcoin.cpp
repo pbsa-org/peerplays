@@ -17,6 +17,7 @@
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/utilities/key_conversion.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -870,7 +871,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          boost::property_tree::ptree address_info_pt;
          boost::property_tree::read_json(address_info_ss, address_info_pt);
 
-         std::string address = address_info_pt.get_child("result").get<std::string>("address");
+         std::string address = address_info_pt.get<std::string>("address");
+         std::string redeem_script = address_info_pt.get<std::string>("redeemScript");
 
          son_wallet_update_operation op;
          op.payer = gpo.parameters.son_account();
@@ -933,7 +935,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             fc::flat_map<std::string, double> outputs;
             outputs[active_pw_address] = total_amount - min_amount;
 
-            std::string tx_str = create_transaction(inputs, outputs, "");
+            std::string tx_str = create_transaction(inputs, outputs, redeem_script);
 
             if (!tx_str.empty()) {
 
@@ -1263,22 +1265,23 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    tx.nVersion = 2;
    tx.nLockTime = 0;
    tx.hasWitness = true;
+   vector<uint64_t> in_amounts;
    for(const auto& in: inputs)
    {
-      btc_in bin(in.txid_, in.out_num_, in.amount_);
-      tx.vin.push_back(bin);
+      tx.vin.push_back(btc_in(in.txid_, in.out_num_, in.amount_));
+      in_amounts.push_back(in.amount_);
    }
    for(const auto& out: outputs)
       tx.vout.push_back(btc_out(out.first, out.second));
    bytes buf;
    tx.to_bytes(buf);
-   if (!redeem_script.empty()) {
+   if (redeem_script.size()) {
       bytes redeem_script_bin;
       redeem_script_bin.resize(redeem_script.size() / 2);
       fc::from_hex(redeem_script, (char*)&redeem_script_bin[0], redeem_script_bin.size());
-      buf = add_dummy_signatures_for_pw_transfer(buf, redeem_script_bin, 15);
+      buf = add_dummy_signatures_for_pw_transfer(buf, redeem_script_bin, 15); // TODO: get son number from the script
    }
-   return fc::to_hex((char*)&buf[0], buf.size());
+   return save_tx_data_to_string(buf, in_amounts);
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto, bool &complete) {
@@ -1378,10 +1381,37 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const sidechain
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sidechain_transaction_object &sto, bool &complete) {
-   complete = false;
+   if(complete)
+      return sto.transaction;
 
-   complete = true;
-   return "";
+   uint64_t total_votes = 0;
+   uint64_t already_signed = 0;
+   for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
+      son_object son = plugin.get_son_object(sto.signatures[idx].first);
+      total_votes += son.total_votes;
+      if(!sto.signatures[idx].second.empty())
+         already_signed += son.total_votes;
+   }
+   set<son_id_type> owed_sons = plugin.get_sons();
+   bytes partially_signed_tx;
+   vector<uint64_t> in_amounts;
+   read_tx_data_from_string(sto.transaction, partially_signed_tx, in_amounts);
+   for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
+      if(!sto.signatures[idx].second.empty())
+         continue;
+      if(!owed_sons.count(sto.signatures[idx].first))
+         continue;
+      son_object son = plugin.get_son_object(sto.signatures[idx].first);
+      std::string btc_public_key = son.sidechain_public_keys[sidechain_type::bitcoin];
+      fc::optional<fc::ecc::private_key> btc_private_key = graphene::utilities::wif_to_key(private_keys[btc_public_key]);
+      partially_signed_tx = partially_sign_pw_transfer_transaction(partially_signed_tx, in_amounts, *btc_private_key, idx);
+      already_signed += son.total_votes;
+   }
+   complete = (3 * already_signed > 2 * total_votes);
+   if(complete)
+      return fc::to_hex((const char*)&partially_signed_tx[0], partially_signed_tx.size());
+
+   return save_tx_data_to_string(partially_signed_tx, in_amounts);
 }
 
 bool sidechain_net_handler_bitcoin::send_transaction_raw(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
