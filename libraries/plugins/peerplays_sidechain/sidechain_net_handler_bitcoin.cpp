@@ -331,6 +331,34 @@ std::string bitcoin_rpc_client::finalizepsbt(std::string const &tx_psbt) {
    return "";
 }
 
+std::string bitcoin_rpc_client::getaddressinfo(const std::string &address) {
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"getaddressinfo\", \"method\": "
+                                  "\"getaddressinfo\", \"params\": [\"" +
+                                  address + "\"] }");
+
+   const auto reply = send_post_request(body);
+
+   if (reply.body.empty()) {
+      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+      return "";
+   }
+
+   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   if (reply.status == 200) {
+      std::stringstream ss;
+      boost::property_tree::json_parser::write_json(ss, json.get_child("result"));
+      return ss.str();
+   }
+
+   if (json.count("error") && !json.get_child("error").empty()) {
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+   }
+   return "";
+}
+
 std::string bitcoin_rpc_client::getblock(const std::string &block_hash, int32_t verbosity) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"getblock\", \"method\": "
                                   "\"getblock\", \"params\": [\"" +
@@ -364,7 +392,7 @@ void bitcoin_rpc_client::importaddress(const std::string &address_or_script) {
                                  "\"method\": \"importaddress\", \"params\": [") +
                      std::string("\"") + address_or_script + std::string("\"") + std::string("] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -376,7 +404,6 @@ void bitcoin_rpc_client::importaddress(const std::string &address_or_script) {
    boost::property_tree::read_json(ss, json);
 
    if (reply.status == 200) {
-      idump((address_or_script)(ss.str()));
       return;
    } else if (json.count("error") && !json.get_child("error").empty()) {
       wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
@@ -760,6 +787,10 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
    listener = std::unique_ptr<zmq_listener>(new zmq_listener(ip, zmq_port));
    listener->event_received.connect([this](const std::string &event_data) {
       std::thread(&sidechain_net_handler_bitcoin::handle_event, this, event_data).detach();
+   });
+
+   database.changed_objects.connect([this](const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts) {
+      on_changed_objects(ids, accounts);
    });
 }
 
@@ -1316,6 +1347,27 @@ std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block
    }
 
    return result;
+}
+
+void sidechain_net_handler_bitcoin::on_changed_objects(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts) {
+   for (auto id : ids) {
+      if (id.is<son_wallet_object>()) {
+         const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+         auto swo = swi.find(id);
+         if (swo != swi.end()) {
+            std::stringstream pw_ss(swo->addresses.at(sidechain));
+            boost::property_tree::ptree pw_pt;
+            boost::property_tree::read_json(pw_ss, pw_pt);
+
+            std::string pw_redeem_script = "";
+
+            if (pw_pt.count("redeemScript")) {
+               pw_redeem_script = pw_pt.get<std::string>("redeemScript");
+               bitcoin_client->importaddress(pw_redeem_script);
+            }
+         }
+      }
+   }
 }
 
 // =============================================================================

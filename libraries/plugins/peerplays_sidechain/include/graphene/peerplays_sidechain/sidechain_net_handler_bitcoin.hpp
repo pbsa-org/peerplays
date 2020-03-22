@@ -30,6 +30,7 @@ public:
    std::string encryptwallet(const std::string &passphrase);
    uint64_t estimatesmartfee();
    std::string finalizepsbt(std::string const &tx_psbt);
+   std::string getaddressinfo(const std::string &address);
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);
    void importaddress(const std::string &address_or_script);
    std::vector<btc_txout> listunspent();
@@ -113,6 +114,7 @@ private:
 
    void handle_event(const std::string &event_data);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);
+   void on_changed_objects(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts);
 };
 
 }} // namespace graphene::peerplays_sidechain
