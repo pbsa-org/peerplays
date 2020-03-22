@@ -377,7 +377,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
          //process_leftover_sidechain_transactions(); ???
       }
    }
-} // namespace detail
+}
 
 void peerplays_sidechain_plugin_impl::approve_proposals() {
 
@@ -421,42 +421,61 @@ void peerplays_sidechain_plugin_impl::approve_proposals() {
          continue;
       }
 
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_report_down_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
+      if (proposal.proposed_transaction.operations.size() == 1) {
+         int32_t op_idx_0 = proposal.proposed_transaction.operations[0].which();
+
+         if (op_idx_0 == chain::operation::tag<chain::son_report_down_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
+
+         if (op_idx_0 == chain::operation::tag<chain::son_delete_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
+
+         if (op_idx_0 == chain::operation::tag<chain::son_wallet_update_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
+
+         if (op_idx_0 == chain::operation::tag<chain::son_wallet_deposit_create_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
+
+         if (op_idx_0 == chain::operation::tag<chain::son_wallet_withdraw_create_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
+
+         if (op_idx_0 == chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
+
+         if (op_idx_0 == chain::operation::tag<chain::sidechain_transaction_create_operation>::value) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
       }
 
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_delete_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
+      if (proposal.proposed_transaction.operations.size() == 2) {
+         int32_t op_idx_0 = proposal.proposed_transaction.operations[0].which();
+         int32_t op_idx_1 = proposal.proposed_transaction.operations[1].which();
+
+         if ((op_idx_0 == chain::operation::tag<chain::son_wallet_deposit_process_operation>::value) &&
+             (op_idx_1 == chain::operation::tag<chain::transfer_operation>::value)) {
+            approve_proposal(get_current_son_id(), proposal.id);
+            continue;
+         }
       }
 
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_update_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
-      }
-
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_deposit_create_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
-      }
-
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_deposit_process_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
-      }
-
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_withdraw_create_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
-      }
-
-      if (proposal.proposed_transaction.operations.size() == 1 && proposal.proposed_transaction.operations[0].which() == chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value) {
-         approve_proposal(get_current_son_id(), proposal.id);
-         continue;
-      }
-
-      approve_proposal(get_current_son_id(), proposal.id);
+      ilog("==================================================");
+      ilog("==================================================");
+      ilog("Proposal not approved ${proposal}", ("proposal", proposal));
+      ilog("==================================================");
+      ilog("==================================================");
    }
 }
 

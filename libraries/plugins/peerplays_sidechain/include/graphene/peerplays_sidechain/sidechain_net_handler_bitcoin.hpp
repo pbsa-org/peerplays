@@ -83,8 +83,8 @@ public:
    virtual ~sidechain_net_handler_bitcoin();
 
    void recreate_primary_wallet();
-   std::string process_deposit(const son_wallet_deposit_object &swdo);
-   std::string process_withdrawal(const son_wallet_withdraw_object &swwo);
+   bool process_deposit(const son_wallet_deposit_object &swdo);
+   bool process_withdrawal(const son_wallet_withdraw_object &swwo);
    std::string process_sidechain_transaction(const sidechain_transaction_object &sto, bool &complete);
    bool send_sidechain_transaction(const sidechain_transaction_object &sto);
 
@@ -111,10 +111,6 @@ private:
    std::string sign_transaction_raw(const std::string &tx, bool &complete);
    std::string sign_transaction_psbt(const std::string &tx, bool &complete);
    std::string sign_transaction_standalone(const std::string &tx, bool &complete);
-
-   std::string transfer_all_btc(const std::string &from_address, const std::string &to_address);
-   std::string transfer_deposit_to_primary_wallet(const son_wallet_deposit_object &swdo);
-   std::string transfer_withdrawal_from_primary_wallet(const son_wallet_withdraw_object &swwo);
 
    void handle_event(const std::string &event_data);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);

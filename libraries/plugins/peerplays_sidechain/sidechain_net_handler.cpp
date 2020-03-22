@@ -94,7 +94,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
             proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
-            signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
+            signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
             try {
                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
                if (plugin.app().p2p_node())
@@ -140,7 +140,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
             proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
-            signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
+            signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), proposal_op);
             try {
                database.push_transaction(trx, database::validation_steps::skip_block_size_check);
                if (plugin.app().p2p_node())
@@ -157,51 +157,42 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 }
 
 void sidechain_net_handler::process_deposits() {
-   const auto &idx = plugin.database().get_index_type<son_wallet_deposit_index>().indices().get<by_sidechain_and_processed>();
+   const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_sidechain_and_processed>();
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const son_wallet_deposit_object &swdo) {
       ilog("Deposit to process: ${swdo}", ("swdo", swdo));
 
-      std::string sidechain_tx = process_deposit(swdo);
+      bool process_deposit_result = process_deposit(swdo);
 
-      if (sidechain_tx.empty()) {
+      if (!process_deposit_result) {
          wlog("Deposit not processed: ${swdo}", ("swdo", swdo));
          return;
       }
 
       const chain::global_property_object &gpo = database.get_global_properties();
 
-      auto active_sons = gpo.active_sons;
-      std::vector<son_id_type> signers;
-      for (const son_info &si : active_sons) {
-         signers.push_back(si.son_id);
-      }
-
-      sidechain_transaction_create_operation stc_op;
-      stc_op.payer = GRAPHENE_SON_ACCOUNT;
-      //stc_op.son_wallet_id = ; // not set, not needed
-      stc_op.son_wallet_deposit_id = swdo.id;
-      //stc_op.son_wallet_withdraw_id = ; // not set, not needed
-      stc_op.sidechain = sidechain;
-      stc_op.transaction = sidechain_tx;
-      stc_op.signers = signers;
-
       son_wallet_deposit_process_operation swdp_op;
       swdp_op.payer = GRAPHENE_SON_ACCOUNT;
       swdp_op.son_wallet_deposit_id = swdo.id;
 
+      transfer_operation t_op;
+      t_op.fee = asset(2000000);
+      t_op.from = swdo.peerplays_to; // GRAPHENE_SON_ACCOUNT
+      t_op.to = swdo.peerplays_from;
+      t_op.amount = swdo.peerplays_asset;
+
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
-      proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
       proposal_op.proposed_ops.emplace_back(op_wrapper(swdp_op));
+      proposal_op.proposed_ops.emplace_back(op_wrapper(t_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
-      proposal_op.expiration_time = time_point_sec(plugin.database().head_block_time().sec_since_epoch() + lifetime);
+      proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
-      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
       trx.validate();
       try {
-         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
@@ -211,35 +202,20 @@ void sidechain_net_handler::process_deposits() {
 }
 
 void sidechain_net_handler::process_withdrawals() {
-   const auto &idx = plugin.database().get_index_type<son_wallet_withdraw_index>().indices().get<by_withdraw_sidechain_and_processed>();
+   const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_withdraw_sidechain_and_processed>();
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const son_wallet_withdraw_object &swwo) {
       ilog("Withdraw to process: ${swwo}", ("swwo", swwo));
 
-      std::string sidechain_tx = process_withdrawal(swwo);
+      bool process_withdrawal_result = process_withdrawal(swwo);
 
-      if (sidechain_tx.empty()) {
+      if (!process_withdrawal_result) {
          wlog("Withdraw not processed: ${swwo}", ("swwo", swwo));
          return;
       }
 
       const chain::global_property_object &gpo = database.get_global_properties();
-
-      auto active_sons = gpo.active_sons;
-      std::vector<son_id_type> signers;
-      for (const son_info &si : active_sons) {
-         signers.push_back(si.son_id);
-      }
-
-      sidechain_transaction_create_operation stc_op;
-      stc_op.payer = GRAPHENE_SON_ACCOUNT;
-      //stc_op.son_wallet_id = ; // not set, not needed
-      //stc_op.son_wallet_deposit_id = ; // not set, not needed
-      stc_op.son_wallet_withdraw_id = swwo.id;
-      stc_op.sidechain = sidechain;
-      stc_op.transaction = sidechain_tx;
-      stc_op.signers = signers;
 
       son_wallet_withdraw_process_operation swwp_op;
       swwp_op.payer = GRAPHENE_SON_ACCOUNT;
@@ -247,15 +223,14 @@ void sidechain_net_handler::process_withdrawals() {
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
-      proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
       proposal_op.proposed_ops.emplace_back(op_wrapper(swwp_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
-      proposal_op.expiration_time = time_point_sec(plugin.database().head_block_time().sec_since_epoch() + lifetime);
+      proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
-      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
       trx.validate();
       try {
-         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
@@ -265,7 +240,7 @@ void sidechain_net_handler::process_withdrawals() {
 }
 
 void sidechain_net_handler::process_sidechain_transactions() {
-   const auto &idx = plugin.database().get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete>();
+   const auto &idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete>();
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
@@ -285,10 +260,10 @@ void sidechain_net_handler::process_sidechain_transactions() {
       sts_op.transaction = processed_sidechain_tx;
       sts_op.complete = complete;
 
-      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
       trx.validate();
       try {
-         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
@@ -298,7 +273,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
 }
 
 void sidechain_net_handler::send_sidechain_transactions() {
-   const auto &idx = plugin.database().get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete_and_sent>();
+   const auto &idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete_and_sent>();
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
@@ -315,10 +290,10 @@ void sidechain_net_handler::send_sidechain_transactions() {
       sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
       sts_op.sidechain_transaction_id = sto.id;
 
-      signed_transaction trx = plugin.database().create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
       trx.validate();
       try {
-         plugin.database().push_transaction(trx, database::validation_steps::skip_block_size_check);
+         database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       } catch (fc::exception e) {
@@ -331,11 +306,11 @@ void sidechain_net_handler::recreate_primary_wallet() {
    FC_ASSERT(false, "recreate_primary_wallet not implemented");
 }
 
-std::string sidechain_net_handler::process_deposit(const son_wallet_deposit_object &swdo) {
+bool sidechain_net_handler::process_deposit(const son_wallet_deposit_object &swdo) {
    FC_ASSERT(false, "process_deposit not implemented");
 }
 
-std::string sidechain_net_handler::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+bool sidechain_net_handler::process_withdrawal(const son_wallet_withdraw_object &swwo) {
    FC_ASSERT(false, "process_withdrawal not implemented");
 }
 
