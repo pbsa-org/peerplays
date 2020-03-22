@@ -1355,16 +1355,13 @@ void sidechain_net_handler_bitcoin::on_changed_objects(const vector<object_id_ty
          const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
          auto swo = swi.find(id);
          if (swo != swi.end()) {
-            std::stringstream pw_ss(swo->addresses.at(sidechain));
-            boost::property_tree::ptree pw_pt;
-            boost::property_tree::read_json(pw_ss, pw_pt);
-
-            std::string pw_redeem_script = "";
-
-            if (pw_pt.count("redeemScript")) {
-               pw_redeem_script = pw_pt.get<std::string>("redeemScript");
-               bitcoin_client->importaddress(pw_redeem_script);
+            auto sons = swo.sons;
+            vector<string> son_pubkeys_bitcoin;
+            for (const son_info &si : active_sons) {
+               son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
             }
+            uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+            bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
          }
       }
    }
