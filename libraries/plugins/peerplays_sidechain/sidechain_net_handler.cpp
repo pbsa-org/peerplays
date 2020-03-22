@@ -183,7 +183,7 @@ void sidechain_net_handler::process_deposits() {
       t_op.amount = swdo.peerplays_asset;
 
       proposal_create_operation proposal_op;
-      proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(op_wrapper(swdp_op));
       proposal_op.proposed_ops.emplace_back(op_wrapper(t_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
@@ -222,7 +222,7 @@ void sidechain_net_handler::process_withdrawals() {
       swwp_op.son_wallet_withdraw_id = swwo.id;
 
       proposal_create_operation proposal_op;
-      proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(op_wrapper(swwp_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
@@ -255,7 +255,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
       }
 
       sidechain_transaction_sign_operation sts_op;
-      sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      sts_op.payer = plugin.get_current_son_object().son_account;
       sts_op.sidechain_transaction_id = sto.id;
       sts_op.transaction = processed_sidechain_tx;
       sts_op.complete = complete;
@@ -287,7 +287,7 @@ void sidechain_net_handler::send_sidechain_transactions() {
       }
 
       sidechain_transaction_send_operation sts_op;
-      sts_op.payer = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      sts_op.payer = plugin.get_current_son_object().son_account;
       sts_op.sidechain_transaction_id = sto.id;
 
       signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);

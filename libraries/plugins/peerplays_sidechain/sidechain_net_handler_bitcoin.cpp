@@ -799,7 +799,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             op.address = res.str();
 
             proposal_create_operation proposal_op;
-            proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+            proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
             proposal_op.proposed_ops.emplace_back(op_wrapper(op));
             uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
             proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
@@ -871,7 +871,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                   stc_op.signers = signers;
 
                   proposal_create_operation proposal_op;
-                  proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+                  proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
                   proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
                   uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
                   proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
@@ -947,7 +947,7 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
       stc_op.signers = signers;
 
       proposal_create_operation proposal_op;
-      proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
@@ -1029,7 +1029,7 @@ bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw
       stc_op.signers = signers;
 
       proposal_create_operation proposal_op;
-      proposal_op.fee_paying_account = plugin.get_son_object(plugin.get_current_son_id()).son_account;
+      proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
