@@ -87,7 +87,7 @@ std::string bitcoin_rpc_client::createpsbt(const std::vector<btc_txout> &ins, co
    }
    body += std::string("]] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -131,7 +131,7 @@ std::string bitcoin_rpc_client::createrawtransaction(const std::vector<btc_txout
    }
    body += std::string("]] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -273,7 +273,7 @@ uint64_t bitcoin_rpc_client::estimatesmartfee() {
                                  "\"method\": \"estimatesmartfee\", \"params\": [") +
                      std::to_string(confirmation_target_blocks) + std::string("] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -310,7 +310,7 @@ std::string bitcoin_rpc_client::finalizepsbt(std::string const &tx_psbt) {
                                   "\"finalizepsbt\", \"params\": [\"" +
                                   tx_psbt + "\"] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -486,7 +486,7 @@ bool bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
                                  "\"method\": \"sendrawtransaction\", \"params\": [") +
                      std::string("\"") + tx_hex + std::string("\"") + std::string("] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -508,17 +508,13 @@ bool bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
    return false;
 }
 
-std::string bitcoin_rpc_client::signrawtransactionwithkey(const std::string &tx_hash, const std::string &private_key) {
-   return "";
-}
-
 std::string bitcoin_rpc_client::signrawtransactionwithwallet(const std::string &tx_hash) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"signrawtransactionwithwallet\", "
                                   "\"method\": \"signrawtransactionwithwallet\", \"params\": [");
    std::string params = "\"" + tx_hash + "\"";
    body = body + params + std::string("]}");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -599,7 +595,7 @@ std::string bitcoin_rpc_client::walletprocesspsbt(std::string const &tx_psbt) {
                                   "\"walletprocesspsbt\", \"params\": [\"" +
                                   tx_psbt + "\"] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -658,7 +654,6 @@ fc::http::reply bitcoin_rpc_client::send_post_request(std::string body, bool sho
 
    fc::http::reply reply = conn.request("POST", url, body, fc::http::headers{authorization});
 
-   show_log = true; // Log all requests temporary
    if (show_log) {
       ilog("### Request URL:    ${url}", ("url", url));
       ilog("### Request:        ${body}", ("body", body));
@@ -829,7 +824,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
 
                if (prev_pw_address == active_pw_address) {
-                  elog("BTC Primary wallet funds not transfered from ${prev_sw} to ${active_sw}", ("prev_sw", *prev_sw)("active_sw", *active_sw));
+                  elog("BTC previous and new primary wallet addresses are same. No funds moving needed [from ${prev_sw} to ${active_sw}]", ("prev_sw", prev_sw->id)("active_sw", active_sw->id));
                   return;
                }
 
@@ -1196,7 +1191,6 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const std::strin
    bool complete_raw = json_res.get<bool>("complete");
 
    if (complete_raw) {
-      std::string decoded_raw = bitcoin_client->decoderawtransaction(new_tx_raw);
       complete = true;
       return new_tx_raw;
    }
@@ -1245,7 +1239,6 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const std::stri
       bool complete_raw = json_res.get<bool>("complete");
 
       if (complete_raw) {
-         std::string decoded_raw = bitcoin_client->decoderawtransaction(new_tx_raw);
          complete = true;
          return new_tx_raw;
       }

@@ -36,7 +36,6 @@ public:
    std::vector<btc_txout> listunspent_by_address_and_amount(const std::string &address, double transfer_amount);
    std::string loadwallet(const std::string &filename);
    bool sendrawtransaction(const std::string &tx_hex);
-   std::string signrawtransactionwithkey(const std::string &tx_hash, const std::string &private_key);
    std::string signrawtransactionwithwallet(const std::string &tx_hash);
    std::string unloadwallet(const std::string &filename);
    std::string walletlock();
