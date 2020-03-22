@@ -100,6 +100,8 @@ private:
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    std::unique_ptr<zmq_listener> listener;
 
+   fc::future<void> on_changed_objects_task;
+
    std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string sign_transaction(const std::string &tx, bool &complete);
    bool send_transaction(const std::string &tx);
@@ -115,6 +117,7 @@ private:
    void handle_event(const std::string &event_data);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);
    void on_changed_objects(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts);
+   void on_changed_objects_cb(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts);
 };
 
 }} // namespace graphene::peerplays_sidechain

@@ -795,6 +795,15 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
 }
 
 sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
+   try {
+      if (on_changed_objects_task.valid()) {
+         on_changed_objects_task.cancel_and_wait(__FUNCTION__);
+      }
+   } catch (fc::canceled_exception &) {
+      //Expected exception. Move along.
+   } catch (fc::exception &e) {
+      edump((e.to_detail_string()));
+   }
 }
 
 void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
@@ -1350,6 +1359,18 @@ std::vector<info_for_vin> sidechain_net_handler_bitcoin::extract_info_from_block
 }
 
 void sidechain_net_handler_bitcoin::on_changed_objects(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts) {
+   fc::time_point now = fc::time_point::now();
+   int64_t time_to_next_changed_objects_processing = 5000;
+
+   fc::time_point next_wakeup(now + fc::microseconds(time_to_next_changed_objects_processing));
+
+   on_changed_objects_task = fc::schedule([this, ids, accounts] {
+      on_changed_objects_cb(ids, accounts);
+   },
+                                       next_wakeup, "SON Processing");
+}
+
+void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts) {
    for (auto id : ids) {
       if (id.is<son_wallet_object>()) {
          const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
