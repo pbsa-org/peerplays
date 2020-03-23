@@ -22,6 +22,7 @@ namespace graphene { namespace chain {
          std::string transaction;
          std::vector<std::pair<son_id_type, bool>> signers;
 
+         block_id_type block;
          bool valid = false;
          bool complete = false;
          bool sent = false;
@@ -62,6 +63,7 @@ FC_REFLECT_DERIVED( graphene::chain::sidechain_transaction_object, (graphene::db
                     (object_id)
                     (transaction)
                     (signers)
+                    (block)
                     (valid)
                     (complete)
                     (sent) )

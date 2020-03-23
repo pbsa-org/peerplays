@@ -33,6 +33,7 @@ object_id_type sidechain_transaction_create_evaluator::do_apply(const sidechain_
       std::transform(op.signers.begin(), op.signers.end(), std::inserter(sto.signers, sto.signers.end()), [](const son_id_type son_id) {
          return std::make_pair(son_id, false);
       });
+      sto.block = db().head_block_id();
       sto.valid = true;
       sto.complete = false;
       sto.sent = false;
@@ -60,6 +61,8 @@ void_result sidechain_transaction_sign_evaluator::do_evaluate(const sidechain_tr
    }
    FC_ASSERT(expected, "Signer not expected");
 
+   FC_ASSERT(sto_obj->block == op.block, "Sidechain transaction already signed in this block");
+
    FC_ASSERT(sto_obj->valid, "Transaction not valid");
    FC_ASSERT(!sto_obj->complete, "Transaction signing completed");
    FC_ASSERT(!sto_obj->sent, "Transaction already sent");
@@ -77,6 +80,7 @@ object_id_type sidechain_transaction_sign_evaluator::do_apply(const sidechain_tr
 
    db().modify(*sto_obj, [&](sidechain_transaction_object &sto) {
       sto.transaction = op.transaction;
+      sto.block = db().head_block_id();
       sto.complete = op.complete;
       for (size_t i = 0; i < sto.signers.size(); i++) {
          if (sto.signers.at(i).first == son_obj->id) {
@@ -113,6 +117,7 @@ object_id_type sidechain_transaction_send_evaluator::do_apply(const sidechain_tr
    auto sto_obj = sto_idx.find(op.sidechain_transaction_id);
 
    db().modify(*sto_obj, [&](sidechain_transaction_object &sto) {
+      sto.block = db().head_block_id();
       sto.sent = true;
    });
 
