@@ -834,7 +834,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
             son_wallet_update_operation op;
             op.payer = GRAPHENE_SON_ACCOUNT;
-            op.son_wallet_id = (*active_sw).id;
+            op.son_wallet_id = active_sw->id;
             op.sidechain = sidechain_type::bitcoin;
             op.address = res.str();
 
@@ -905,7 +905,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
                   sidechain_transaction_create_operation stc_op;
                   stc_op.payer = GRAPHENE_SON_ACCOUNT;
-                  stc_op.son_wallet_id = (*prev_sw).id;
+                  stc_op.object_id = prev_sw->id;
                   stc_op.sidechain = sidechain;
                   stc_op.transaction = tx_str;
                   stc_op.signers = signers;
@@ -981,7 +981,7 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 
       sidechain_transaction_create_operation stc_op;
       stc_op.payer = GRAPHENE_SON_ACCOUNT;
-      stc_op.son_wallet_deposit_id = swdo.id;
+      stc_op.object_id = swdo.id;
       stc_op.sidechain = sidechain;
       stc_op.transaction = tx_str;
       stc_op.signers = signers;
@@ -1063,7 +1063,7 @@ bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw
 
       sidechain_transaction_create_operation stc_op;
       stc_op.payer = GRAPHENE_SON_ACCOUNT;
-      stc_op.son_wallet_withdraw_id = swwo.id;
+      stc_op.object_id = swwo.id;
       stc_op.sidechain = sidechain;
       stc_op.transaction = tx_str;
       stc_op.signers = signers;

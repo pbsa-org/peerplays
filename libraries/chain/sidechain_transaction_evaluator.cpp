@@ -13,11 +13,13 @@ void_result sidechain_transaction_create_evaluator::do_evaluate(const sidechain_
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT( op.payer == GRAPHENE_SON_ACCOUNT, "SON paying account must be set as payer." );
 
-   //FC_ASSERT( (!op.son_wallet_id && !op.son_wallet_deposit_id && !op.son_wallet_withdraw_id), "Sidechain transaction origin not set." );
-   //FC_ASSERT( op.son_wallet_id && op.son_wallet_deposit_id, "Sidechain transaction origin ambiguous. Single origin required." );
-   //FC_ASSERT( op.son_wallet_id && op.son_wallet_withdraw_id, "Sidechain transaction origin ambiguous. Single origin required." );
-   //FC_ASSERT( op.son_wallet_deposit_id && op.son_wallet_withdraw_id, "Sidechain transaction origin ambiguous. Single origin required." );
-   FC_ASSERT( !op.transaction.empty(), "Sidechain transaction data not set." );
+   FC_ASSERT((op.object_id.is<son_wallet_id_type>() || op.object_id.is<son_wallet_deposit_id_type>() || op.object_id.is<son_wallet_withdraw_id_type>()), "Invalid object id");
+
+   const auto &sto_idx = db().get_index_type<sidechain_transaction_index>().indices().get<by_object_id>();
+   const auto &sto_obj = sto_idx.find(op.object_id);
+   FC_ASSERT(sto_obj == sto_idx.end(), "Sidechain transaction for a given object is already created");
+
+   FC_ASSERT(!op.transaction.empty(), "Sidechain transaction data not set");
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( ( op ) ) }
@@ -26,9 +28,7 @@ object_id_type sidechain_transaction_create_evaluator::do_apply(const sidechain_
 { try {
    const auto &new_sidechain_transaction_object = db().create<sidechain_transaction_object>([&](sidechain_transaction_object &sto) {
       sto.sidechain = op.sidechain;
-      sto.son_wallet_id = op.son_wallet_id;
-      sto.son_wallet_deposit_id = op.son_wallet_deposit_id;
-      sto.son_wallet_withdraw_id = op.son_wallet_withdraw_id;
+      sto.object_id = op.object_id;
       sto.transaction = op.transaction;
       std::transform(op.signers.begin(), op.signers.end(), std::inserter(sto.signers, sto.signers.end()), [](const son_id_type son_id) {
          return std::make_pair(son_id, false);

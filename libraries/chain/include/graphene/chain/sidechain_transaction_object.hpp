@@ -18,9 +18,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = sidechain_transaction_object_type;
 
          sidechain_type sidechain;
-         optional<son_wallet_id_type> son_wallet_id;
-         optional<son_wallet_deposit_id_type> son_wallet_deposit_id;
-         optional<son_wallet_withdraw_id_type> son_wallet_withdraw_id;
+         object_id_type object_id;
          std::string transaction;
          std::vector<std::pair<son_id_type, bool>> signers;
 
@@ -29,6 +27,7 @@ namespace graphene { namespace chain {
          bool sent = false;
    };
 
+   struct by_object_id;
    struct by_sidechain_and_complete;
    struct by_sidechain_and_complete_and_sent;
    using sidechain_transaction_multi_index_type = multi_index_container<
@@ -36,6 +35,9 @@ namespace graphene { namespace chain {
       indexed_by<
          ordered_unique< tag<by_id>,
             member<object, object_id_type, &object::id>
+         >,
+         ordered_unique< tag<by_object_id>,
+            member<sidechain_transaction_object, object_id_type, &sidechain_transaction_object::object_id>
          >,
          ordered_non_unique< tag<by_sidechain_and_complete>,
             composite_key<sidechain_transaction_object,
@@ -57,9 +59,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::sidechain_transaction_object, (graphene::db::object ),
                     (sidechain)
-                    (son_wallet_id)
-                    (son_wallet_deposit_id)
-                    (son_wallet_withdraw_id)
+                    (object_id)
                     (transaction)
                     (signers)
                     (valid)

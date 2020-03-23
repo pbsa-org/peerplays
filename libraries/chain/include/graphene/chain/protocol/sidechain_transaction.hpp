@@ -13,9 +13,7 @@ namespace graphene { namespace chain {
       account_id_type payer;
 
       sidechain_type sidechain;
-      optional<son_wallet_id_type> son_wallet_id;
-      optional<son_wallet_deposit_id_type> son_wallet_deposit_id;
-      optional<son_wallet_withdraw_id_type> son_wallet_withdraw_id;
+      object_id_type object_id;
       std::string transaction;
       std::vector<son_id_type> signers;
 
@@ -56,9 +54,7 @@ namespace graphene { namespace chain {
 FC_REFLECT( graphene::chain::sidechain_transaction_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::sidechain_transaction_create_operation, (fee)(payer)
         (sidechain)
-        (son_wallet_id)
-        (son_wallet_deposit_id)
-        (son_wallet_withdraw_id)
+        (object_id)
         (transaction)
         (signers) )
 
