@@ -1155,9 +1155,9 @@ bool sidechain_net_handler_bitcoin::send_sidechain_transaction(const sidechain_t
 std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::string> &son_pubkeys_bitcoin, const std::vector<uint64_t>& son_votes)
 {
    std::string new_address = "";
-   //new_tx = create_multisig_address_raw(son_pubkeys);
-   new_address = create_multisig_address_psbt(son_pubkeys_bitcoin);
-   //new_tx = create_multisig_address_standalone(son_pubkeys_bitcoin, son_votes);
+   //new_address = create_multisig_address_raw(son_pubkeys);
+   //new_address = create_multisig_address_psbt(son_pubkeys_bitcoin);
+   new_address = create_multisig_address_standalone(son_pubkeys_bitcoin, son_votes);
    return new_address;
 }
 
@@ -1166,8 +1166,8 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::ve
 std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs, const std::string& extra_data) {
    std::string new_tx = "";
    //new_tx = create_transaction_raw(inputs, outputs);
-   new_tx = create_transaction_psbt(inputs, outputs);
-   //new_tx = create_transaction_standalone(inputs, outputs, extra_data);
+   //new_tx = create_transaction_psbt(inputs, outputs);
+   new_tx = create_transaction_standalone(inputs, outputs, extra_data);
    return new_tx;
 }
 
@@ -1177,8 +1177,8 @@ std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_tran
    complete = false;
    std::string new_tx = "";
    //new_tx = sign_transaction_raw(sto, complete);
-   new_tx = sign_transaction_psbt(sto, complete);
-   //new_tx = sign_transaction_standalone(sto, complete);
+   //new_tx = sign_transaction_psbt(sto, complete);
+   new_tx = sign_transaction_standalone(sto, complete);
    return new_tx;
 }
 
