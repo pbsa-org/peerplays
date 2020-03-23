@@ -23,22 +23,22 @@ object_id_type create_son_wallet_deposit_evaluator::do_apply(const son_wallet_de
    const auto& idx = db().get_index_type<son_wallet_deposit_index>().indices().get<by_sidechain_uid>();
    auto itr = idx.find(op.sidechain_uid);
    if (itr == idx.end()) {
-      const auto& new_son_wallet_deposit_object = db().create<son_wallet_deposit_object>( [&]( son_wallet_deposit_object& swto ){
-         swto.timestamp = op.timestamp;
-         swto.sidechain = op.sidechain;
-         swto.sidechain_uid = op.sidechain_uid;
-         swto.sidechain_transaction_id = op.sidechain_transaction_id;
-         swto.sidechain_from = op.sidechain_from;
-         swto.sidechain_to = op.sidechain_to;
-         swto.sidechain_currency = op.sidechain_currency;
-         swto.sidechain_amount = op.sidechain_amount;
-         swto.peerplays_from = op.peerplays_from;
-         swto.peerplays_to = op.peerplays_to;
-         swto.peerplays_asset = op.peerplays_asset;
+      const auto& new_son_wallet_deposit_object = db().create<son_wallet_deposit_object>( [&]( son_wallet_deposit_object& swdo ){
+         swdo.timestamp = op.timestamp;
+         swdo.sidechain = op.sidechain;
+         swdo.sidechain_uid = op.sidechain_uid;
+         swdo.sidechain_transaction_id = op.sidechain_transaction_id;
+         swdo.sidechain_from = op.sidechain_from;
+         swdo.sidechain_to = op.sidechain_to;
+         swdo.sidechain_currency = op.sidechain_currency;
+         swdo.sidechain_amount = op.sidechain_amount;
+         swdo.peerplays_from = op.peerplays_from;
+         swdo.peerplays_to = op.peerplays_to;
+         swdo.peerplays_asset = op.peerplays_asset;
 
          auto &gpo = db().get_global_properties();
          for (auto &si : gpo.active_sons) {
-            swto.expected_reports.insert(si.son_id);
+            swdo.expected_reports.insert(si.son_id);
 
             auto stats_itr = db().get_index_type<son_stats_index>().indices().get<by_owner>().find(si.son_id);
             db().modify(*stats_itr, [&op, &si](son_statistics_object &sso) {
@@ -49,14 +49,14 @@ object_id_type create_son_wallet_deposit_evaluator::do_apply(const son_wallet_de
             });
          }
 
-         swto.received_reports.insert(op.son_id);
+         swdo.received_reports.insert(op.son_id);
 
-         swto.processed = false;
+         swdo.processed = false;
       });
       return new_son_wallet_deposit_object.id;
    } else {
-      db().modify(*itr, [&op](son_wallet_deposit_object &swto) {
-         swto.received_reports.insert(op.son_id);
+      db().modify(*itr, [&op](son_wallet_deposit_object &swdo) {
+         swdo.received_reports.insert(op.son_id);
       });
       auto stats_itr = db().get_index_type<son_stats_index>().indices().get<by_owner>().find(op.son_id);
       db().modify(*stats_itr, [&op](son_statistics_object &sso) {
@@ -74,6 +74,7 @@ void_result process_son_wallet_deposit_evaluator::do_evaluate(const son_wallet_d
    const auto& idx = db().get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
    const auto& itr = idx.find(op.son_wallet_deposit_id);
    FC_ASSERT(itr != idx.end(), "Son wallet deposit not found");
+   FC_ASSERT(!itr->processed, "Son wallet deposit is already processed");
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -83,11 +84,9 @@ object_id_type process_son_wallet_deposit_evaluator::do_apply(const son_wallet_d
    auto itr = idx.find(op.son_wallet_deposit_id);
    if(itr != idx.end())
    {
-       if (itr->processed == false) {
-          db().modify(*itr, [&op](son_wallet_deposit_object &swto) {
-             swto.processed = true;
-          });
-       }
+      db().modify(*itr, [&op](son_wallet_deposit_object &swdo) {
+         swdo.processed = true;
+      });
    }
    return op.son_wallet_deposit_id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
