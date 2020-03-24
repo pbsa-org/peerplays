@@ -45,7 +45,7 @@ std::string bitcoin_rpc_client::addmultisigaddress(const uint32_t nrequired, con
    params = params + pubkeys + std::string("]");
    body = body + params + std::string("] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -821,6 +821,10 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          for (const son_info &si : active_sons) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
          }
+
+         if (!wallet_password.empty()) {
+            bitcoin_client->walletpassphrase(wallet_password, 5);
+         }
          uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
          string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
 
@@ -1367,7 +1371,7 @@ void sidechain_net_handler_bitcoin::on_changed_objects(const vector<object_id_ty
    on_changed_objects_task = fc::schedule([this, ids, accounts] {
       on_changed_objects_cb(ids, accounts);
    },
-                                       next_wakeup, "SON Processing");
+                                          next_wakeup, "SON Processing");
 }
 
 void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts) {
@@ -1381,6 +1385,9 @@ void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id
                son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
             }
             uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+            if (!wallet_password.empty()) {
+               bitcoin_client->walletpassphrase(wallet_password, 5);
+            }
             bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
          }
       }
