@@ -489,7 +489,7 @@ void peerplays_sidechain_plugin_impl::create_son_down_proposals() {
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = get_current_son_object().son_account;
-      proposal_op.proposed_ops.push_back(op_wrapper(son_down_op));
+      proposal_op.proposed_ops.emplace_back(op_wrapper(son_down_op));
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(d.head_block_time().sec_since_epoch() + lifetime);
       return proposal_op;

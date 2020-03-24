@@ -844,7 +844,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
             proposal_create_operation proposal_op;
             proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
-            proposal_op.proposed_ops.emplace_back(op_wrapper(op));
+            proposal_op.proposed_ops.emplace_back(op);
             uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
             proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -916,7 +916,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
                   proposal_create_operation proposal_op;
                   proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
-                  proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
+                  proposal_op.proposed_ops.emplace_back(stc_op);
                   uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
                   proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -992,7 +992,7 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
-      proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
+      proposal_op.proposed_ops.emplace_back(stc_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -1074,7 +1074,7 @@ bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
-      proposal_op.proposed_ops.emplace_back(op_wrapper(stc_op));
+      proposal_op.proposed_ops.emplace_back(stc_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -1380,15 +1380,25 @@ void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id
          const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
          auto swo = swi.find(id);
          if (swo != swi.end()) {
-            vector<string> son_pubkeys_bitcoin;
-            for (const son_info &si : swo->sons) {
-               son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
-            }
-            uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+            std::stringstream pw_ss(swo->addresses.at(sidechain));
+            boost::property_tree::ptree pw_pt;
+            boost::property_tree::read_json(pw_ss, pw_pt);
+
             if (!wallet_password.empty()) {
                bitcoin_client->walletpassphrase(wallet_password, 5);
             }
-            bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
+
+            std::string pw_address = "";
+            if (pw_pt.count("address")) {
+               pw_address = pw_pt.get<std::string>("address");
+               bitcoin_client->importaddress(pw_address);
+            }
+
+            std::string pw_redeem_script = "";
+            if (pw_pt.count("redeemScript")) {
+               pw_redeem_script = pw_pt.get<std::string>("redeemScript");
+               bitcoin_client->importaddress(pw_redeem_script);
+            }
          }
       }
    }
