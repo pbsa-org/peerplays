@@ -489,7 +489,7 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent_by_address_and_amount(con
    body += std::to_string(minimum_amount);
    body += std::string("}] }");
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    std::vector<btc_txout> result;
    if (reply.body.empty()) {
@@ -862,6 +862,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          }
 
          std::string full_address_info = create_multisig_address(son_pubkeys_bitcoin, son_votes);
+         ilog("multisig address: ${addr}", ("addr", full_address_info));
          if(!full_address_info.size())
          {
             elog("Failed to create multisig address");
@@ -898,12 +899,15 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
          const auto &prev_sw = std::next(active_sw);
          if (prev_sw != swi.rend()) {
+            ilog("transfer all btc...");
             std::stringstream prev_sw_ss(prev_sw->addresses.at(sidechain_type::bitcoin));
             boost::property_tree::ptree prev_sw_pt;
             boost::property_tree::read_json(prev_sw_ss, prev_sw_pt);
 
             std::string active_pw_address = address;
             std::string prev_pw_address = prev_sw_pt.get<std::string>("address");
+            std::string prev_redeem_script = prev_sw_pt.get<std::string>("redeemScript");
+            ilog("From ${from} to ${to}", ("from", prev_pw_address)("to", active_pw_address));
 
             if (prev_pw_address == active_pw_address) {
                elog("BTC previous and new primary wallet addresses are same. No funds moving needed [from ${prev_sw} to ${active_sw}]", ("prev_sw", prev_sw->id)("active_sw", active_sw->id));
@@ -935,7 +939,8 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             fc::flat_map<std::string, double> outputs;
             outputs[active_pw_address] = total_amount - min_amount;
 
-            std::string tx_str = create_transaction(inputs, outputs, redeem_script);
+            std::string tx_str = create_transaction(inputs, outputs, prev_redeem_script);
+            ilog("Tx: [${tx}]", ("tx", tx_str));
 
             if (!tx_str.empty()) {
 
@@ -1269,10 +1274,10 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    for(const auto& in: inputs)
    {
       tx.vin.push_back(btc_in(in.txid_, in.out_num_, in.amount_));
-      in_amounts.push_back(in.amount_);
+      in_amounts.push_back(in.amount_ * 100000000.0);
    }
    for(const auto& out: outputs)
-      tx.vout.push_back(btc_out(out.first, out.second));
+      tx.vout.push_back(btc_out(out.first, out.second * 100000000.0));
    bytes buf;
    tx.to_bytes(buf);
    if (redeem_script.size()) {
