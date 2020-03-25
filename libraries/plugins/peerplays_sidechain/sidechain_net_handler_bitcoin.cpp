@@ -804,6 +804,13 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
          if (!key_pair.first.length() || !key_pair.second.length()) {
             FC_THROW("Invalid public private key pair.");
          }
+         fc::optional<fc::ecc::private_key> privkey = graphene::utilities::wif_to_key(key_pair.second);
+         if (!privkey)
+            FC_THROW("Invalid private key.");
+         fc::ecc::public_key derived = privkey->get_public_key();
+         fc::ecc::public_key_data kd = derived.serialize();
+         if (fc::to_hex(kd.data, kd.size()) != key_pair.first)
+            FC_THROW("Public key doesn't match private key.");
          private_keys[key_pair.first] = key_pair.second;
       }
    }
@@ -1244,10 +1251,7 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    vector<pair<std::string, uint64_t>> son_data;
    for(unsigned idx = 0; idx < son_pubkeys.size(); ++idx)
       son_data.push_back(make_pair(son_pubkeys[idx], son_votes[idx]));
-   sort(son_data.begin(), son_data.end(),
-        [](const pair<string, uint64_t>& p1, const pair<string, uint64_t>& p2) -> bool
-         { return p1.second > p2.second; }
-   );
+   ilog("keys data123: ${kd}", ("kd", son_data));
 
    std::string address = get_weighted_multisig_address(son_data);
    bytes redeem_script = get_weighted_multisig_redeem_script(son_data);
@@ -1397,18 +1401,20 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
       if(!sto.signatures[idx].second.empty())
          already_signed += son.total_votes;
    }
-   set<son_id_type> owed_sons = plugin.get_sons();
+   set<son_id_type> owned_sons = plugin.get_sons();
    bytes partially_signed_tx;
    vector<uint64_t> in_amounts;
    read_tx_data_from_string(sto.transaction, partially_signed_tx, in_amounts);
    for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
       if(!sto.signatures[idx].second.empty())
          continue;
-      if(!owed_sons.count(sto.signatures[idx].first))
+      if(!owned_sons.count(sto.signatures[idx].first))
          continue;
       son_object son = plugin.get_son_object(sto.signatures[idx].first);
       std::string btc_public_key = son.sidechain_public_keys[sidechain_type::bitcoin];
       fc::optional<fc::ecc::private_key> btc_private_key = graphene::utilities::wif_to_key(private_keys[btc_public_key]);
+      ilog("Sign with public key ${pub}, private key ${priv}, index ${idx}",
+           ("pub", btc_public_key)("priv", *btc_private_key)("idx", idx));
       partially_signed_tx = partially_sign_pw_transfer_transaction(partially_signed_tx, in_amounts, *btc_private_key, idx);
       already_signed += son.total_votes;
    }
