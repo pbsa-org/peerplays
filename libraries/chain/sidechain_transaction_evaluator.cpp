@@ -11,7 +11,7 @@ namespace graphene { namespace chain {
 void_result sidechain_transaction_create_evaluator::do_evaluate(const sidechain_transaction_create_operation &op)
 { try {
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
-   FC_ASSERT( op.payer == GRAPHENE_SON_ACCOUNT, "SON paying account must be set as payer." );
+   FC_ASSERT( op.payer == db().get_global_properties().parameters.son_account(), "SON paying account must be set as payer." );
 
    FC_ASSERT((op.object_id.is<son_wallet_id_type>() || op.object_id.is<son_wallet_deposit_id_type>() || op.object_id.is<son_wallet_withdraw_id_type>()), "Invalid object id");
 

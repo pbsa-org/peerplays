@@ -837,7 +837,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
             boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
 
             son_wallet_update_operation op;
-            op.payer = GRAPHENE_SON_ACCOUNT;
+            op.payer = gpo.parameters.son_account();
             op.son_wallet_id = active_sw->id;
             op.sidechain = sidechain_type::bitcoin;
             op.address = res.str();
@@ -908,7 +908,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                   }
 
                   sidechain_transaction_create_operation stc_op;
-                  stc_op.payer = GRAPHENE_SON_ACCOUNT;
+                  stc_op.payer = gpo.parameters.son_account();
                   stc_op.object_id = prev_sw->id;
                   stc_op.sidechain = sidechain;
                   stc_op.transaction = tx_str;
@@ -984,7 +984,7 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
       }
 
       sidechain_transaction_create_operation stc_op;
-      stc_op.payer = GRAPHENE_SON_ACCOUNT;
+      stc_op.payer = gpo.parameters.son_account();
       stc_op.object_id = swdo.id;
       stc_op.sidechain = sidechain;
       stc_op.transaction = tx_str;
@@ -1066,7 +1066,7 @@ bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw
       }
 
       sidechain_transaction_create_operation stc_op;
-      stc_op.payer = GRAPHENE_SON_ACCOUNT;
+      stc_op.payer = gpo.parameters.son_account();
       stc_op.object_id = swwo.id;
       stc_op.sidechain = sidechain;
       stc_op.transaction = tx_str;
@@ -1322,7 +1322,7 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
          sed.sidechain_currency = "BTC";
          sed.sidechain_amount = v.out.amount;
          sed.peerplays_from = addr_itr->sidechain_address_account;
-         sed.peerplays_to = GRAPHENE_SON_ACCOUNT;
+         sed.peerplays_to = database.get_global_properties().parameters.son_account();
          sed.peerplays_asset = asset(sed.sidechain_amount / 1000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
          sidechain_event_data_received(sed);
       }
@@ -1399,6 +1399,13 @@ void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id
                pw_redeem_script = pw_pt.get<std::string>("redeemScript");
                bitcoin_client->importaddress(pw_redeem_script);
             }
+
+            vector<string> son_pubkeys_bitcoin;
+            for (const son_info &si : swo->sons) {
+               son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+            }
+            uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+            bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
          }
       }
    }

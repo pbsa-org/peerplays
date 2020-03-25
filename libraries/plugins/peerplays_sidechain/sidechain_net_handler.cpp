@@ -68,9 +68,9 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    const chain::global_property_object &gpo = database.get_global_properties();
 
    // Deposit request
-   if ((sed.peerplays_to == GRAPHENE_SON_ACCOUNT) && (sed.sidechain_currency.compare("1.3.0") != 0)) {
+   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("1.3.0") != 0)) {
       son_wallet_deposit_create_operation op;
-      op.payer = GRAPHENE_SON_ACCOUNT;
+      op.payer = gpo.parameters.son_account();
       //op.son_id = ; // to be filled for each son
       op.timestamp = sed.timestamp;
       op.sidechain = sed.sidechain;
@@ -109,7 +109,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    // Withdrawal request
-   if ((sed.peerplays_to == GRAPHENE_SON_ACCOUNT) && (sed.sidechain_currency.compare("1.3.0") == 0)) {
+   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("1.3.0") == 0)) {
       // BTC Payout only (for now)
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sed.peerplays_from, sidechain_type::bitcoin));
@@ -117,7 +117,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
          return;
 
       son_wallet_withdraw_create_operation op;
-      op.payer = GRAPHENE_SON_ACCOUNT;
+      op.payer = gpo.parameters.son_account();
       //op.son_id = ; // to be filled for each son
       op.timestamp = sed.timestamp;
       op.sidechain = sed.sidechain;
@@ -174,12 +174,12 @@ void sidechain_net_handler::process_deposits() {
       const chain::global_property_object &gpo = database.get_global_properties();
 
       son_wallet_deposit_process_operation swdp_op;
-      swdp_op.payer = GRAPHENE_SON_ACCOUNT;
+      swdp_op.payer = gpo.parameters.son_account();
       swdp_op.son_wallet_deposit_id = swdo.id;
 
       transfer_operation t_op;
       t_op.fee = asset(2000000);
-      t_op.from = swdo.peerplays_to; // GRAPHENE_SON_ACCOUNT
+      t_op.from = swdo.peerplays_to; // gpo.parameters.son_account()
       t_op.to = swdo.peerplays_from;
       t_op.amount = swdo.peerplays_asset;
 
@@ -219,7 +219,7 @@ void sidechain_net_handler::process_withdrawals() {
       const chain::global_property_object &gpo = database.get_global_properties();
 
       son_wallet_withdraw_process_operation swwp_op;
-      swwp_op.payer = GRAPHENE_SON_ACCOUNT;
+      swwp_op.payer = gpo.parameters.son_account();
       swwp_op.son_wallet_withdraw_id = swwo.id;
 
       proposal_create_operation proposal_op;
