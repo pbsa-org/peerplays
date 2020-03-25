@@ -901,9 +901,9 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
 
                if (!tx_str.empty()) {
 
-                  auto active_sons = gpo.active_sons;
+                  auto signer_sons = prev_sw->sons;
                   std::vector<son_id_type> signers;
-                  for (const son_info &si : active_sons) {
+                  for (const son_info &si : signer_sons) {
                      signers.push_back(si.son_id);
                   }
 
