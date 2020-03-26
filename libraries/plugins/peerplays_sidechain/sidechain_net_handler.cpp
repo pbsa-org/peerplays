@@ -143,8 +143,8 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 }
 
 void sidechain_net_handler::process_deposits() {
-   const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_sidechain_and_processed>();
-   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
+   const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_sidechain_and_confirmed_and_processed>();
+   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const son_wallet_deposit_object &swdo) {
       ilog("Deposit to process: ${swdo}", ("swdo", swdo));
@@ -188,8 +188,8 @@ void sidechain_net_handler::process_deposits() {
 }
 
 void sidechain_net_handler::process_withdrawals() {
-   const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_withdraw_sidechain_and_processed>();
-   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
+   const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_withdraw_sidechain_and_confirmed_and_processed>();
+   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const son_wallet_withdraw_object &swwo) {
       ilog("Withdraw to process: ${swwo}", ("swwo", swwo));

@@ -137,7 +137,7 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
       config_ready_son = config_ready_son && !sons.empty();
 
 #ifndef SUPPORT_MULTIPLE_SONS
-      FC_ASSERT(sons.size() == 1, "Multiple SONs not supported");
+      //FC_ASSERT(sons.size() == 1, "Multiple SONs not supported");
 #endif
 
       if (options.count("peerplays-private-key")) {

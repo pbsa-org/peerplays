@@ -26,8 +26,8 @@ void_result create_son_wallet_withdraw_evaluator::do_evaluate(const son_wallet_w
       FC_ASSERT(expected, "Only active SON can create deposit");
    } else {
       bool expected = false;
-      for (auto &son_id : swwo->expected_reports) {
-         if (op.son_id == son_id) {
+      for (auto &exp : swwo->expected_reports) {
+         if (op.son_id == exp.first) {
             expected = true;
             break;
          }
@@ -65,7 +65,7 @@ object_id_type create_son_wallet_withdraw_evaluator::do_apply(const son_wallet_w
 
          auto &gpo = db().get_global_properties();
          for (auto &si : gpo.active_sons) {
-            swwo.expected_reports.insert(si.son_id);
+            swwo.expected_reports.insert(std::make_pair(si.son_id, si.weight));
 
             auto stats_itr = db().get_index_type<son_stats_index>().indices().get<by_owner>().find(si.son_id);
             db().modify(*stats_itr, [&op, &si](son_statistics_object &sso) {
@@ -78,12 +78,32 @@ object_id_type create_son_wallet_withdraw_evaluator::do_apply(const son_wallet_w
 
          swwo.received_reports.insert(op.son_id);
 
+         uint64_t total_weight = 0;
+         for (const auto exp : swwo.expected_reports) {
+             total_weight = total_weight + exp.second;
+         }
+         uint64_t current_weight = 0;
+         for (const auto rec : swwo.received_reports) {
+             current_weight = current_weight + swwo.expected_reports.find(rec)->second;
+         }
+         swwo.confirmed = (current_weight > (total_weight * 2 / 3));
+
          swwo.processed = false;
       });
       return new_son_wallet_withdraw_object.id;
    } else {
       db().modify(*itr, [&op](son_wallet_withdraw_object &swwo) {
          swwo.received_reports.insert(op.son_id);
+
+         uint64_t total_weight = 0;
+         for (const auto exp : swwo.expected_reports) {
+             total_weight = total_weight + exp.second;
+         }
+         uint64_t current_weight = 0;
+         for (const auto rec : swwo.received_reports) {
+             current_weight = current_weight + swwo.expected_reports.find(rec)->second;
+         }
+         swwo.confirmed = (current_weight > (total_weight * 2 / 3));
       });
       auto stats_itr = db().get_index_type<son_stats_index>().indices().get<by_owner>().find(op.son_id);
       db().modify(*stats_itr, [&op](son_statistics_object &sso) {
