@@ -35,6 +35,7 @@ static const unsigned char OP_SWAP = 0x7c;
 static const unsigned char OP_EQUAL = 0x87;
 static const unsigned char OP_ADD = 0x93;
 static const unsigned char OP_GREATERTHAN = 0xa0;
+static const unsigned char OP_GREATERTHANOREQUAL = 0xa2;
 static const unsigned char OP_HASH160 = 0xa9;
 static const unsigned char OP_CHECKSIG = 0xac;
 
@@ -371,7 +372,7 @@ bytes generate_redeem_script(std::vector<std::pair<fc::ecc::public_key, uint64_t
    }
    uint64_t threshold_weight = 2 * total_weight / 3;
    add_number_to_script(result, static_cast<unsigned char>(threshold_weight));
-   result.push_back(OP_GREATERTHAN);
+   result.push_back(OP_GREATERTHANOREQUAL);
    return result;
 }
 
