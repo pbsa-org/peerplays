@@ -307,6 +307,51 @@ struct get_impacted_account_visitor
    void operator()( const son_delete_operation& op ){
       _impacted.insert( op.owner_account );
    }
+   void operator()( const son_heartbeat_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const son_report_down_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const son_maintenance_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const son_wallet_recreate_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const son_wallet_update_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const son_wallet_deposit_create_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const son_wallet_deposit_process_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const son_wallet_withdraw_create_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const son_wallet_withdraw_process_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const sidechain_address_add_operation& op ){
+        _impacted.insert( op.sidechain_address_account );
+   }
+   void operator()( const sidechain_address_update_operation& op ){
+      _impacted.insert( op.sidechain_address_account );
+   }
+   void operator()( const sidechain_address_delete_operation& op ){
+      _impacted.insert( op.sidechain_address_account );
+   }
+   void operator()( const sidechain_transaction_create_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const sidechain_transaction_sign_operation& op ){
+      _impacted.insert( op.payer );
+   }
+   void operator()( const sidechain_transaction_send_operation& op ){
+      _impacted.insert( op.payer );
+   }
 };
 
 void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )

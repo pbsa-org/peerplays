@@ -31,4 +31,31 @@ public:
     void_result do_apply(const son_delete_operation& o);
 };
 
+class son_heartbeat_evaluator : public evaluator<son_heartbeat_evaluator>
+{
+public:
+    typedef son_heartbeat_operation operation_type;
+
+    void_result do_evaluate(const son_heartbeat_operation& o);
+    object_id_type do_apply(const son_heartbeat_operation& o);
+};
+
+class son_report_down_evaluator : public evaluator<son_report_down_evaluator>
+{
+public:
+    typedef son_report_down_operation operation_type;
+
+    void_result do_evaluate(const son_report_down_operation& o);
+    object_id_type do_apply(const son_report_down_operation& o);
+};
+
+class son_maintenance_evaluator : public evaluator<son_maintenance_evaluator>
+{
+public:
+    typedef son_maintenance_operation operation_type;
+
+    void_result do_evaluate(const son_maintenance_operation& o);
+    object_id_type do_apply(const son_maintenance_operation& o);
+};
+
 } } // namespace graphene::chain

@@ -175,8 +175,6 @@
 #define GRAPHENE_PROXY_TO_SELF_ACCOUNT (graphene::chain::account_id_type(5))
 ///
 #define GRAPHENE_RAKE_FEE_ACCOUNT_ID (graphene::chain::account_id_type(6))
-///
-#define GRAPHENE_SON_ACCOUNT_ID (graphene::chain::account_id_type(7))
 /// Sentinel value used in the scheduler.
 #define GRAPHENE_NULL_WITNESS (graphene::chain::witness_id_type(0))
 ///@}
@@ -234,7 +232,10 @@
 #define MIN_SON_MEMBER_COUNT                                15
 #define SON_VESTING_AMOUNT                                  (50*GRAPHENE_BLOCKCHAIN_PRECISION) // 50 PPY
 #define SON_VESTING_PERIOD                                  (60*60*24*2) // 2 days
-#define SON_DEREGISTER_TIME                                 (12) // 12 Hours
+#define SON_DEREGISTER_TIME                                 (60*60*12) // 12 Hours in seconds
+#define SON_HEARTBEAT_FREQUENCY                             (60*3) // 3 minutes in seconds
+#define SON_DOWN_TIME                                       (60*3*2) // 2 Heartbeats in seconds
+#define SON_PAY_TIME                                        (60*60*24) // 1 day
 #define MIN_SON_PAY_DAILY_MAX                               (GRAPHENE_BLOCKCHAIN_PRECISION * int64_t(200))
 #define SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE              (2*GRAPHENE_1_PERCENT)
 #define SWEEPS_DEFAULT_DISTRIBUTION_ASSET                   (graphene::chain::asset_id_type(0))

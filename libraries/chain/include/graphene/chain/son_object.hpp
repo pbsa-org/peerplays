@@ -2,6 +2,7 @@
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
+#include <graphene/chain/sidechain_defs.hpp>
 
 namespace graphene { namespace chain {
    using namespace graphene::db;
@@ -10,7 +11,9 @@ namespace graphene { namespace chain {
    {
       inactive,
       active,
-      in_maintenance
+      request_maintenance,
+      in_maintenance,
+      deregistered
    };
    /**
     * @class son_statistics_object
@@ -27,12 +30,24 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = impl_son_statistics_object_type;
 
          son_id_type  owner;
+         // Lifetime total transactions signed
+         uint64_t total_txs_signed = 0;
          // Transactions signed since the last son payouts
          uint64_t txs_signed = 0;
+         // Total Voted Active time i.e. duration selected as part of voted active SONs
+         uint64_t total_voted_time = 0;
          // Total Downtime barring the current down time in seconds, used for stats to present to user
          uint64_t total_downtime = 0;
+         // Current Interval Downtime since last maintenance
+         uint64_t current_interval_downtime = 0;
          // Down timestamp, if son status is in_maintenance use this
          fc::time_point_sec last_down_timestamp;
+         // Last Active heartbeat timestamp
+         fc::time_point_sec last_active_timestamp;
+         // Total sidechain transactions reported by SON network while SON was active
+         uint64_t total_sidechain_txs_reported = 0;
+         // Sidechain transactions reported by this SON
+         uint64_t sidechain_txs_reported = 0;
    };
 
    /**
@@ -55,6 +70,7 @@ namespace graphene { namespace chain {
          vesting_balance_id_type pay_vb;
          son_statistics_id_type statistics;
          son_status status = son_status::inactive;
+         flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys;
 
          void pay_son_fee(share_type pay, database& db);
    };
@@ -77,23 +93,37 @@ namespace graphene { namespace chain {
    >;
    using son_index = generic_index<son_object, son_multi_index_type>;
 
+   struct by_owner;
    using son_stats_multi_index_type = multi_index_container<
       son_statistics_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >
+         ordered_unique< tag<by_id>,
+            member<object, object_id_type, &object::id>
+         >,
+         ordered_unique< tag<by_owner>,
+            member<son_statistics_object, son_id_type, &son_statistics_object::owner>
+         >
       >
    >;
-
    using son_stats_index = generic_index<son_statistics_object, son_stats_multi_index_type>;
+
 } } // graphene::chain
 
-FC_REFLECT_ENUM(graphene::chain::son_status, (inactive)(active)(in_maintenance) )
+FC_REFLECT_ENUM(graphene::chain::son_status, (inactive)(active)(request_maintenance)(in_maintenance)(deregistered) )
 
 FC_REFLECT_DERIVED( graphene::chain::son_object, (graphene::db::object),
-                    (son_account)(vote_id)(total_votes)(url)(deposit)(signing_key)(pay_vb) )
+                    (son_account)(vote_id)(total_votes)(url)(deposit)(signing_key)(pay_vb)(statistics)(status)(sidechain_public_keys) )
 
 FC_REFLECT_DERIVED( graphene::chain::son_statistics_object,
                     (graphene::db::object),
                     (owner)
+                    (total_txs_signed)
                     (txs_signed)
+                    (total_voted_time)
+                    (total_downtime)
+                    (current_interval_downtime)
+                    (last_down_timestamp)
+                    (last_active_timestamp)
+                    (total_sidechain_txs_reported)
+                    (sidechain_txs_reported)
                   )

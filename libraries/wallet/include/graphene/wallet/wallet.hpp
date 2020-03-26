@@ -1311,6 +1311,7 @@ class wallet_api
        *            display this when showing a list of SONs.  May be blank.
        * @param deposit_id vesting balance id for SON deposit
        * @param pay_vb_id vesting balance id for SON pay_vb
+       * @param sidechain_public_keys The new set of sidechain public keys.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a SON
        */
@@ -1318,6 +1319,7 @@ class wallet_api
                                     string url,
                                     vesting_balance_id_type deposit_id,
                                     vesting_balance_id_type pay_vb_id,
+                                    flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
       /**
@@ -1326,11 +1328,13 @@ class wallet_api
        * @param witness The name of the SON's owner account.  Also accepts the ID of the owner account or the ID of the SON.
        * @param url Same as for create_son.  The empty string makes it remain the same.
        * @param block_signing_key The new block signing public key.  The empty string makes it remain the same.
+       * @param sidechain_public_keys The new set of sidechain public keys.  The empty string makes it remain the same.
        * @param broadcast true if you wish to broadcast the transaction.
        */
       signed_transaction update_son(string owner_account,
                                     string url,
                                     string block_signing_key,
+                                    flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                     bool broadcast = false);
 
 
@@ -1339,13 +1343,29 @@ class wallet_api
        * An account can have at most one witness object.
        *
        * @param owner_account the name or id of the account which is creating the witness
-       * @param url a URL to include in the witness record in the blockchain.  Clients may
-       *            display this when showing a list of witnesses.  May be blank.
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a witness
        */
       signed_transaction delete_son(string owner_account,
                                     bool broadcast = false);
+
+      /** Modify status of the SON owned by the given account to maintenance.
+       *
+       * @param owner_account the name or id of the account which is owning the SON
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction
+       */
+      signed_transaction request_son_maintenance(string owner_account,
+                                              bool broadcast = false);
+
+      /** Modify status of the SON owned by the given account back to active.
+       *
+       * @param owner_account the name or id of the account which is owning the SON
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction
+       */
+      signed_transaction cancel_request_son_maintenance(string owner_account,
+                                              bool broadcast = false);
 
       /** Lists all SONs in the blockchain.
        * This returns a list of all account names that own SON, and the associated SON id,
@@ -1361,6 +1381,106 @@ class wallet_api
        * @returns a list of SON mapping SON names to SON ids
        */
       map<string, son_id_type> list_sons(const string& lowerbound, uint32_t limit);
+
+      /** Lists active at the moment SONs.
+       * This returns a list of all account names that own active SON, and the associated SON id,
+       * sorted by name.
+       * @returns a list of active SONs mapping SON names to SON ids
+       */
+      map<string, son_id_type> list_active_sons();
+
+      /**
+       * @brief Get active SON wallet
+       * @return Active SON wallet object
+       */
+      optional<son_wallet_object> get_active_son_wallet();
+
+      /**
+       * @brief Get SON wallet that was active for a given time point
+       * @param time_point Time point
+       * @return SON wallet object, for the wallet that was active for a given time point
+       */
+      optional<son_wallet_object> get_son_wallet_by_time_point(time_point_sec time_point);
+
+      /**
+       * @brief Get full list of SON wallets
+       * @param limit Maximum number of results to return
+       * @return A list of SON wallet objects
+       */
+      vector<optional<son_wallet_object>> get_son_wallets(uint32_t limit);
+
+      /** Adds sidechain address owned by the given account for a given sidechain.
+       *
+       * An account can have at most one sidechain address for one sidechain.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain a sidechain to whom address belongs
+       * @param deposit_address sidechain address for deposits
+       * @param withdraw_address sidechain address for withdrawals
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction adding sidechain address
+       */
+      signed_transaction add_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string deposit_address,
+                                          string withdraw_address,
+                                          bool broadcast = false);
+
+      /** Updates existing sidechain address owned by the given account for a given sidechain.
+       *
+       * Only address, private key and public key might be updated.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain a sidechain to whom address belongs
+       * @param deposit_address sidechain address for deposits
+       * @param withdraw_address sidechain address for withdrawals
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction updating sidechain address
+       */
+      signed_transaction update_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string deposit_address,
+                                          string withdraw_address,
+                                          bool broadcast = false);
+
+      /** Deletes existing sidechain address owned by the given account for a given sidechain.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain a sidechain to whom address belongs
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction updating sidechain address
+       */
+      signed_transaction delete_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          bool broadcast = false);
+
+      /** Retrieves all sidechain addresses owned by given account.
+       *
+       * @param account the name or id of the account who owns the address
+       * @returns the list of all sidechain addresses owned by given account.
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses_by_account(string account);
+
+      /** Retrieves all sidechain addresses registered for a given sidechain.
+       *
+       * @param sidechain the name of the sidechain
+       * @returns the list of all sidechain addresses registered for a given sidechain.
+       */
+      vector<optional<sidechain_address_object>> get_sidechain_addresses_by_sidechain(peerplays_sidechain::sidechain_type sidechain);
+
+      /** Retrieves sidechain address owned by given account for a given sidechain.
+       *
+       * @param account the name or id of the account who owns the address
+       * @param sidechain the name of the sidechain
+       * @returns the sidechain address owned by given account for a given sidechain.
+       */
+      fc::optional<sidechain_address_object> get_sidechain_address_by_account_and_sidechain(string account, peerplays_sidechain::sidechain_type sidechain);
+
+      /** Retrieves the total number of sidechain addresses registered in the system.
+       *
+       * @returns the total number of sidechain addresses registered in the system.
+       */
+      uint64_t get_sidechain_addresses_count();
 
       /** Creates a witness object owned by the given account.
        *
@@ -1428,15 +1548,17 @@ class wallet_api
 
       /** Creates a vesting deposit owned by the given account.
        *
-       * @param owner_account the name or id of the account
-       * @param amount the amount to deposit
+       * @param owner_account vesting balance owner and creator (the name or id)
+       * @param amount amount to vest
+       * @param asset_symbol the symbol of the asset to vest
        * @param vesting_type "normal", "gpos" or "son"
        * @param broadcast true to broadcast the transaction on the network
        * @returns the signed transaction registering a vesting object
        */
-      signed_transaction create_vesting(string owner_account,
+      signed_transaction create_vesting_balance(string owner_account,
                                         string amount,
-                                        string vesting_type,
+                                        string asset_symbol,
+                                        vesting_balance_type vesting_type,
                                         bool broadcast = false);
 
       /**
@@ -2113,11 +2235,24 @@ FC_API( graphene::wallet::wallet_api,
         (update_son)
         (delete_son)
         (list_sons)
+        (list_active_sons)
+        (request_son_maintenance)
+        (cancel_request_son_maintenance)
+        (get_active_son_wallet)
+        (get_son_wallet_by_time_point)
+        (get_son_wallets)
+        (add_sidechain_address)
+        (update_sidechain_address)
+        (delete_sidechain_address)
+        (get_sidechain_addresses_by_account)
+        (get_sidechain_addresses_by_sidechain)
+        (get_sidechain_address_by_account_and_sidechain)
+        (get_sidechain_addresses_count)
         (create_witness)
         (update_witness)
         (create_worker)
         (update_worker_votes)
-        (create_vesting)
+        (create_vesting_balance)
         (get_vesting_balances)
         (withdraw_vesting)
         (vote_for_committee_member)

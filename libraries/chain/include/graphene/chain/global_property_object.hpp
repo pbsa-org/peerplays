@@ -27,6 +27,7 @@
 #include <graphene/chain/protocol/chain_parameters.hpp>
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/database.hpp>
+#include <graphene/chain/son_info.hpp>
 #include <graphene/db/object.hpp>
 
 namespace graphene { namespace chain {
@@ -51,7 +52,7 @@ namespace graphene { namespace chain {
          uint32_t                           next_available_vote_id = 0;
          vector<committee_member_id_type>   active_committee_members; // updated once per maintenance interval
          flat_set<witness_id_type>          active_witnesses; // updated once per maintenance interval
-         vector<son_id_type>                active_sons; // updated once per maintenance interval
+         vector<son_info>                   active_sons; // updated once per maintenance interval
    };
 
    /**
@@ -78,7 +79,7 @@ namespace graphene { namespace chain {
          time_point_sec    last_budget_time;
          share_type        witness_budget;
          //Last SON Payout time, it can be different to the maintenance interval time
-         time_point_sec    last_son_payout_time;
+         time_point_sec    last_son_payout_time = HARDFORK_SON_TIME;
          share_type        son_budget = 0;
          uint32_t          accounts_registered_this_interval = 0;
          /**
@@ -137,6 +138,8 @@ FC_REFLECT_DERIVED( graphene::chain::dynamic_global_property_object, (graphene::
                     (next_maintenance_time)
                     (last_budget_time)
                     (witness_budget)
+                    (last_son_payout_time)
+                    (son_budget)
                     (accounts_registered_this_interval)
                     (recently_missed_count)
                     (current_aslot)

@@ -73,6 +73,7 @@
 #include <graphene/chain/rock_paper_scissors.hpp>
 
 #include <graphene/bookie/bookie_api.hpp>
+#include <graphene/chain/sidechain_defs.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/utilities/git_revision.hpp>
@@ -822,6 +823,7 @@ public:
    //          account, false otherwise (but it is stored either way)
    bool import_key(string account_name_or_id, string wif_key)
    {
+      fc::scoped_lock<fc::mutex> lock(_resync_mutex);
       fc::optional<fc::ecc::private_key> optional_private_key = wif_to_key(wif_key);
       if (!optional_private_key)
          FC_THROW("Invalid private key");
@@ -1323,6 +1325,7 @@ public:
                                                       bool broadcast = false,
                                                       bool save_wallet = true)
    { try {
+         fc::scoped_lock<fc::mutex> lock(_resync_mutex);
          int active_key_index = find_first_unused_derived_key_index(owner_privkey);
          fc::ecc::private_key active_privkey = derive_private_key( key_to_wif(owner_privkey), active_key_index);
 
@@ -1827,8 +1830,10 @@ public:
                                  string url,
                                  vesting_balance_id_type deposit_id,
                                  vesting_balance_id_type pay_vb_id,
+                                 flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                  bool broadcast /* = false */)
    { try {
+      fc::scoped_lock<fc::mutex> lock(_resync_mutex);
       account_object son_account = get_account(owner_account);
       auto son_public_key = son_account.active.get_keys()[0];
 
@@ -1838,6 +1843,7 @@ public:
       son_create_op.url = url;
       son_create_op.deposit = deposit_id;
       son_create_op.pay_vb = pay_vb_id;
+      son_create_op.sidechain_public_keys = sidechain_public_keys;
 
       if (_remote_db->get_son_by_account(son_create_op.owner_account))
          FC_THROW("Account ${owner_account} is already a SON", ("owner_account", owner_account));
@@ -1853,6 +1859,7 @@ public:
    signed_transaction update_son(string owner_account,
                                  string url,
                                  string block_signing_key,
+                                 flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                  bool broadcast /* = false */)
    { try {
       son_object son = get_son(owner_account);
@@ -1864,6 +1871,9 @@ public:
          son_update_op.new_url = url;
       if( block_signing_key != "" ) {
          son_update_op.new_signing_key = public_key_type( block_signing_key );
+      }
+      if( !sidechain_public_keys.empty() ) {
+         son_update_op.new_sidechain_public_keys = sidechain_public_keys;
       }
 
       signed_transaction tx;
@@ -1892,10 +1902,165 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
 
+   signed_transaction request_son_maintenance(string owner_account,
+                                           bool broadcast)
+   { try {
+         son_object son = get_son(owner_account);
+
+         son_maintenance_operation op;
+         op.owner_account = son.son_account;
+         op.son_id = son.id;
+         op.request_type = son_maintenance_request_type::request_maintenance;
+
+         signed_transaction tx;
+         tx.operations.push_back( op );
+         set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+         tx.validate();
+
+         return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account) ) }
+
+   signed_transaction cancel_request_son_maintenance(string owner_account,
+                                           bool broadcast)
+   { try {
+         son_object son = get_son(owner_account);
+
+         son_maintenance_operation op;
+         op.owner_account = son.son_account;
+         op.son_id = son.id;
+         op.request_type = son_maintenance_request_type::cancel_request_maintenance;
+
+         signed_transaction tx;
+         tx.operations.push_back( op );
+         set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees );
+         tx.validate();
+
+         return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (owner_account) ) }
+
+   map<string, son_id_type> list_active_sons()
+   { try {
+      global_property_object gpo = get_global_properties();
+      vector<son_id_type> son_ids;
+      son_ids.reserve(gpo.active_sons.size());
+      std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
+                     std::inserter(son_ids, son_ids.end()),
+                     [](const son_info& swi) {
+         return swi.son_id;
+      });
+      std::vector<fc::optional<son_object>> son_objects = _remote_db->get_sons(son_ids);
+      vector<account_id_type> owners;
+      for(auto obj: son_objects)
+      {
+         if (obj)
+            owners.push_back(obj->son_account);
+      }
+      vector<fc::optional<account_object>> accs = _remote_db->get_accounts(owners);
+      std::remove_if(son_objects.begin(), son_objects.end(),
+                     [](const fc::optional<son_object>& obj) -> bool { return obj.valid(); });
+      map<string, son_id_type> result;
+      std::transform(accs.begin(), accs.end(), son_objects.begin(),
+                     std::inserter(result, result.end()),
+                     [](fc::optional<account_object>& acct, fc::optional<son_object> son) {
+                        FC_ASSERT(acct, "Invalid active SONs list in global properties.");
+                        if (son.valid())
+                           return std::make_pair<string, son_id_type>(string(acct->name), std::move(son->id));
+                        return std::make_pair<string, son_id_type>(string(acct->name), std::move(son_id_type()));
+                     });
+      return result;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   optional<son_wallet_object> get_active_son_wallet()
+   { try {
+       return _remote_db->get_active_son_wallet();
+   } FC_CAPTURE_AND_RETHROW() }
+
+   optional<son_wallet_object> get_son_wallet_by_time_point(time_point_sec time_point)
+   { try {
+       return _remote_db->get_son_wallet_by_time_point(time_point);
+   } FC_CAPTURE_AND_RETHROW() }
+
+   vector<optional<son_wallet_object>> get_son_wallets(uint32_t limit)
+   { try {
+      return _remote_db->get_son_wallets(limit);
+   } FC_CAPTURE_AND_RETHROW() }
+
+   signed_transaction add_sidechain_address(string account,
+                                            peerplays_sidechain::sidechain_type sidechain,
+                                            string deposit_address,
+                                            string withdraw_address,
+                                            bool broadcast /* = false */)
+   { try {
+      account_id_type sidechain_address_account_id = get_account_id(account);
+
+      sidechain_address_add_operation op;
+      op.sidechain_address_account = sidechain_address_account_id;
+      op.sidechain = sidechain;
+      op.deposit_address = deposit_address;
+      op.withdraw_address = withdraw_address;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW() }
+
+   signed_transaction update_sidechain_address(string account,
+                                               peerplays_sidechain::sidechain_type sidechain,
+                                               string deposit_address,
+                                               string withdraw_address,
+                                               bool broadcast /* = false */)
+   { try {
+      account_id_type sidechain_address_account_id = get_account_id(account);
+      fc::optional<sidechain_address_object> sao = _remote_db->get_sidechain_address_by_account_and_sidechain(sidechain_address_account_id, sidechain);
+      if (!sao)
+         FC_THROW("No sidechain address for account ${account} and sidechain ${sidechain}", ("account", sidechain_address_account_id)("sidechain", sidechain));
+
+      sidechain_address_update_operation op;
+      op.sidechain_address_id = sao->id;
+      op.sidechain_address_account = sidechain_address_account_id;
+      op.sidechain = sidechain;
+      op.deposit_address = deposit_address;
+      op.withdraw_address = withdraw_address;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW() }
+
+   signed_transaction delete_sidechain_address(string account,
+                                               peerplays_sidechain::sidechain_type sidechain,
+                                               bool broadcast /* = false */)
+   { try {
+      account_id_type sidechain_address_account_id = get_account_id(account);
+      fc::optional<sidechain_address_object> sao = _remote_db->get_sidechain_address_by_account_and_sidechain(sidechain_address_account_id, sidechain);
+      if (!sao)
+         FC_THROW("No sidechain address for account ${account} and sidechain ${sidechain}", ("account", sidechain_address_account_id)("sidechain", sidechain));
+
+      sidechain_address_delete_operation op;
+      op.sidechain_address_id = sao->id;
+      op.sidechain_address_account = sidechain_address_account_id;
+      op.sidechain = sidechain;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+
+      return sign_transaction( tx, broadcast );
+
+   } FC_CAPTURE_AND_RETHROW() }
+
    signed_transaction create_witness(string owner_account,
                                      string url,
                                      bool broadcast /* = false */)
    { try {
+      fc::scoped_lock<fc::mutex> lock(_resync_mutex);
       account_object witness_account = get_account(owner_account);
       fc::ecc::private_key active_private_key = get_private_key_for_account(witness_account);
       int witness_key_index = find_first_unused_derived_key_index(active_private_key);
@@ -2067,27 +2232,21 @@ public:
       return sign_transaction( tx, broadcast );
    }
 
-   signed_transaction create_vesting(string owner_account,
+   signed_transaction create_vesting_balance(string owner_account,
                                      string amount,
-                                     string vesting_type,
+                                     string asset_symbol,
+                                     vesting_balance_type vesting_type,
                                      bool broadcast /* = false */)
    { try {
       account_object son_account = get_account(owner_account);
+      fc::optional<asset_object> asset_obj = get_asset(asset_symbol);
+      FC_ASSERT(asset_obj, "Invalid asset symbol {asst}", ("asst", asset_symbol));
 
       vesting_balance_create_operation op;
       op.creator = son_account.get_id();
       op.owner = son_account.get_id();
-      op.amount = asset_object().amount_from_string(amount);
-      if (vesting_type == "normal")
-          op.balance_type = vesting_balance_type::normal;
-      else if (vesting_type == "gpos")
-          op.balance_type = vesting_balance_type::gpos;
-      else if (vesting_type == "son")
-          op.balance_type = vesting_balance_type::son;
-      else
-      {
-          FC_ASSERT( false, "unknown vesting type value ${vt}", ("vt", vesting_type) );
-      }
+      op.amount = asset_obj->amount_from_string(amount);
+      op.balance_type = vesting_type;
       if (op.balance_type == vesting_balance_type::son)
           op.policy = dormant_vesting_policy_initializer {};
 
@@ -2232,26 +2391,27 @@ public:
                                            uint16_t desired_number_of_sons,
                                            bool broadcast /* = false */)
    { try {
+      FC_ASSERT(sons_to_approve.size() || sons_to_reject.size(), "Both accepted and rejected lists can't be empty simultaneously");
       account_object voting_account_object = get_account(voting_account);
       for (const std::string& son : sons_to_approve)
       {
          account_id_type son_owner_account_id = get_account_id(son);
          fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
          if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a witness", ("son", son));
+            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          auto insert_result = voting_account_object.options.votes.insert(son_obj->vote_id);
          if (!insert_result.second)
-            FC_THROW("Account ${account} was already voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} was already voting for SON ${son}", ("account", voting_account)("son", son));
       }
       for (const std::string& son : sons_to_reject)
       {
          account_id_type son_owner_account_id = get_account_id(son);
          fc::optional<son_object> son_obj = _remote_db->get_son_by_account(son_owner_account_id);
          if (!son_obj)
-            FC_THROW("Account ${son} is not registered as a son", ("son", son));
+            FC_THROW("Account ${son} is not registered as a SON", ("son", son));
          unsigned votes_removed = voting_account_object.options.votes.erase(son_obj->vote_id);
          if (!votes_removed)
-            FC_THROW("Account ${account} is already not voting for son ${son}", ("account", voting_account)("son", son));
+            FC_THROW("Account ${account} is already not voting for SON ${son}", ("account", voting_account)("son", son));
       }
       voting_account_object.options.num_son = desired_number_of_sons;
 
@@ -4231,29 +4391,32 @@ committee_member_object wallet_api::get_committee_member(string owner_account)
    return my->get_committee_member(owner_account);
 }
 
-signed_transaction wallet_api::create_vesting(string owner_account,
+signed_transaction wallet_api::create_vesting_balance(string owner_account,
                                               string amount,
-                                              string vesting_type,
+                                              string asset_symbol,
+                                              vesting_balance_type vesting_type,
                                               bool broadcast /* = false */)
 {
-   return my->create_vesting(owner_account, amount, vesting_type, broadcast);
+   return my->create_vesting_balance(owner_account, amount, asset_symbol, vesting_type, broadcast);
 }
 
 signed_transaction wallet_api::create_son(string owner_account,
                                           string url,
                                           vesting_balance_id_type deposit_id,
                                           vesting_balance_id_type pay_vb_id,
+                                          flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                           bool broadcast /* = false */)
 {
-   return my->create_son(owner_account, url, deposit_id, pay_vb_id, broadcast);
+   return my->create_son(owner_account, url, deposit_id, pay_vb_id, sidechain_public_keys, broadcast);
 }
 
 signed_transaction wallet_api::update_son(string owner_account,
                                           string url,
                                           string block_signing_key,
+                                          flat_map<peerplays_sidechain::sidechain_type, string> sidechain_public_keys,
                                           bool broadcast /* = false */)
 {
-   return my->update_son(owner_account, url, block_signing_key, broadcast);
+   return my->update_son(owner_account, url, block_signing_key, sidechain_public_keys, broadcast);
 }
 
 signed_transaction wallet_api::delete_son(string owner_account,
@@ -4262,9 +4425,86 @@ signed_transaction wallet_api::delete_son(string owner_account,
    return my->delete_son(owner_account, broadcast);
 }
 
+signed_transaction wallet_api::request_son_maintenance(string owner_account, bool broadcast)
+{
+   return my->request_son_maintenance(owner_account, broadcast);
+}
+
+signed_transaction wallet_api::cancel_request_son_maintenance(string owner_account, bool broadcast)
+{
+   return my->cancel_request_son_maintenance(owner_account, broadcast);
+}
+
 map<string, son_id_type> wallet_api::list_sons(const string& lowerbound, uint32_t limit)
 {
    return my->_remote_db->lookup_son_accounts(lowerbound, limit);
+}
+
+map<string, son_id_type> wallet_api::list_active_sons()
+{
+    return my->list_active_sons();
+}
+
+optional<son_wallet_object> wallet_api::get_active_son_wallet()
+{
+    return my->get_active_son_wallet();
+}
+
+optional<son_wallet_object> wallet_api::get_son_wallet_by_time_point(time_point_sec time_point)
+{
+    return my->get_son_wallet_by_time_point(time_point);
+}
+
+vector<optional<son_wallet_object>> wallet_api::get_son_wallets(uint32_t limit)
+{
+    return my->get_son_wallets(limit);
+}
+
+signed_transaction wallet_api::add_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string deposit_address,
+                                          string withdraw_address,
+                                          bool broadcast /* = false */)
+{
+   return my->add_sidechain_address(account, sidechain, deposit_address, withdraw_address, broadcast);
+}
+
+signed_transaction wallet_api::update_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          string deposit_address,
+                                          string withdraw_address,
+                                          bool broadcast /* = false */)
+{
+   return my->update_sidechain_address(account, sidechain, deposit_address, withdraw_address, broadcast);
+}
+
+signed_transaction wallet_api::delete_sidechain_address(string account,
+                                          peerplays_sidechain::sidechain_type sidechain,
+                                          bool broadcast /* = false */)
+{
+   return my->delete_sidechain_address(account, sidechain, broadcast);
+}
+
+vector<optional<sidechain_address_object>> wallet_api::get_sidechain_addresses_by_account(string account)
+{
+   account_id_type account_id = get_account_id(account);
+   return my->_remote_db->get_sidechain_addresses_by_account(account_id);
+}
+
+vector<optional<sidechain_address_object>> wallet_api::get_sidechain_addresses_by_sidechain(peerplays_sidechain::sidechain_type sidechain)
+{
+   return my->_remote_db->get_sidechain_addresses_by_sidechain(sidechain);
+}
+
+fc::optional<sidechain_address_object> wallet_api::get_sidechain_address_by_account_and_sidechain(string account, peerplays_sidechain::sidechain_type sidechain)
+{
+   account_id_type account_id = get_account_id(account);
+   return my->_remote_db->get_sidechain_address_by_account_and_sidechain(account_id, sidechain);
+}
+
+uint64_t wallet_api::get_sidechain_addresses_count()
+{
+   return my->_remote_db->get_sidechain_addresses_count();
 }
 
 signed_transaction wallet_api::create_witness(string owner_account,

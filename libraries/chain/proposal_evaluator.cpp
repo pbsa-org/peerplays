@@ -148,6 +148,18 @@ struct proposal_operation_hardfork_visitor
       FC_ASSERT( block_time >= HARDFORK_SON_TIME, "son_delete_operation not allowed yet!" );
    }
 
+   void operator()(const son_heartbeat_operation &v) const {
+      FC_ASSERT( block_time >= HARDFORK_SON_TIME, "son_heartbeat_operation not allowed yet!" );
+   }
+
+   void operator()(const son_report_down_operation &v) const {
+      FC_ASSERT( block_time >= HARDFORK_SON_TIME, "son_report_down_operation not allowed yet!" );
+   }
+
+   void operator()(const son_maintenance_operation &v) const {
+      FC_ASSERT( block_time >= HARDFORK_SON_TIME, "son_maintenance_operation not allowed yet!" );
+   }
+
    // loop and self visit in proposals
    void operator()(const proposal_create_operation &v) const {
       for (const op_wrapper &op : v.proposed_ops)
@@ -159,6 +171,15 @@ void son_hardfork_visitor::operator()( const son_delete_operation &v )
 {
    db.create<son_proposal_object>([&]( son_proposal_object& son_prop ) {
       son_prop.proposal_type = son_proposal_type::son_deregister_proposal;
+      son_prop.proposal_id = prop_id;
+      son_prop.son_id = v.son_id;
+   });
+}
+
+void son_hardfork_visitor::operator()( const son_report_down_operation &v )
+{
+   db.create<son_proposal_object>([&]( son_proposal_object& son_prop ) {
+      son_prop.proposal_type = son_proposal_type::son_report_down_proposal;
       son_prop.proposal_id = prop_id;
       son_prop.son_id = v.son_id;
    });

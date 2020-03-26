@@ -42,6 +42,7 @@
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <graphene/chain/special_authority_object.hpp>
+#include <graphene/chain/son_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/vote_count.hpp>
 #include <graphene/chain/witness_object.hpp>
@@ -122,7 +123,7 @@ void database::pay_sons()
    time_point_sec now = head_block_time();
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
    // Current requirement is that we have to pay every 24 hours, so the following check
-   if( dpo.son_budget.value > 0 && now - dpo.last_son_payout_time >= fc::days(1)) {
+   if( dpo.son_budget.value > 0 && ((now - dpo.last_son_payout_time) >= fc::seconds(get_global_properties().parameters.son_pay_time()))) {
       uint64_t total_txs_signed = 0;
       share_type son_budget = dpo.son_budget;
       get_index_type<son_stats_index>().inspect_all_objects([this, &total_txs_signed](const object& o) {
@@ -137,7 +138,8 @@ void database::pay_sons()
          if(s.txs_signed > 0){
             auto son_params = get_global_properties().parameters;
             share_type pay = (s.txs_signed * son_budget.value)/total_txs_signed;
-
+            // TODO: Remove me after QA
+            ilog( "pay ${p} to ${s} for ${t} transactions signed", ("p", pay.value)("s", s.id)("t",s.txs_signed) );
             const auto& idx = get_index_type<son_index>().indices().get<by_id>();
             auto son_obj = idx.find( s.owner );
             modify( *son_obj, [&]( son_object& _son_obj)
@@ -152,6 +154,7 @@ void database::pay_sons()
             //Reset the tx counter in each son statistics object
             modify( s, [&]( son_statistics_object& _s)
             {
+               _s.total_txs_signed += _s.txs_signed;
                _s.txs_signed = 0;
             });
          }
@@ -160,6 +163,156 @@ void database::pay_sons()
       modify( dpo, [&]( dynamic_global_property_object& _dpo )
       {
          _dpo.last_son_payout_time = now;
+      });
+   }
+}
+
+void database::update_son_metrics(const vector<son_info>& curr_active_sons)
+{
+   vector<son_id_type> current_sons;
+
+   current_sons.reserve(curr_active_sons.size());
+   std::transform(curr_active_sons.begin(), curr_active_sons.end(),
+                  std::inserter(current_sons, current_sons.end()),
+                  [](const son_info &swi) {
+                     return swi.son_id;
+                  });
+
+   const auto& son_idx = get_index_type<son_index>().indices().get< by_id >();
+   for( auto& son : son_idx )
+   {
+      auto& stats = son.statistics(*this);
+      bool is_active_son = (std::find(current_sons.begin(), current_sons.end(), son.id) != current_sons.end());
+      modify( stats, [&]( son_statistics_object& _stats )
+      {
+         _stats.total_downtime += _stats.current_interval_downtime;
+         _stats.current_interval_downtime = 0;
+         if(is_active_son)
+         {
+            _stats.total_voted_time = _stats.total_voted_time + get_global_properties().parameters.maintenance_interval;
+         }
+      });
+   }
+}
+
+void database::update_son_statuses(const vector<son_info>& curr_active_sons, const vector<son_info>& new_active_sons)
+{
+   vector<son_id_type> current_sons, new_sons;
+   vector<son_id_type> sons_to_remove, sons_to_add;
+   const auto& idx = get_index_type<son_index>().indices().get<by_id>();
+
+   current_sons.reserve(curr_active_sons.size());
+   std::transform(curr_active_sons.begin(), curr_active_sons.end(),
+                  std::inserter(current_sons, current_sons.end()),
+                  [](const son_info &swi) {
+                     return swi.son_id;
+                  });
+
+   new_sons.reserve(new_active_sons.size());
+   std::transform(new_active_sons.begin(), new_active_sons.end(),
+                  std::inserter(new_sons, new_sons.end()),
+                  [](const son_info &swi) {
+                     return swi.son_id;
+                  });
+
+   // find all cur_active_sons members that is not in new_active_sons
+   for_each(current_sons.begin(), current_sons.end(),
+            [&sons_to_remove, &new_sons](const son_id_type& si)
+            {
+               if(std::find(new_sons.begin(), new_sons.end(), si) ==
+                     new_sons.end())
+               {
+                  sons_to_remove.push_back(si);
+               }
+            }
+   );
+
+   for( const auto& sid : sons_to_remove )
+   {
+      auto son = idx.find( sid );
+      if(son == idx.end()) // SON is deleted already
+         continue;
+      // keep maintenance status for nodes becoming inactive
+      if(son->status == son_status::active)
+      {
+         modify( *son, [&]( son_object& obj ){
+                  obj.status = son_status::inactive;
+                  });
+      }
+   }
+
+   // find all new_active_sons members that is not in cur_active_sons
+   for_each(new_sons.begin(), new_sons.end(),
+            [&sons_to_add, &current_sons](const son_id_type& si)
+            {
+               if(std::find(current_sons.begin(), current_sons.end(), si) ==
+                     current_sons.end())
+               {
+                  sons_to_add.push_back(si);
+               }
+            }
+   );
+
+   for( const auto& sid : sons_to_add )
+   {
+      auto son = idx.find( sid );
+      FC_ASSERT(son != idx.end(), "Invalid SON in active list, id={sonid}.", ("sonid", sid));
+      // keep maintenance status for new nodes
+      if(son->status == son_status::inactive)
+      {
+         modify( *son, [&]( son_object& obj ){
+                  obj.status = son_status::active;
+                  });
+      }
+   }
+
+   ilog("New SONS");
+   for(size_t i = 0; i < new_sons.size(); i++) {
+         auto son = idx.find( new_sons[i] );
+         if(son == idx.end()) // SON is deleted already
+            continue;
+      ilog( "${s}, status = ${ss}, total_votes = ${sv}", ("s", new_sons[i])("ss", son->status)("sv", son->total_votes) );
+   }
+
+   if( sons_to_remove.size() > 0 )
+   {
+      remove_inactive_son_proposals(sons_to_remove);
+   }
+}
+
+void database::update_son_wallet(const vector<son_info>& new_active_sons)
+{
+   bool should_recreate_pw = true;
+
+   // Expire for current son_wallet_object wallet, if exists
+   const auto& idx_swi = get_index_type<son_wallet_index>().indices().get<by_id>();
+   auto obj = idx_swi.rbegin();
+   if (obj != idx_swi.rend()) {
+      // Compare current wallet SONs and to-be lists of active sons
+      auto cur_wallet_sons = (*obj).sons;
+
+      bool wallet_son_sets_equal = (cur_wallet_sons.size() == new_active_sons.size());
+      if (wallet_son_sets_equal) {
+         for( size_t i = 0; i < cur_wallet_sons.size(); i++ ) {
+            wallet_son_sets_equal = wallet_son_sets_equal && cur_wallet_sons.at(i) == new_active_sons.at(i);
+         }
+      }
+
+      should_recreate_pw = !wallet_son_sets_equal;
+
+      if (should_recreate_pw) {
+         modify(*obj, [&, obj](son_wallet_object &swo) {
+            swo.expires = head_block_time();
+         });
+      }
+   }
+
+   if (should_recreate_pw) {
+      // Create new son_wallet_object, to initiate wallet recreation
+      create<son_wallet_object>( [&]( son_wallet_object& obj ) {
+         obj.valid_from = head_block_time();
+         obj.expires = time_point_sec::maximum();
+         obj.sons.insert(obj.sons.end(), new_active_sons.begin(), new_active_sons.end());
       });
    }
 }
@@ -399,67 +552,116 @@ void database::update_active_sons()
 
    const auto& all_sons = get_index_type<son_index>().indices();
 
+   auto& local_vote_buffer_ref = _vote_tally_buffer;
    for( const son_object& son : all_sons )
    {
-      modify( son, [&]( son_object& obj ){
-              obj.total_votes = _vote_tally_buffer[son.vote_id];
+      if(son.status == son_status::request_maintenance)
+      {
+         auto& stats = son.statistics(*this);
+         modify( stats, [&]( son_statistics_object& _s){
+               _s.last_down_timestamp = head_block_time();
+            });
+      }
+      modify( son, [local_vote_buffer_ref]( son_object& obj ){
+              obj.total_votes = local_vote_buffer_ref[obj.vote_id];
+              if(obj.status == son_status::request_maintenance)
+                 obj.status = son_status::in_maintenance;
               });
    }
 
    // Update SON authority
-   modify( get(GRAPHENE_SON_ACCOUNT_ID), [&]( account_object& a )
+   if( gpo.parameters.son_account() != GRAPHENE_NULL_ACCOUNT )
    {
-      if( head_block_time() < HARDFORK_533_TIME )
+      modify( get(gpo.parameters.son_account()), [&]( account_object& a )
       {
-         uint64_t total_votes = 0;
-         map<account_id_type, uint64_t> weights;
-         a.active.weight_threshold = 0;
-         a.active.clear();
-
-         for( const son_object& son : sons )
+         if( head_block_time() < HARDFORK_533_TIME )
          {
-            weights.emplace(son.son_account, _vote_tally_buffer[son.vote_id]);
-            total_votes += _vote_tally_buffer[son.vote_id];
-         }
+            uint64_t total_votes = 0;
+            map<account_id_type, uint64_t> weights;
+            a.active.weight_threshold = 0;
+            a.active.account_auths.clear();
 
-         // total_votes is 64 bits. Subtract the number of leading low bits from 64 to get the number of useful bits,
-         // then I want to keep the most significant 16 bits of what's left.
-         int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
-         for( const auto& weight : weights )
+            for( const son_object& son : sons )
+            {
+               weights.emplace(son.son_account, _vote_tally_buffer[son.vote_id]);
+               total_votes += _vote_tally_buffer[son.vote_id];
+            }
+
+            // total_votes is 64 bits. Subtract the number of leading low bits from 64 to get the number of useful bits,
+            // then I want to keep the most significant 16 bits of what's left.
+            int8_t bits_to_drop = std::max(int(boost::multiprecision::detail::find_msb(total_votes)) - 15, 0);
+            for( const auto& weight : weights )
+            {
+               // Ensure that everyone has at least one vote. Zero weights aren't allowed.
+               uint16_t votes = std::max((weight.second >> bits_to_drop), uint64_t(1) );
+               a.active.account_auths[weight.first] += votes;
+               a.active.weight_threshold += votes;
+            }
+
+            a.active.weight_threshold *= 2;
+            a.active.weight_threshold /= 3;
+            a.active.weight_threshold += 1;
+         }
+         else
          {
-            // Ensure that everyone has at least one vote. Zero weights aren't allowed.
-            uint16_t votes = std::max((weight.second >> bits_to_drop), uint64_t(1) );
-            a.active.account_auths[weight.first] += votes;
-            a.active.weight_threshold += votes;
+            vote_counter vc;
+            for( const son_object& son : sons )
+               vc.add( son.son_account, std::max(_vote_tally_buffer[son.vote_id], UINT64_C(1)) );
+            vc.finish_2_3( a.active );
          }
+      } );
+   }
+   
 
-         a.active.weight_threshold /= 2;
-         a.active.weight_threshold += 1;
+   // Compare current and to-be lists of active sons
+   auto cur_active_sons = gpo.active_sons;
+   vector<son_info> new_active_sons;
+   for( const son_object& son : sons ) {
+      son_info swi;
+      swi.son_id = son.id;
+      swi.total_votes = son.total_votes;
+      swi.signing_key = son.signing_key;
+      swi.sidechain_public_keys = son.sidechain_public_keys;
+      new_active_sons.push_back(swi);
+   }
+
+   bool son_sets_equal = (cur_active_sons.size() == new_active_sons.size());
+   if (son_sets_equal) {
+      for( size_t i = 0; i < cur_active_sons.size(); i++ ) {
+         son_sets_equal = son_sets_equal && cur_active_sons.at(i) == new_active_sons.at(i);
       }
-      else
-      {
-         vote_counter vc;
-         for( const son_object& son : sons )
-            vc.add( son.son_account, std::max(_vote_tally_buffer[son.vote_id], UINT64_C(1)) );
-         vc.finish( a.active );
-      }
-   } );
+   }
+
+   if (son_sets_equal) {
+      ilog( "Active SONs set NOT CHANGED" );
+   } else {
+      ilog( "Active SONs set CHANGED" );
+
+      update_son_wallet(new_active_sons);
+      update_son_statuses(cur_active_sons, new_active_sons);
+   }
+
+   // Update son performance metrics
+   update_son_metrics(cur_active_sons);
 
    modify(gpo, [&]( global_property_object& gp ){
       gp.active_sons.clear();
-      gp.active_sons.reserve(sons.size());
-      std::transform(sons.begin(), sons.end(),
-                     std::inserter(gp.active_sons, gp.active_sons.end()),
-                     [](const son_object& s) {
-         return s.id;
-      });
+      gp.active_sons.reserve(new_active_sons.size());
+      gp.active_sons.insert(gp.active_sons.end(), new_active_sons.begin(), new_active_sons.end());
    });
 
-   //const witness_schedule_object& wso = witness_schedule_id_type()(*this);
-   //modify(wso, [&](witness_schedule_object& _wso)
-   //{
-   //   _wso.scheduler.update(gpo.active_witnesses);
-   //});
+   const son_schedule_object& sso = son_schedule_id_type()(*this);
+   modify(sso, [&](son_schedule_object& _sso)
+   {
+      flat_set<son_id_type> active_sons;
+      active_sons.reserve(gpo.active_sons.size());
+      std::transform(gpo.active_sons.begin(), gpo.active_sons.end(),
+                     std::inserter(active_sons, active_sons.end()),
+                     [](const son_info& swi) {
+         return swi.son_id;
+      });
+      _sso.scheduler.update(active_sons);
+   });
 } FC_CAPTURE_AND_RETHROW() }
 
 void database::initialize_budget_record( fc::time_point_sec now, budget_record& rec )const
@@ -1375,6 +1577,30 @@ void process_dividend_assets(database& db)
       }
 } FC_CAPTURE_AND_RETHROW() }
 
+void perform_son_tasks(database& db)
+{
+   const global_property_object& gpo = db.get_global_properties();
+   if(gpo.parameters.son_account() == GRAPHENE_NULL_ACCOUNT && db.head_block_time() >= HARDFORK_SON_TIME)
+   {
+      const auto& son_account = db.create<account_object>([&](account_object& a) {
+         a.name = "son-account";
+         a.statistics = db.create<account_statistics_object>([&](account_statistics_object& s){s.owner = a.id;}).id;
+         a.owner.weight_threshold = 1;
+         a.active.weight_threshold = 0;
+         a.registrar = a.lifetime_referrer = a.referrer = a.id;
+         a.membership_expiration_date = time_point_sec::maximum();
+         a.network_fee_percentage = GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+         a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
+      });
+
+      db.modify( gpo, [&]( global_property_object& gpo ) {
+            gpo.parameters.extensions.value.son_account = son_account.get_id();
+            if( gpo.pending_parameters )
+               gpo.pending_parameters->extensions.value.son_account = son_account.get_id();
+      });
+   }
+}
+
 void database::perform_chain_maintenance(const signed_block& next_block, const global_property_object& global_props)
 { try {
    const auto& gpo = get_global_properties();
@@ -1383,6 +1609,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
    create_buyback_orders(*this);
 
    process_dividend_assets(*this);
+   perform_son_tasks(*this);
 
    struct vote_tally_helper {
       database& d;

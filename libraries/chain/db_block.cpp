@@ -336,8 +336,6 @@ processed_transaction database::validate_transaction( const signed_transaction& 
 
 processed_transaction database::push_proposal(const proposal_object& proposal)
 { try {
-   FC_ASSERT( _undo_db.size() < _undo_db.max_size(), "Undo database is full!" );
-
    transaction_evaluation_state eval_state(this);
    eval_state._is_proposed_trx = true;
 
@@ -347,6 +345,8 @@ processed_transaction database::push_proposal(const proposal_object& proposal)
    size_t old_applied_ops_size = _applied_ops.size();
 
    try {
+      if( _undo_db.size() >= _undo_db.max_size() )
+         _undo_db.set_max_size( _undo_db.size() + 1 );
       auto session = _undo_db.start_undo_session(true);
       for( auto& op : proposal.proposed_transaction.operations )
          eval_state.operation_results.emplace_back(apply_operation(eval_state, op));
@@ -426,34 +426,6 @@ signed_block database::_generate_block(
    //
    _pending_tx_session.reset();
    _pending_tx_session = _undo_db.start_undo_session();
-
-   if( head_block_time() > HARDFORK_SON_TIME )
-   {
-      // Approve proposals raised by me in previous schedule or before
-      process_son_proposals( witness_obj, block_signing_private_key );
-      // Check for new SON Deregistration Proposals to be raised
-      std::set<son_id_type> sons_to_be_dereg = get_sons_to_be_deregistered();
-      if(sons_to_be_dereg.size() > 0)
-      {
-         // We shouldn't raise proposals for the SONs for which a de-reg
-         // proposal is already raised.
-         std::set<son_id_type> sons_being_dereg = get_sons_being_deregistered();
-         for( auto& son : sons_to_be_dereg)
-         {
-            // New SON to be deregistered
-            if(sons_being_dereg.find(son) == sons_being_dereg.end())
-            {
-               // Creating the de-reg proposal
-               auto op = create_son_deregister_proposal(son, witness_obj);
-               if(op.valid())
-               {
-                  // Signing and pushing into the txs to be included in the block
-                  _pending_tx.insert( _pending_tx.begin(), create_signed_transaction( block_signing_private_key, *op ) );
-               }
-            }
-         }
-      }
-   }
 
    uint64_t postponed_tx_count = 0;
    // pop pending state (reset to head block state)
@@ -649,8 +621,13 @@ void database::_apply_block( const signed_block& next_block )
       _current_virtual_op = 0;   
    }
 
-   if (global_props.parameters.witness_schedule_algorithm == GRAPHENE_WITNESS_SCHEDULED_ALGORITHM)
-       update_witness_schedule(next_block);
+   if (global_props.parameters.witness_schedule_algorithm == GRAPHENE_WITNESS_SCHEDULED_ALGORITHM) {
+      update_witness_schedule(next_block);
+      if(global_props.active_sons.size() > 0) {
+         update_son_schedule(next_block);
+      }
+   }
+
    const uint32_t missed = update_witness_missed_blocks( next_block );
    update_global_dynamic_data( next_block, missed );
    update_signing_witness(signing_witness, next_block);
@@ -678,8 +655,13 @@ void database::_apply_block( const signed_block& next_block )
    // update_global_dynamic_data() as perhaps these methods only need
    // to be called for header validation?
    update_maintenance_flag( maint_needed );
-   if (global_props.parameters.witness_schedule_algorithm == GRAPHENE_WITNESS_SHUFFLED_ALGORITHM)
-        update_witness_schedule();
+   if (global_props.parameters.witness_schedule_algorithm == GRAPHENE_WITNESS_SHUFFLED_ALGORITHM) {
+      update_witness_schedule();
+      if(global_props.active_sons.size() > 0) {
+         update_son_schedule();
+      }
+   }
+
    if( !_node_property_object.debug_updates.empty() )
       apply_debug_updates();
 

@@ -40,6 +40,8 @@
 
 #include <graphene/chain/protocol/protocol.hpp>
 
+#include <graphene/chain/sidechain_defs.hpp>
+
 #include <fc/log/logger.hpp>
 
 #include <map>
@@ -241,6 +243,22 @@ namespace graphene { namespace chain {
          witness_id_type get_scheduled_witness(uint32_t slot_num)const;
 
          /**
+          * @brief Get the son scheduled for block production in a slot.
+          *
+          * slot_num always corresponds to a time in the future.
+          *
+          * If slot_num == 1, returns the next scheduled son.
+          * If slot_num == 2, returns the next scheduled son after
+          * 1 block gap.
+          *
+          * Use the get_slot_time() and get_slot_at_time() functions
+          * to convert between slot_num and timestamp.
+          *
+          * Passing slot_num == 0 returns GRAPHENE_NULL_WITNESS
+          */
+         son_id_type get_scheduled_son(uint32_t slot_num)const;
+
+         /**
           * Get the time at which the given slot occurs.
           *
           * If slot_num == 0, return time_point_sec().
@@ -263,6 +281,8 @@ namespace graphene { namespace chain {
          vector<witness_id_type> get_near_witness_schedule()const;
          void update_witness_schedule();
          void update_witness_schedule(const signed_block& next_block);
+         void update_son_schedule();
+         void update_son_schedule(const signed_block& next_block);
       
          void check_lottery_end_by_participants( asset_id_type asset_id );
          void check_ending_lotteries();
@@ -280,12 +300,11 @@ namespace graphene { namespace chain {
          std::vector<uint32_t>                  get_seeds( asset_id_type for_asset, uint8_t count_winners )const;
          uint64_t                               get_random_bits( uint64_t bound );
          std::set<son_id_type>                  get_sons_being_deregistered();
+         std::set<son_id_type>                  get_sons_being_reported_down();
          std::set<son_id_type>                  get_sons_to_be_deregistered();
-         fc::optional<operation>                create_son_deregister_proposal(const son_id_type& son_id, const witness_object& current_witness );
+         fc::optional<operation>                create_son_deregister_proposal( son_id_type son_id, account_id_type paying_son );
          signed_transaction                     create_signed_transaction( const fc::ecc::private_key& signing_private_key, const operation& op );
-         void                                   process_son_proposals( const witness_object& current_witness, const fc::ecc::private_key& private_key );
-         void                                   remove_son_proposal( const proposal_object& proposal );
-         bool                                   is_son_dereg_valid( const son_id_type& son_id );
+         bool                                   is_son_dereg_valid( son_id_type son_id );
 
          time_point_sec   head_block_time()const;
          uint32_t         head_block_num()const;
@@ -527,7 +546,13 @@ namespace graphene { namespace chain {
          void perform_chain_maintenance(const signed_block& next_block, const global_property_object& global_props);
          void update_active_witnesses();
          void update_active_committee_members();
+         void update_son_metrics( const vector<son_info>& curr_active_sons );
          void update_active_sons();
+         void remove_son_proposal( const proposal_object& proposal );
+         void remove_inactive_son_down_proposals( const vector<son_id_type>& son_ids_to_remove );
+         void remove_inactive_son_proposals( const vector<son_id_type>& son_ids_to_remove );
+         void update_son_statuses( const vector<son_info>& cur_active_sons, const vector<son_info>& new_active_sons );
+         void update_son_wallet( const vector<son_info>& new_active_sons );
          void update_worker_votes();
       
          template<class... Types>
@@ -582,6 +607,13 @@ namespace graphene { namespace chain {
           * database::close() has not been called, or failed during execution.
           */
          bool                              _opened = false;
+
+      /////////////////////// db_sidechain.cpp ////////////////////
+      public:
+          bool recreate_primary_wallet;
+          void initialize_db_sidechain();
+      protected:
+      private:
    };
 
    namespace detail
