@@ -74,7 +74,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
          if (plugin.is_active_son(son_id)) {
 
             son_wallet_deposit_create_operation op;
-            op.payer = plugin.get_current_son_object().son_account;
+            op.payer = plugin.get_son_object(son_id).son_account;
             op.son_id = son_id;
             op.timestamp = sed.timestamp;
             op.sidechain = sed.sidechain;
@@ -94,7 +94,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                if (plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch (fc::exception e) {
-               elog("Sending proposal for son wallet deposit create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
+               elog("Sending son wallet deposit create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
             }
          }
       }
@@ -113,7 +113,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
          if (plugin.is_active_son(son_id)) {
 
             son_wallet_withdraw_create_operation op;
-            op.payer = plugin.get_current_son_object().son_account;
+            op.payer = plugin.get_son_object(son_id).son_account;
             op.son_id = son_id;
             op.timestamp = sed.timestamp;
             op.sidechain = sed.sidechain;
@@ -132,7 +132,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                if (plugin.app().p2p_node())
                   plugin.app().p2p_node()->broadcast(net::trx_message(trx));
             } catch (fc::exception e) {
-               elog("Sending proposal for son wallet withdraw create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
+               elog("Sending son wallet withdraw create operation by ${son} failed with exception ${e}", ("son", son_id)("e", e.what()));
             }
          }
       }
