@@ -617,7 +617,6 @@ void database::update_active_sons()
    auto cur_active_sons = gpo.active_sons;
    vector<son_info> new_active_sons;
    const auto &acc = get(gpo.parameters.son_account());
-   assert(acc != acc_idx.end());
    for( const son_object& son : sons ) {
       son_info swi;
       swi.son_id = son.id;
