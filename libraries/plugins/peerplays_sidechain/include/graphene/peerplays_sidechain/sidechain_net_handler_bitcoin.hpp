@@ -43,7 +43,7 @@ public:
    std::string walletlock();
    std::string walletprocesspsbt(std::string const &tx_psbt);
    bool walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
-
+   uint64_t outputamount(const std::string& txid, uint32_t output_num);
 private:
    fc::http::reply send_post_request(std::string body, bool show_log = false);
 

@@ -706,6 +706,38 @@ bool bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, uint32_
    return false;
 }
 
+uint64_t bitcoin_rpc_client::outputamount(const std::string &txid, uint32_t output_num)
+{
+   const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"peerplays_plugin\", "
+                                 "\"method\": \"getrawtransaction\", \"params\": [\"") +
+                     txid + std::string("\", false] }");
+
+   const auto reply = send_post_request(body, true);
+
+   if (reply.body.empty()) {
+      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+      return 0;
+   }
+
+   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   if (reply.status == 200) {
+      if (json.find("result") != json.not_found()) {
+         auto txraw_str = json.get<std::string>("result");
+         bytes txraw;
+         txraw.resize(txraw_str.size() / 2);
+         fc::from_hex(txraw_str, (char*)&txraw[0], txraw.size());
+         btc_tx tx;
+         tx.fill_from_bytes(txraw);
+         return tx.vout[output_num].nValue;
+      }
+   }
+
+   return 0;
+}
+
 fc::http::reply bitcoin_rpc_client::send_post_request(std::string body, bool show_log) {
    fc::http::connection conn;
    conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), rpc_port));
@@ -938,7 +970,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
                }
 
                if (min_amount >= total_amount) {
-                  elog("Failed not enough BTC to transfer from ${fa}", ("fa", prev_pw_address));
+                  elog("Failed not enough BTC to transfer from ${fa}, ${ma} >= ${ta}", ("fa", prev_pw_address)("ma", min_amount)("ta", total_amount));
                   return;
                }
             }
@@ -1277,8 +1309,8 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    vector<uint64_t> in_amounts;
    for(const auto& in: inputs)
    {
-      tx.vin.push_back(btc_in(in.txid_, in.out_num_, in.amount_));
-      in_amounts.push_back(in.amount_ * 100000000.0);
+      tx.vin.push_back(btc_in(in.txid_, in.out_num_));
+      in_amounts.push_back(bitcoin_client->outputamount(in.txid_, in.out_num_));
    }
    for(const auto& out: outputs)
       tx.vout.push_back(btc_out(out.first, out.second * 100000000.0));
