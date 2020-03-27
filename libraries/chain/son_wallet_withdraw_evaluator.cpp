@@ -10,7 +10,14 @@ namespace graphene { namespace chain {
 void_result create_son_wallet_withdraw_evaluator::do_evaluate(const son_wallet_withdraw_create_operation& op)
 { try {
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
-   FC_ASSERT( op.payer == db().get_global_properties().parameters.son_account(), "SON paying account must be set as payer." );
+
+   const auto &son_idx = db().get_index_type<son_index>().indices().get<by_id>();
+   const auto so = son_idx.find(op.son_id);
+   FC_ASSERT(so != son_idx.end(), "SON not found");
+   FC_ASSERT(so->son_account == op.payer, "Payer is not SON account owner");
+
+   const auto &ss_idx = db().get_index_type<son_stats_index>().indices().get<by_owner>();
+   FC_ASSERT(ss_idx.find(op.son_id) != ss_idx.end(), "Statistic object for a given SON ID does not exists");
 
    const auto &swwo_idx = db().get_index_type<son_wallet_withdraw_index>().indices().get<by_peerplays_uid>();
    const auto swwo = swwo_idx.find(op.peerplays_uid);
@@ -25,6 +32,18 @@ void_result create_son_wallet_withdraw_evaluator::do_evaluate(const son_wallet_w
       }
       FC_ASSERT(expected, "Only active SON can create deposit");
    } else {
+      bool exactly_the_same = true;
+      exactly_the_same = exactly_the_same && (swwo->sidechain == op.sidechain);
+      exactly_the_same = exactly_the_same && (swwo->peerplays_uid == op.peerplays_uid);
+      exactly_the_same = exactly_the_same && (swwo->peerplays_transaction_id == op.peerplays_transaction_id);
+      exactly_the_same = exactly_the_same && (swwo->peerplays_from == op.peerplays_from);
+      exactly_the_same = exactly_the_same && (swwo->peerplays_asset == op.peerplays_asset);
+      exactly_the_same = exactly_the_same && (swwo->withdraw_sidechain == op.withdraw_sidechain);
+      exactly_the_same = exactly_the_same && (swwo->withdraw_address == op.withdraw_address);
+      exactly_the_same = exactly_the_same && (swwo->withdraw_currency == op.withdraw_currency);
+      exactly_the_same = exactly_the_same && (swwo->withdraw_amount == op.withdraw_amount);
+      FC_ASSERT(exactly_the_same, "Invalid withdraw confirmation");
+
       bool expected = false;
       for (auto &exp : swwo->expected_reports) {
          if (op.son_id == exp.first) {
@@ -34,14 +53,6 @@ void_result create_son_wallet_withdraw_evaluator::do_evaluate(const son_wallet_w
       }
       FC_ASSERT(expected, "Confirmation from this SON not expected");
    }
-
-   const auto &son_idx = db().get_index_type<son_index>().indices().get<by_id>();
-   const auto so = son_idx.find(op.son_id);
-   FC_ASSERT(so != son_idx.end(), "SON not found");
-   FC_ASSERT(so->son_account == op.payer, "Payer is not SON account owner");
-
-   const auto &ss_idx = db().get_index_type<son_stats_index>().indices().get<by_owner>();
-   FC_ASSERT(ss_idx.find(op.son_id) != ss_idx.end(), "Statistic object for a given SON ID does not exists");
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
