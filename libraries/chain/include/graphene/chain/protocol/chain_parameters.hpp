@@ -58,6 +58,7 @@ namespace graphene { namespace chain {
       optional < uint32_t >           son_deregister_time;
       optional < uint32_t >           son_heartbeat_frequency;
       optional < uint32_t >           son_down_time;
+      optional < account_id_type >    son_account;
    };
 
    struct chain_parameters
@@ -174,6 +175,9 @@ namespace graphene { namespace chain {
       inline uint32_t gpos_vesting_lockin_period()const {
          return extensions.value.gpos_vesting_lockin_period.valid() ? *extensions.value.gpos_vesting_lockin_period : GPOS_VESTING_LOCKIN_PERIOD; /// GPOS vesting lockin period
       }      
+      inline account_id_type son_account() const {
+         return extensions.value.son_account.valid() ? *extensions.value.son_account : GRAPHENE_NULL_ACCOUNT;
+      }
    };
 
 } }  // graphene::chain
@@ -198,7 +202,8 @@ FC_REFLECT( graphene::chain::parameter_extension,
    (son_pay_time)
    (son_deregister_time)
    (son_heartbeat_frequency)
-   (son_down_time)   
+   (son_down_time)
+   (son_account)
 )
 
 FC_REFLECT( graphene::chain::chain_parameters,
