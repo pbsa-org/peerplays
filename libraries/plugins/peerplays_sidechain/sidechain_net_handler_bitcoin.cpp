@@ -897,7 +897,7 @@ void sidechain_net_handler_bitcoin::recreate_primary_wallet() {
          vector<uint64_t> son_votes;
          for (const son_info &si : active_sons) {
             son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
-            son_votes.push_back(si.total_votes);
+            son_votes.push_back(si.weight);
          }
 
          std::string full_address_info = create_multisig_address(son_pubkeys_bitcoin, son_votes);
@@ -1317,13 +1317,10 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
       tx.vout.push_back(btc_out(out.first, out.second * 100000000.0));
    bytes buf;
    tx.to_bytes(buf);
-   if (redeem_script.size()) {
-      bytes redeem_script_bin;
-      redeem_script_bin.resize(redeem_script.size() / 2);
-      fc::from_hex(redeem_script, (char*)&redeem_script_bin[0], redeem_script_bin.size());
-      buf = add_dummy_signatures_for_pw_transfer(buf, redeem_script_bin, 15); // TODO: get son number from the script
-   }
-   return save_tx_data_to_string(buf, in_amounts);
+   bytes redeem_script_bin;
+   redeem_script_bin.resize(redeem_script.size() / 2);
+   fc::from_hex(redeem_script, (char*)&redeem_script_bin[0], redeem_script_bin.size());
+   return save_tx_data_to_string(buf, in_amounts, redeem_script_bin);
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto, bool &complete) {
@@ -1435,27 +1432,25 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
          already_signed += son.total_votes;
    }
    set<son_id_type> owned_sons = plugin.get_sons();
-   bytes partially_signed_tx;
+   bytes unsigned_tx;
    vector<uint64_t> in_amounts;
-   read_tx_data_from_string(sto.transaction, partially_signed_tx, in_amounts);
+   bytes redeem_script;
+   read_tx_data_from_string(sto.transaction, unsigned_tx, in_amounts, redeem_script);
+   son_object active_son = plugin.get_current_son_object();
+   vector<bytes> signatures;
    for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
       if(!sto.signatures[idx].second.empty())
          continue;
-      if(!owned_sons.count(sto.signatures[idx].first))
+      if(sto.signatures[idx].first != active_son.id)
          continue;
-      son_object son = plugin.get_son_object(sto.signatures[idx].first);
-      std::string btc_public_key = son.sidechain_public_keys[sidechain_type::bitcoin];
+      std::string btc_public_key = active_son.sidechain_public_keys[sidechain_type::bitcoin];
       fc::optional<fc::ecc::private_key> btc_private_key = graphene::utilities::wif_to_key(private_keys[btc_public_key]);
-      ilog("Sign with public key ${pub}, private key ${priv}, index ${idx}",
-           ("pub", btc_public_key)("priv", *btc_private_key)("idx", idx));
-      partially_signed_tx = partially_sign_pw_transfer_transaction(partially_signed_tx, in_amounts, *btc_private_key, idx);
-      already_signed += son.total_votes;
+      already_signed += active_son.total_votes;
+      signatures = signatures_for_raw_transaction(unsigned_tx, in_amounts, redeem_script, *btc_private_key);
    }
    complete = (3 * already_signed > 2 * total_votes);
-   if(complete)
-      return fc::to_hex((const char*)&partially_signed_tx[0], partially_signed_tx.size());
 
-   return save_tx_data_to_string(partially_signed_tx, in_amounts);
+   return write_bytes_array_to_string(signatures);
 }
 
 bool sidechain_net_handler_bitcoin::send_transaction_raw(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
@@ -1511,7 +1506,23 @@ bool sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain_transa
 bool sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
    sidechain_transaction = "";
 
-   return bitcoin_client->sendrawtransaction(sto.transaction);
+   bytes unsigned_tx;
+   vector<uint64_t> in_amounts;
+   bytes redeem_script;
+   read_tx_data_from_string(sto.transaction, unsigned_tx, in_amounts, redeem_script);
+   uint32_t inputs_number = in_amounts.size();
+   vector<bytes> dummy;
+   dummy.resize(inputs_number);
+   vector<vector<bytes>> signatures;
+   for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
+      if(sto.signatures[idx].second.empty())
+         signatures.push_back(dummy);
+      else
+         signatures.push_back(read_bytes_array_from_string(sto.signatures[idx].second));
+   }
+   bytes signed_tx = add_signatures_to_unsigned_tx(unsigned_tx, signatures, redeem_script);
+
+   return bitcoin_client->sendrawtransaction(fc::to_hex((char*)&signed_tx[0], signed_tx.size()));
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {

@@ -786,7 +786,7 @@ bytes get_weighted_multisig_redeem_script(std::vector<std::pair<std::string, uin
    return generate_redeem_script(key_data);
 }
 
-void read_tx_data_from_string(const std::string &string_buf, bytes &tx, std::vector<uint64_t> &in_amounts)
+void read_tx_data_from_string(const std::string &string_buf, bytes &tx, std::vector<uint64_t> &in_amounts, bytes &redeem_script)
 {
    std::stringstream ss(string_buf);
    boost::property_tree::ptree json;
@@ -798,9 +798,13 @@ void read_tx_data_from_string(const std::string &string_buf, bytes &tx, std::vec
    in_amounts.clear();
    for(auto &v: json.get_child("in_amounts"))
       in_amounts.push_back(fc::to_uint64(v.second.data()));
+   std::string script = json.get<std::string>("redeem_script");
+   redeem_script.clear();
+   redeem_script.resize(script.size() / 2);
+   fc::from_hex(script, (char*)&redeem_script[0], redeem_script.size());
 }
 
-std::string save_tx_data_to_string(const bytes &tx, const std::vector<uint64_t> &in_amounts)
+std::string save_tx_data_to_string(const bytes &tx, const std::vector<uint64_t> &in_amounts, const bytes &redeem_script)
 {
    std::string res = "{\"tx_hex\":\"" + fc::to_hex((const char*)&tx[0], tx.size()) + "\",\"in_amounts\":[";
    for (unsigned int idx = 0; idx < in_amounts.size(); ++idx) {
@@ -808,7 +812,37 @@ std::string save_tx_data_to_string(const bytes &tx, const std::vector<uint64_t> 
       if (idx != in_amounts.size() - 1)
          res += ",";
    }
-   res += "]}";
+   res += "],\"redeem_script\":\"" + fc::to_hex((const char*)&redeem_script[0], redeem_script.size()) + "\"}";
+   return res;
+}
+
+std::vector<bytes> read_bytes_array_from_string(const std::string &string_buf)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   std::vector<bytes> data;
+   for(auto &v: json)
+   {
+      std::string hex = v.second.data();
+      bytes item;
+      item.resize(hex.size() / 2);
+      fc::from_hex(hex, (char*)&item[0], item.size());
+      data.push_back(item);
+   }
+   return data;
+}
+
+std::string write_bytes_array_to_string(const std::vector<bytes>& data)
+{
+   std::string res = "[";
+   for (unsigned int idx = 0; idx < data.size(); ++idx) {
+      res += "\"" + fc::to_hex((char*)&data[idx][0], data[idx].size()) + "\"";
+      if (idx != data.size() - 1)
+         res += ",";
+   }
+   res += "]";
    return res;
 }
 

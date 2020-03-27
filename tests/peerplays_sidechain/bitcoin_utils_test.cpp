@@ -33,12 +33,20 @@ BOOST_AUTO_TEST_CASE(tx_data_serialization)
 {
    bytes source_tx({0, 1, 2, 3, 4, 5});
    std::vector<uint64_t> source_ins({6, 7, 8, 9, 10});
-   std::string buf = save_tx_data_to_string(source_tx, source_ins);
+   bytes source_script({11, 12, 13, 14});
+   std::string buf = save_tx_data_to_string(source_tx, source_ins, source_script);
    bytes destination_tx;
    std::vector<uint64_t> destination_ins;
-   read_tx_data_from_string(buf, destination_tx, destination_ins);
+   bytes destination_script;
+   read_tx_data_from_string(buf, destination_tx, destination_ins, destination_script);
    BOOST_REQUIRE(source_tx == destination_tx);
    BOOST_REQUIRE(source_ins == destination_ins);
+   BOOST_REQUIRE(source_script == destination_script);
+
+   std::vector<bytes> source_array({source_tx, source_script, source_script});
+   buf = write_bytes_array_to_string(source_array);
+   std::vector<bytes> destination_array = read_bytes_array_from_string(buf);
+   BOOST_REQUIRE(source_array == destination_array);
 }
 
 BOOST_AUTO_TEST_CASE(pw_transfer)

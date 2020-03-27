@@ -68,8 +68,11 @@ bytes add_signatures_to_unsigned_tx(const bytes &unsigned_tx,
                                     const std::vector<std::vector<bytes>> &signatures,
                                     const bytes &redeem_script);
 
-void read_tx_data_from_string(const std::string &string_buf, bytes& tx, std::vector<uint64_t>& in_amounts);
-std::string save_tx_data_to_string(const bytes& tx, const std::vector<uint64_t>& in_amounts);
+void read_tx_data_from_string(const std::string &string_buf, bytes& tx, std::vector<uint64_t>& in_amounts, bytes& redeem_script);
+std::string save_tx_data_to_string(const bytes& tx, const std::vector<uint64_t>& in_amounts, const bytes& redeem_script);
+
+std::vector<bytes> read_bytes_array_from_string(const std::string &string_buf);
+std::string write_bytes_array_to_string(const std::vector<bytes>& data);
 
 
 struct btc_outpoint {
