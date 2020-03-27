@@ -1229,7 +1229,8 @@ std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_tran
 bool sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
    sidechain_transaction = "";
    //return send_transaction_raw(sto, sidechain_transaction);
-   return send_transaction_psbt(sto, sidechain_transaction);
+   //return send_transaction_psbt(sto, sidechain_transaction);
+   return send_transaction_standalone(sto, sidechain_transaction);
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisig_address_raw(const std::vector<std::string> &son_pubkeys)
@@ -1505,7 +1506,13 @@ bool sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain_transa
    }
 
    return false;
-} // namespace peerplays_sidechain
+}
+
+bool sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
+   sidechain_transaction = "";
+
+   return bitcoin_client->sendrawtransaction(sto.transaction);
+}
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
    std::string block = bitcoin_client->getblock(event_data);
