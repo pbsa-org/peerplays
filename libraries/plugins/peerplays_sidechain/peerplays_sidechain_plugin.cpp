@@ -286,7 +286,7 @@ bool peerplays_sidechain_plugin_impl::is_son_down_op_valid(const chain::operatio
    fc::time_point_sec last_active_ts = ((stats.last_active_timestamp > last_maintenance_time) ? stats.last_active_timestamp : last_maintenance_time);
    int64_t down_threshold = gpo.parameters.son_down_time();
    if (((son_obj->status == chain::son_status::active) || (son_obj->status == chain::son_status::request_maintenance)) &&
-         ((fc::time_point::now() - last_active_ts) > fc::seconds(down_threshold))) {
+       ((fc::time_point::now() - last_active_ts) > fc::seconds(down_threshold))) {
       return true;
    }
    return false;
@@ -428,14 +428,6 @@ bool peerplays_sidechain_plugin_impl::is_valid_son_proposal(const chain::proposa
          return true;
       }
 
-      if (op_idx_0 == chain::operation::tag<chain::son_wallet_deposit_create_operation>::value) {
-         return true;
-      }
-
-      if (op_idx_0 == chain::operation::tag<chain::son_wallet_withdraw_create_operation>::value) {
-         return true;
-      }
-
       if (op_idx_0 == chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value) {
          return true;
       }
@@ -448,7 +440,7 @@ bool peerplays_sidechain_plugin_impl::is_valid_son_proposal(const chain::proposa
       int32_t op_idx_1 = proposal.proposed_transaction.operations[1].which();
 
       if ((op_idx_0 == chain::operation::tag<chain::son_wallet_deposit_process_operation>::value) &&
-            (op_idx_1 == chain::operation::tag<chain::transfer_operation>::value)) {
+          (op_idx_1 == chain::operation::tag<chain::transfer_operation>::value)) {
          return true;
       }
    }
