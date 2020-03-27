@@ -12,6 +12,8 @@ using namespace graphene::peerplays_sidechain;
 
 BOOST_FIXTURE_TEST_SUITE( plugin, son_fixture )
 
+#ifdef SUPPORT_MULTIPLE_SONS
+
 BOOST_AUTO_TEST_CASE(init)
 {
    generate_blocks(HARDFORK_SON_TIME + 1);
@@ -68,5 +70,7 @@ BOOST_AUTO_TEST_CASE(init)
    BOOST_CHECK_NO_THROW(plugin.plugin_startup());
    BOOST_CHECK_NO_THROW(plugin.plugin_shutdown());
 }
+
+#endif // #ifdef SUPPORT_MULTIPLE_SONS
 
 BOOST_AUTO_TEST_SUITE_END()
