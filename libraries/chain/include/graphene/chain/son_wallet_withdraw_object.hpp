@@ -64,4 +64,4 @@ FC_REFLECT_DERIVED( graphene::chain::son_wallet_withdraw_object, (graphene::db::
                     (peerplays_uid) (peerplays_transaction_id) (peerplays_from) (peerplays_asset)
                     (withdraw_sidechain) (withdraw_address) (withdraw_currency) (withdraw_amount)
                     (expected_reports) (received_reports)
-                    (processed) )
+                    (confirmed) (processed) )
