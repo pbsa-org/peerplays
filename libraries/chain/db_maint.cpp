@@ -1864,7 +1864,7 @@ void perform_son_tasks(database& db)
    {
       const asset_dynamic_data_object& dyn_asset =
          db.create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
-            a.current_supply = GRAPHENE_MAX_SHARE_SUPPLY;
+            a.current_supply = 0;
          });
 
       const asset_object& pbtc_asset =
