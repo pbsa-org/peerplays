@@ -1860,15 +1860,14 @@ void perform_son_tasks(database& db)
       });
    }
    // create PBTC asset here because son_account is the issuer of the PBTC
-   if (gpo.parameters.btc_asset() == asset_id_type())
+   if (gpo.parameters.pbtc_asset() == asset_id_type())
    {
-      // Create PBTC asset
       const asset_dynamic_data_object& dyn_asset =
          db.create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
             a.current_supply = GRAPHENE_MAX_SHARE_SUPPLY;
          });
 
-      const asset_object& btc_asset =
+      const asset_object& pbtc_asset =
          db.create<asset_object>( [&gpo, &dyn_asset]( asset_object& a ) {
             a.symbol = "PBTC";
             a.options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
@@ -1882,10 +1881,10 @@ void perform_son_tasks(database& db)
             a.options.core_exchange_rate.quote.asset_id = asset_id_type(0);
             a.dynamic_asset_data_id = dyn_asset.id;
          });
-      db.modify( gpo, [&btc_asset]( global_property_object& gpo ) {
-            gpo.parameters.extensions.value.btc_asset = btc_asset.get_id();
+      db.modify( gpo, [&pbtc_asset]( global_property_object& gpo ) {
+            gpo.parameters.extensions.value.pbtc_asset = pbtc_asset.get_id();
             if( gpo.pending_parameters )
-               gpo.pending_parameters->extensions.value.btc_asset = btc_asset.get_id();
+               gpo.pending_parameters->extensions.value.pbtc_asset = pbtc_asset.get_id();
       });
    }
 }
