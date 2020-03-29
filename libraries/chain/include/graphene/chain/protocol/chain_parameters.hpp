@@ -59,6 +59,7 @@ namespace graphene { namespace chain {
       optional < uint32_t >           son_heartbeat_frequency;
       optional < uint32_t >           son_down_time;
       optional < account_id_type >    son_account;
+      optional < asset_id_type >      btc_asset;
    };
 
    struct chain_parameters
@@ -178,6 +179,9 @@ namespace graphene { namespace chain {
       inline account_id_type son_account() const {
          return extensions.value.son_account.valid() ? *extensions.value.son_account : GRAPHENE_NULL_ACCOUNT;
       }
+      inline asset_id_type btc_asset() const {
+         return extensions.value.btc_asset.valid() ? *extensions.value.btc_asset : asset_id_type();
+      }
    };
 
 } }  // graphene::chain
@@ -204,6 +208,7 @@ FC_REFLECT( graphene::chain::parameter_extension,
    (son_heartbeat_frequency)
    (son_down_time)
    (son_account)
+   (btc_asset)
 )
 
 FC_REFLECT( graphene::chain::chain_parameters,
