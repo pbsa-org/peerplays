@@ -1877,7 +1877,7 @@ void perform_son_tasks(database& db)
             a.precision = 8;
             a.options.flags = 0;
             a.options.issuer_permissions = 0;
-            a.issuer = *gpo.parameters.extensions.value.son_account;
+            a.issuer = gpo.parameters.son_account();
             a.options.core_exchange_rate.base.amount = 1;
             a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
             a.options.core_exchange_rate.quote.amount = 1;
