@@ -172,7 +172,7 @@ void sidechain_net_handler::process_deposits() {
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swdp_op);
       proposal_op.proposed_ops.emplace_back(t_op);
-      uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+      uint32_t lifetime = gpo.parameters.maintenance_interval * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
       signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
@@ -210,7 +210,7 @@ void sidechain_net_handler::process_withdrawals() {
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swwp_op);
-      uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+      uint32_t lifetime = gpo.parameters.maintenance_interval * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
       signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
