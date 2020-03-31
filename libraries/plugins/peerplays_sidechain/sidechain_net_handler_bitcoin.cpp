@@ -1412,7 +1412,9 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
          sed.sidechain_amount = v.out.amount;
          sed.peerplays_from = addr_itr->sidechain_address_account;
          sed.peerplays_to = database.get_global_properties().parameters.son_account();
-         sed.peerplays_asset = asset(sed.sidechain_amount / 1000); // For Bitcoin, the exchange rate is 1:1, for others, get the exchange rate from market
+         asset_id_type btc_asset_id = database.get_global_properties().parameters.btc_asset();
+         asset_object btc_asset = btc_asset_id(database);
+         sed.peerplays_asset = btc_asset.amount(sed.sidechain_amount);
          sidechain_event_data_received(sed);
       }
    }

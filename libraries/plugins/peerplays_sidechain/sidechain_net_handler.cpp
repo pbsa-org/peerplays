@@ -68,7 +68,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    const chain::global_property_object &gpo = database.get_global_properties();
 
    // Deposit request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("1.3.0") != 0)) {
+   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::bitcoin)) {
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
@@ -102,7 +102,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    // Withdrawal request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("1.3.0") == 0)) {
+   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::peerplays)) {
       // BTC Payout only (for now)
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sed.peerplays_from, sidechain_type::bitcoin));
@@ -124,7 +124,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             op.withdraw_sidechain = sidechain_type::bitcoin;        // BTC payout only (for now)
             op.withdraw_address = addr_itr->withdraw_address;       // BTC payout only (for now)
             op.withdraw_currency = "BTC";                           // BTC payout only (for now)
-            op.withdraw_amount = sed.peerplays_asset.amount * 1000; // BTC payout only (for now)
+            op.withdraw_amount = sed.peerplays_asset.amount;        // BTC payout only (for now)
 
             signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), op);
             try {
