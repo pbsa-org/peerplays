@@ -1863,7 +1863,7 @@ void perform_son_tasks(database& db)
       });
    }
    // create BTC asset here because son_account is the issuer of the BTC
-   if (gpo.parameters.btc_asset() == asset_id_type())
+   if (gpo.parameters.btc_asset() == asset_id_type()  && db.head_block_time() >= HARDFORK_SON_TIME)
    {
       const asset_dynamic_data_object& dyn_asset =
          db.create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
