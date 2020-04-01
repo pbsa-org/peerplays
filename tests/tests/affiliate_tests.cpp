@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE( affiliate_payout_helper_test )
 {
    ACTORS( (irene) );
 
-   const asset_id_type btc_id = create_user_issued_asset( "BTCT", irene, 0 ).id;
+   const asset_id_type btc_id = create_user_issued_asset( "BTC", irene, 0 ).id;
    issue_uia( irene, asset( 100000, btc_id ) );
 
    affiliate_test_helper ath( *this );
@@ -517,7 +517,7 @@ BOOST_AUTO_TEST_CASE( bookie_payout_test )
 { try {
    ACTORS( (irene) );
 
-   const asset_id_type btc_id = create_user_issued_asset( "BTCT", irene, 0 ).id;
+   const asset_id_type btc_id = create_user_issued_asset( "BTC", irene, 0 ).id;
 
    affiliate_test_helper ath( *this );
 
@@ -616,7 +616,7 @@ BOOST_AUTO_TEST_CASE( statistics_test )
 
    INVOKE(bookie_payout_test);
 
-   const asset_id_type btc_id = get_asset( "BTCT" ).id;
+   const asset_id_type btc_id = get_asset( "BTC" ).id;
 
    transfer( ath.alice_id, ath.ann_id,    asset( 100, btc_id ), asset(0) );
    transfer( ath.alice_id, ath.audrey_id, asset( 100, btc_id ), asset(0) );
@@ -625,12 +625,12 @@ BOOST_AUTO_TEST_CASE( statistics_test )
 
    {
       const auto& idx = db.get_index_type<graphene::affiliate_stats::referral_reward_index>().indices().get<graphene::affiliate_stats::by_asset>();
-      BOOST_CHECK_EQUAL( 2, idx.size() ); // penny 216+60 CORE, paula 600 BTCT
+      BOOST_CHECK_EQUAL( 2, idx.size() ); // penny 216+60 CORE, paula 600 BTC
    }
 
    {
       const auto& idx = db.get_index_type<graphene::affiliate_stats::app_reward_index>().indices().get<graphene::affiliate_stats::by_asset>();
-      BOOST_CHECK_EQUAL( 3, idx.size() ); // rps 216 CORE, bookie 60 CORE + 600 BTCT
+      BOOST_CHECK_EQUAL( 3, idx.size() ); // rps 216 CORE, bookie 60 CORE + 600 BTC
    }
 
    graphene::affiliate_stats::affiliate_stats_api stats( app );

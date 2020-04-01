@@ -95,11 +95,6 @@ void_result asset_create_evaluator::do_evaluate( const asset_create_operation& o
           wlog( "Asset ${s} has a name which requires hardfork 385", ("s",op.symbol) );
    }
 
-   if( d.head_block_time() < HARDFORK_SON_TIME )
-   {
-      FC_ASSERT( op.symbol != "BTC", "Preventive check to not allow BTC asset before SON HF" );
-   }
-
    // core_fee_paid -= core_fee_paid.value/2;
 
    if( op.bitasset_opts )
