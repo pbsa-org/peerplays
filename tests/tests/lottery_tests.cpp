@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE( create_lottery_asset_test )
       creator.issuer = account_id_type();
       creator.fee = asset();
       char symbol[5] = "LOT";
-      symbol[3] = (char)('A' - 2 + test_asset_id.instance.value); symbol[4] = '\0'; // symbol depending on asset_id
+      symbol[3] = (char)('A' - 1 + test_asset_id.instance.value); symbol[4] = '\0'; // symbol depending on asset_id
       creator.symbol = symbol;
       creator.common_options.max_supply = 200;
       creator.precision = 0;
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE( create_lottery_asset_test )
       lottery_options.end_date = db.head_block_time() + fc::minutes(5);
       lottery_options.ticket_price = asset(100);
       lottery_options.winning_tickets = { 5 * GRAPHENE_1_PERCENT, 5 * GRAPHENE_1_PERCENT, 5 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT };
-      lottery_options.is_active = (test_asset_id.instance.value - 1) % 2;
+      lottery_options.is_active = test_asset_id.instance.value % 2;
       lottery_options.ending_on_soldout = true;
 
       creator.extensions = lottery_options;
