@@ -222,7 +222,7 @@ void sidechain_net_handler::process_withdrawals() {
       swwp_op.son_wallet_withdraw_id = swwo.id;
 
       asset_reserve_operation r_op;
-      r_op.fee = asset(200000);
+      r_op.fee = asset(2001000);
       r_op.payer = gpo.parameters.son_account();
       asset_object btc_asset_obj = gpo.parameters.btc_asset()(database);
       r_op.amount_to_reserve = btc_asset_obj.amount(swwo.withdraw_amount);

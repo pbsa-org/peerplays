@@ -81,7 +81,7 @@ void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {
             sed.sidechain_amount = transfer_op.amount.amount;
             sed.peerplays_from = transfer_op.from;
             sed.peerplays_to = transfer_op.to;
-            sed.peerplays_asset = transfer_op.amount.amount;
+            sed.peerplays_asset = transfer_op.amount;
             sidechain_event_data_received(sed);
          }
       }
