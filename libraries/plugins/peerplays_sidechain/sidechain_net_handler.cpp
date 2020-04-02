@@ -190,12 +190,6 @@ void sidechain_net_handler::process_proposals() {
             switch (op_idx_0) {
             case chain::operation::tag<chain::son_wallet_update_operation>::value: {
                should_process = true;
-               //son_wallet_id_type swo_id = op.get<son_wallet_update_operation>().son_wallet_id;
-               //const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
-               //const auto swo = idx.find(swo_id);
-               //if (swo != idx.end()) {
-               //   should_process = (swo->sidechain == sidechain);
-               //}
                break;
             }
 
