@@ -68,7 +68,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    const chain::global_property_object &gpo = database.get_global_properties();
 
    // Deposit request
-   if ((sed.peerplays_from == gpo.parameters.son_account()) && (sed.sidechain_currency == "BTC")) {
+   if ((sed.peerplays_from == gpo.parameters.son_account()) && (sed.sidechain_currency != fc::variant(gpo.parameters.btc_asset(), 1).as<std::string>(1))) {
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
