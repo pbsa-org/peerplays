@@ -2,6 +2,8 @@
 
 #include <fc/log/logger.hpp>
 #include <fc/smart_ref_fwd.hpp>
+#include <graphene/chain/chain_property_object.hpp>
+#include <graphene/chain/proposal_object.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -49,6 +51,26 @@ std::string sidechain_net_handler::get_private_key(std::string public_key) {
       return private_key_itr->second;
    }
    return std::string();
+}
+
+bool sidechain_net_handler::approve_proposal(const proposal_id_type &proposal_id, const son_id_type &son_id) {
+
+   proposal_update_operation op;
+   op.fee_paying_account = plugin.get_son_object(son_id).son_account;
+   op.proposal = proposal_id;
+   op.active_approvals_to_add = {plugin.get_son_object(son_id).son_account};
+
+   signed_transaction tx = database.create_signed_transaction(plugin.get_private_key(son_id), op);
+   try {
+      database.push_transaction(tx, database::validation_steps::skip_block_size_check);
+      if (plugin.app().p2p_node())
+         plugin.app().p2p_node()->broadcast(net::trx_message(tx));
+      return true;
+   } catch (fc::exception e) {
+      elog("Sending approval from ${son_id} for proposal ${proposal_id} failed with exception ${e}",
+           ("son_id", son_id)("proposal_id", proposal_id)("e", e.what()));
+      return false;
+   }
 }
 
 void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_data &sed) {
@@ -142,6 +164,86 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    FC_ASSERT(false, "Invalid sidechain event");
 }
 
+void sidechain_net_handler::process_proposals() {
+   const auto &idx = database.get_index_type<proposal_index>().indices().get<by_id>();
+   vector<proposal_id_type> proposals;
+   for (const auto &proposal : idx) {
+      proposals.push_back(proposal.id);
+   }
+
+   for (const auto proposal_id : proposals) {
+      const auto &idx = database.get_index_type<proposal_index>().indices().get<by_id>();
+      const auto po = idx.find(proposal_id);
+      if (po != idx.end()) {
+
+         if (po->available_active_approvals.find(plugin.get_current_son_object().son_account) != po->available_active_approvals.end()) {
+            continue;
+         }
+
+         bool should_process = false;
+
+         if (po->proposed_transaction.operations.size() == 1) {
+
+            int32_t op_idx_0 = po->proposed_transaction.operations[0].which();
+            chain::operation op = po->proposed_transaction.operations[0];
+
+            switch (op_idx_0) {
+            case chain::operation::tag<chain::son_wallet_update_operation>::value: {
+               should_process = true;
+               //son_wallet_id_type swo_id = op.get<son_wallet_update_operation>().son_wallet_id;
+               //const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+               //const auto swo = idx.find(swo_id);
+               //if (swo != idx.end()) {
+               //   should_process = (swo->sidechain == sidechain);
+               //}
+               break;
+            }
+
+            case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
+               son_wallet_deposit_id_type swdo_id = op.get<son_wallet_deposit_process_operation>().son_wallet_deposit_id;
+               const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
+               const auto swdo = idx.find(swdo_id);
+               if (swdo != idx.end()) {
+                  should_process = (swdo->sidechain == sidechain);
+               }
+               break;
+            }
+
+            case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
+               son_wallet_withdraw_id_type swwo_id = op.get<son_wallet_withdraw_process_operation>().son_wallet_withdraw_id;
+               const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
+               const auto swwo = idx.find(swwo_id);
+               if (swwo != idx.end()) {
+                  should_process = (swwo->sidechain == sidechain);
+               }
+               break;
+            }
+
+            case chain::operation::tag<chain::sidechain_transaction_create_operation>::value: {
+               sidechain_type sc = op.get<sidechain_transaction_create_operation>().sidechain;
+               should_process = (sc == sidechain);
+               break;
+            }
+
+            default:
+               should_process = false;
+            }
+         }
+
+         if (should_process) {
+            bool should_approve = process_proposal(*po);
+            if (should_approve) {
+               approve_proposal(po->id, plugin.get_current_son_id());
+            }
+         }
+      }
+   }
+}
+
+void sidechain_net_handler::process_active_sons_change() {
+   process_primary_wallet();
+}
+
 void sidechain_net_handler::process_deposits() {
    if (database.get_global_properties().active_sons.size() < database.get_chain_properties().immutable_parameters.min_son_count) {
       return;
@@ -166,16 +268,16 @@ void sidechain_net_handler::process_deposits() {
       swdp_op.payer = gpo.parameters.son_account();
       swdp_op.son_wallet_deposit_id = swdo.id;
 
-      transfer_operation t_op;
-      t_op.fee = asset(2000000);
-      t_op.from = swdo.peerplays_to; // gpo.parameters.son_account()
-      t_op.to = swdo.peerplays_from;
-      t_op.amount = swdo.peerplays_asset;
+      //transfer_operation t_op;
+      //t_op.fee = asset(2000000);
+      //t_op.from = swdo.peerplays_to; // gpo.parameters.son_account()
+      //t_op.to = swdo.peerplays_from;
+      //t_op.amount = swdo.peerplays_asset;
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swdp_op);
-      proposal_op.proposed_ops.emplace_back(t_op);
+      //proposal_op.proposed_ops.emplace_back(t_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -298,8 +400,12 @@ void sidechain_net_handler::send_sidechain_transactions() {
    });
 }
 
-void sidechain_net_handler::recreate_primary_wallet() {
-   FC_ASSERT(false, "recreate_primary_wallet not implemented");
+bool sidechain_net_handler::process_proposal(const proposal_object &po) {
+   FC_ASSERT(false, "process_proposal not implemented");
+}
+
+void sidechain_net_handler::process_primary_wallet() {
+   FC_ASSERT(false, "process_primary_wallet not implemented");
 }
 
 bool sidechain_net_handler::process_deposit(const son_wallet_deposit_object &swdo) {

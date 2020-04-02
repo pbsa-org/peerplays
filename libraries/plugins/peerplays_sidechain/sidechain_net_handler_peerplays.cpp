@@ -29,7 +29,11 @@ sidechain_net_handler_peerplays::sidechain_net_handler_peerplays(peerplays_sidec
 sidechain_net_handler_peerplays::~sidechain_net_handler_peerplays() {
 }
 
-void sidechain_net_handler_peerplays::recreate_primary_wallet() {
+bool sidechain_net_handler_peerplays::process_proposal(const proposal_object &po) {
+   return true;
+}
+
+void sidechain_net_handler_peerplays::process_primary_wallet() {
    return;
 }
 
