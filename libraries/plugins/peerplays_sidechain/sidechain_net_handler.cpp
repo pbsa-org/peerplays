@@ -68,7 +68,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    const chain::global_property_object &gpo = database.get_global_properties();
 
    // Deposit request
-   if ((sed.peerplays_from == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::bitcoin)) {
+   if ((sed.peerplays_from == gpo.parameters.son_account()) && (sed.sidechain_currency == "BTC")) {
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
@@ -102,7 +102,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    // Withdrawal request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::peerplays)) {
+   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency == fc::variant(gpo.parameters.btc_asset(), 1).as<std::string>(1))) {
       // BTC Payout only (for now)
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sed.peerplays_from, sidechain_type::bitcoin));
@@ -166,12 +166,6 @@ void sidechain_net_handler::process_deposits() {
       swdp_op.payer = gpo.parameters.son_account();
       swdp_op.son_wallet_deposit_id = swdo.id;
 
-/*      transfer_operation t_op;
-      t_op.fee = asset(2000000);
-      t_op.from = swdo.peerplays_to; // gpo.parameters.son_account()
-      t_op.to = swdo.peerplays_from;
-      t_op.amount = swdo.peerplays_asset;
-*/
       asset_issue_operation i_op;
       i_op.fee = asset(2001000);
       i_op.issuer = gpo.parameters.son_account();
