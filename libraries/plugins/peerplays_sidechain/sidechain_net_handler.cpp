@@ -166,16 +166,22 @@ void sidechain_net_handler::process_deposits() {
       swdp_op.payer = gpo.parameters.son_account();
       swdp_op.son_wallet_deposit_id = swdo.id;
 
-      transfer_operation t_op;
+/*      transfer_operation t_op;
       t_op.fee = asset(2000000);
       t_op.from = swdo.peerplays_to; // gpo.parameters.son_account()
       t_op.to = swdo.peerplays_from;
       t_op.amount = swdo.peerplays_asset;
+*/
+      asset_issue_operation i_op;
+      i_op.fee = asset(2000000);
+      i_op.issuer = gpo.parameters.son_account();
+      i_op.asset_to_issue = swdo.peerplays_asset;
+      i_op.issue_to_account = swdo.peerplays_to;
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swdp_op);
-      proposal_op.proposed_ops.emplace_back(t_op);
+      proposal_op.proposed_ops.emplace_back(i_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -215,9 +221,16 @@ void sidechain_net_handler::process_withdrawals() {
       swwp_op.payer = gpo.parameters.son_account();
       swwp_op.son_wallet_withdraw_id = swwo.id;
 
+      asset_reserve_operation r_op;
+      r_op.fee = asset(200000);
+      r_op.payer = gpo.parameters.son_account();
+      asset_object btc_asset_obj = gpo.parameters.btc_asset()(database);
+      r_op.amount_to_reserve = btc_asset_obj.amount(swwo.withdraw_amount);
+
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swwp_op);
+      proposal_op.proposed_ops.emplace_back(r_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
