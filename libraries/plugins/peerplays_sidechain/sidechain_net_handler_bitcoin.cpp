@@ -874,74 +874,84 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
 
    const chain::global_property_object &gpo = database.get_global_properties();
 
-   if (po.proposed_transaction.operations.size() == 1) {
-      int32_t op_idx_0 = po.proposed_transaction.operations[0].which();
-      chain::operation op = po.proposed_transaction.operations[0];
+   int32_t op_idx_0 = -1;
+   chain::operation op_obj_idx_0;
+   //int32_t op_idx_1 = -1;
+   //chain::operation op_obj_idx_1;
 
-      switch (op_idx_0) {
+   if (po.proposed_transaction.operations.size() >= 1) {
+      op_idx_0 = po.proposed_transaction.operations[0].which();
+      op_obj_idx_0 = po.proposed_transaction.operations[0];
+   }
 
-      case chain::operation::tag<chain::son_wallet_update_operation>::value: {
-         should_approve = true;
-         break;
-      }
+   if (po.proposed_transaction.operations.size() >= 2) {
+      //op_idx_1 = po.proposed_transaction.operations[1].which();
+      //op_obj_idx_1 = po.proposed_transaction.operations[1];
+   }
 
-      case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
-         son_wallet_deposit_id_type swdo_id = op.get<son_wallet_deposit_process_operation>().son_wallet_deposit_id;
-         const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
-         const auto swdo = idx.find(swdo_id);
-         if (swdo != idx.end()) {
+   switch (op_idx_0) {
 
-            std::string swdo_txid = swdo->sidechain_transaction_id;
-            std::string swdo_address = swdo->sidechain_to;
-            uint64_t swdo_amount = swdo->sidechain_amount.value;
-            uint64_t swdo_vout = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-") + 1));
+   case chain::operation::tag<chain::son_wallet_update_operation>::value: {
+      should_approve = true;
+      break;
+   }
 
-            std::string tx_str = bitcoin_client->gettransaction(swdo_txid);
-            std::stringstream tx_ss(tx_str);
-            boost::property_tree::ptree tx_json;
-            boost::property_tree::read_json(tx_ss, tx_json);
+   case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
+      son_wallet_deposit_id_type swdo_id = op_obj_idx_0.get<son_wallet_deposit_process_operation>().son_wallet_deposit_id;
+      const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
+      const auto swdo = idx.find(swdo_id);
+      if (swdo != idx.end()) {
 
-            if (tx_json.count("error") && tx_json.get_child("error").empty()) {
+         std::string swdo_txid = swdo->sidechain_transaction_id;
+         std::string swdo_address = swdo->sidechain_to;
+         uint64_t swdo_amount = swdo->sidechain_amount.value;
+         uint64_t swdo_vout = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-") + 1));
 
-               std::string tx_txid = tx_json.get<std::string>("result.txid");
-               uint32_t tx_confirmations = tx_json.get<uint32_t>("result.confirmations");
-               std::string tx_address = "";
-               uint64_t tx_amount = 0;
-               uint64_t tx_vout = 0;
+         std::string tx_str = bitcoin_client->gettransaction(swdo_txid);
+         std::stringstream tx_ss(tx_str);
+         boost::property_tree::ptree tx_json;
+         boost::property_tree::read_json(tx_ss, tx_json);
 
-               for (auto &input : tx_json.get_child("result.details")) {
-                  tx_address = input.second.get<std::string>("address");
-                  std::string tx_amount_s = input.second.get<std::string>("amount");
-                  tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
-                  tx_amount = std::stoll(tx_amount_s);
-                  std::string tx_vout_s = input.second.get<std::string>("vout");
-                  tx_vout = std::stoll(tx_vout_s);
-                  break;
-               }
+         if (tx_json.count("error") && tx_json.get_child("error").empty()) {
 
-               should_approve = (swdo_txid == tx_txid) &&
-                                (swdo_address == tx_address) &&
-                                (swdo_amount == tx_amount) &&
-                                (swdo_vout == tx_vout) &&
-                                (gpo.parameters.son_bitcoin_min_tx_confirmations() <= tx_confirmations);
+            std::string tx_txid = tx_json.get<std::string>("result.txid");
+            uint32_t tx_confirmations = tx_json.get<uint32_t>("result.confirmations");
+            std::string tx_address = "";
+            uint64_t tx_amount = 0;
+            uint64_t tx_vout = 0;
+
+            for (auto &input : tx_json.get_child("result.details")) {
+               tx_address = input.second.get<std::string>("address");
+               std::string tx_amount_s = input.second.get<std::string>("amount");
+               tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
+               tx_amount = std::stoll(tx_amount_s);
+               std::string tx_vout_s = input.second.get<std::string>("vout");
+               tx_vout = std::stoll(tx_vout_s);
+               break;
             }
+
+            should_approve = (swdo_txid == tx_txid) &&
+                             (swdo_address == tx_address) &&
+                             (swdo_amount == tx_amount) &&
+                             (swdo_vout == tx_vout) &&
+                             (gpo.parameters.son_bitcoin_min_tx_confirmations() <= tx_confirmations);
          }
-         break;
       }
+      break;
+   }
 
-      case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
-         should_approve = true;
-         break;
-      }
+   case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
+      should_approve = true;
+      break;
+   }
 
-      case chain::operation::tag<chain::sidechain_transaction_create_operation>::value: {
-         should_approve = true;
-         break;
-      }
+   case chain::operation::tag<chain::sidechain_transaction_create_operation>::value: {
+      should_approve = true;
+      break;
+   }
 
-      default:
-         should_approve = false;
-      }
+   default:
+      should_approve = false;
    }
 
    return should_approve;
@@ -1518,11 +1528,10 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
          sed.sidechain_to = v.address;
          sed.sidechain_currency = "BTC";
          sed.sidechain_amount = v.out.amount;
-         sed.peerplays_from = database.get_global_properties().parameters.son_account();
-         sed.peerplays_to = addr_itr->sidechain_address_account;
-         asset_id_type btc_asset_id = database.get_global_properties().parameters.btc_asset();
-         asset_object btc_asset = btc_asset_id(database);
-         sed.peerplays_asset = btc_asset.amount(sed.sidechain_amount);
+         sed.peerplays_from = addr_itr->sidechain_address_account;
+         sed.peerplays_to = database.get_global_properties().parameters.son_account();
+         price btc_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
+         sed.peerplays_asset = asset(sed.sidechain_amount * btc_price.base.amount / btc_price.quote.amount);
          sidechain_event_data_received(sed);
       }
    }
