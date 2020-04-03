@@ -50,15 +50,16 @@ namespace graphene { namespace chain {
       optional < uint32_t >           gpos_period_start                 = HARDFORK_GPOS_TIME.sec_since_epoch();
       optional < uint32_t >           gpos_vesting_lockin_period        = GPOS_VESTING_LOCKIN_PERIOD;
 
-      optional < uint16_t >           son_count;
-      optional < uint32_t >           son_vesting_amount;
-      optional < uint32_t >           son_vesting_period;
-      optional < uint32_t >           son_pay_daily_max;
-      optional < uint32_t >           son_pay_time;
-      optional < uint32_t >           son_deregister_time;
-      optional < uint32_t >           son_heartbeat_frequency;
-      optional < uint32_t >           son_down_time;
+      optional < uint32_t >           son_vesting_amount                = SON_VESTING_AMOUNT;
+      optional < uint32_t >           son_vesting_period                = SON_VESTING_PERIOD;
+      optional < uint32_t >           son_pay_max                       = SON_PAY_MAX;
+      optional < uint32_t >           son_pay_time                      = SON_PAY_TIME;
+      optional < uint32_t >           son_deregister_time               = SON_DEREGISTER_TIME;
+      optional < uint32_t >           son_heartbeat_frequency           = SON_HEARTBEAT_FREQUENCY;
+      optional < uint32_t >           son_down_time                     = SON_DOWN_TIME;
+
       optional < account_id_type >    son_account;
+      optional < asset_id_type >      btc_asset;
    };
 
    struct chain_parameters
@@ -109,7 +110,7 @@ namespace graphene { namespace chain {
       uint32_t                maximum_tournament_start_time_in_future = TOURNAMENT_MAX_START_TIME_IN_FUTURE;
       uint32_t                maximum_tournament_start_delay      = TOURNAMENT_MAX_START_DELAY;
       uint16_t                maximum_tournament_number_of_wins   = TOURNAMENT_MAX_NUMBER_OF_WINS;
-      
+
       extension<parameter_extension> extensions;
 
       /** defined in fee_schedule.cpp */
@@ -139,17 +140,14 @@ namespace graphene { namespace chain {
       inline account_id_type sweeps_vesting_accumulator_account()const {
          return extensions.value.sweeps_vesting_accumulator_account.valid() ? *extensions.value.sweeps_vesting_accumulator_account : SWEEPS_ACCUMULATOR_ACCOUNT;
       }
-      inline uint16_t son_count()const {
-         return extensions.value.son_count.valid() ? *extensions.value.son_count : MIN_SON_MEMBER_COUNT;
-      }
       inline uint32_t son_vesting_amount()const {
          return extensions.value.son_vesting_amount.valid() ? *extensions.value.son_vesting_amount : SON_VESTING_AMOUNT; /// current period start date
       }
       inline uint32_t son_vesting_period()const {
          return extensions.value.son_vesting_period.valid() ? *extensions.value.son_vesting_period : SON_VESTING_PERIOD; /// current period start date
       }
-      inline uint16_t son_pay_daily_max()const {
-         return extensions.value.son_pay_daily_max.valid() ? *extensions.value.son_pay_daily_max : MIN_SON_PAY_DAILY_MAX;
+      inline uint16_t son_pay_max()const {
+         return extensions.value.son_pay_max.valid() ? *extensions.value.son_pay_max : SON_PAY_MAX;
       }
       inline uint16_t son_pay_time()const {
          return extensions.value.son_pay_time.valid() ? *extensions.value.son_pay_time : SON_PAY_TIME;
@@ -174,9 +172,12 @@ namespace graphene { namespace chain {
       }
       inline uint32_t gpos_vesting_lockin_period()const {
          return extensions.value.gpos_vesting_lockin_period.valid() ? *extensions.value.gpos_vesting_lockin_period : GPOS_VESTING_LOCKIN_PERIOD; /// GPOS vesting lockin period
-      }      
+      }
       inline account_id_type son_account() const {
          return extensions.value.son_account.valid() ? *extensions.value.son_account : GRAPHENE_NULL_ACCOUNT;
+      }
+      inline asset_id_type btc_asset() const {
+         return extensions.value.btc_asset.valid() ? *extensions.value.btc_asset : asset_id_type();
       }
    };
 
@@ -188,7 +189,6 @@ FC_REFLECT( graphene::chain::parameter_extension,
    (betting_rake_fee_percentage)
    (permitted_betting_odds_increments)
    (live_betting_delay_time)
-   (son_count)
    (sweeps_distribution_percentage)
    (sweeps_distribution_asset)
    (sweeps_vesting_accumulator_account)
@@ -198,12 +198,13 @@ FC_REFLECT( graphene::chain::parameter_extension,
    (gpos_vesting_lockin_period)
    (son_vesting_amount)
    (son_vesting_period)
-   (son_pay_daily_max)
+   (son_pay_max)
    (son_pay_time)
    (son_deregister_time)
    (son_heartbeat_frequency)
    (son_down_time)
    (son_account)
+   (btc_asset)
 )
 
 FC_REFLECT( graphene::chain::chain_parameters,

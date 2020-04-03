@@ -196,8 +196,6 @@ void database::pay_sons()
          if(s.txs_signed > 0){
             auto son_params = get_global_properties().parameters;
             share_type pay = (s.txs_signed * son_budget.value)/total_txs_signed;
-            // TODO: Remove me after QA
-            ilog( "pay ${p} to ${s} for ${t} transactions signed", ("p", pay.value)("s", s.id)("t",s.txs_signed) );
             const auto& idx = get_index_type<son_index>().indices().get<by_id>();
             auto son_obj = idx.find( s.owner );
             modify( *son_obj, [&]( son_object& _son_obj)
@@ -365,6 +363,8 @@ void database::update_son_wallet(const vector<son_info>& new_active_sons)
       }
    }
 
+   should_recreate_pw = should_recreate_pw && (new_active_sons.size() >= get_chain_properties().immutable_parameters.min_son_count);
+
    if (should_recreate_pw) {
       // Create new son_wallet_object, to initiate wallet recreation
       create<son_wallet_object>( [&]( son_wallet_object& obj ) {
@@ -432,7 +432,7 @@ void database::update_active_witnesses()
    /// accounts that vote for 0 or 1 witness do not get to express an opinion on
    /// the number of witnesses to have (they abstain and are non-voting accounts)
 
-   share_type stake_tally = 0; 
+   share_type stake_tally = 0;
 
    size_t witness_count = 0;
    if( stake_target > 0 )
@@ -567,7 +567,7 @@ void database::update_active_committee_members()
          update_committee_member_total_votes( cm );
       }
    }
-   
+
    // Update committee authorities
    if( !committee_members.empty() )
    {
@@ -705,7 +705,7 @@ void database::update_active_sons()
          }
       } );
    }
-   
+
 
    // Compare current and to-be lists of active sons
    auto cur_active_sons = gpo.active_sons;
@@ -863,7 +863,7 @@ void database::process_budget()
          pay_sons();
          rec.leftover_son_funds = dpo.son_budget;
          available_funds += rec.leftover_son_funds;
-         son_budget = gpo.parameters.son_pay_daily_max();
+         son_budget = gpo.parameters.son_pay_max();
          son_budget = std::min(son_budget, available_funds);
          rec.son_budget = son_budget;
          available_funds -= son_budget;
@@ -1230,13 +1230,13 @@ double database::calculate_vesting_factor(const account_object& stake_account)
    //  variables needed
    const auto number_of_subperiods = vesting_period / vesting_subperiod;
    double vesting_factor;
-  
+
     // get in what sub period we are
    uint32_t current_subperiod = get_gpos_current_subperiod();
- 
+
    if(current_subperiod == 0 || current_subperiod > number_of_subperiods) return 0;
 
-   // On starting new vesting period, all votes become zero until someone votes, To avoid a situation of zero votes, 
+   // On starting new vesting period, all votes become zero until someone votes, To avoid a situation of zero votes,
    // changes were done to roll in GPOS rules, the vesting factor will be 1 for whoever votes in 6th sub-period of last vesting period
    // BLOCKBACK-174 fix
    if(current_subperiod == 1 && this->head_block_time() >= HARDFORK_GPOS_TIME + vesting_period)   //Applicable only from 2nd vesting period
@@ -1329,10 +1329,10 @@ void rolling_period_start(database& db)
 // dividend-paying asset.  This takes any deposits made to the dividend distribution account
 // since the last time it was called, and distributes them to the current owners of the
 // dividend-paying asset according to the amount they own.
-void schedule_pending_dividend_balances(database& db, 
+void schedule_pending_dividend_balances(database& db,
                                         const asset_object& dividend_holder_asset_obj,
                                         const asset_dividend_data_object& dividend_data,
-                                        const fc::time_point_sec& current_head_block_time, 
+                                        const fc::time_point_sec& current_head_block_time,
                                         const account_balance_index& balance_index,
                                         const vesting_balance_index& vesting_index,
                                         const total_distributed_dividend_balance_object_index& distributed_dividend_balance_index,
@@ -1341,7 +1341,7 @@ void schedule_pending_dividend_balances(database& db,
    dlog("Processing dividend payments for dividend holder asset type ${holder_asset} at time ${t}",
         ("holder_asset", dividend_holder_asset_obj.symbol)("t", db.head_block_time()));
    auto balance_by_acc_index = db.get_index_type< primary_index< account_balance_index > >().get_secondary_index< balances_by_account_index >();
-   auto current_distribution_account_balance_range = 
+   auto current_distribution_account_balance_range =
       //balance_index.indices().get<by_account_asset>().equal_range(boost::make_tuple(dividend_data.dividend_distribution_account));
       balance_by_acc_index.get_account_balances(dividend_data.dividend_distribution_account);
    auto previous_distribution_account_balance_range =
@@ -1352,7 +1352,7 @@ void schedule_pending_dividend_balances(database& db,
    const auto& gpo = db.get_global_properties();
 
    // get the list of accounts that hold nonzero balances of the dividend asset
-   auto holder_balances_begin = 
+   auto holder_balances_begin =
       balance_index.indices().get<by_asset_balance>().lower_bound(boost::make_tuple(dividend_holder_asset_obj.id));
    auto holder_balances_end =
       balance_index.indices().get<by_asset_balance>().upper_bound(boost::make_tuple(dividend_holder_asset_obj.id, share_type()));
@@ -1412,7 +1412,7 @@ void schedule_pending_dividend_balances(database& db,
         ("previous", (int64_t)std::distance(previous_distribution_account_balance_range.first, previous_distribution_account_balance_range.second)));
 
    // when we pay out the dividends to the holders, we need to know the total balance of the dividend asset in all
-   // accounts other than the distribution account (it would be silly to distribute dividends back to 
+   // accounts other than the distribution account (it would be silly to distribute dividends back to
    // the distribution account)
    share_type total_balance_of_dividend_asset;
    if(db.head_block_time() >= HARDFORK_GPOS_TIME && dividend_holder_asset_obj.symbol == GRAPHENE_SYMBOL) { // only core
@@ -1443,7 +1443,7 @@ void schedule_pending_dividend_balances(database& db,
          share_type previous_balance;
          asset_id_type payout_asset_type;
 
-         if (previous_distribution_account_balance_iter == previous_distribution_account_balance_range.second || 
+         if (previous_distribution_account_balance_iter == previous_distribution_account_balance_range.second ||
              current_distribution_account_balance_iter->second->asset_type < previous_distribution_account_balance_iter->dividend_payout_asset_type)
          {
             // there are no more previous balances or there is no previous balance for this particular asset type
@@ -1451,7 +1451,7 @@ void schedule_pending_dividend_balances(database& db,
             current_balance = current_distribution_account_balance_iter->second->balance;
             idump((payout_asset_type)(current_balance));
          }
-         else if (current_distribution_account_balance_iter == current_distribution_account_balance_range.end() || 
+         else if (current_distribution_account_balance_iter == current_distribution_account_balance_range.end() ||
                   previous_distribution_account_balance_iter->dividend_payout_asset_type < current_distribution_account_balance_iter->second->asset_type)
          {
             // there are no more current balances or there is no current balance for this particular previous asset type
@@ -1470,7 +1470,7 @@ void schedule_pending_dividend_balances(database& db,
 
          share_type delta_balance = current_balance - previous_balance;
 
-         // Next, figure out if we want to share this out -- if the amount added to the distribution 
+         // Next, figure out if we want to share this out -- if the amount added to the distribution
          // account since last payout is too small, we won't bother.
 
          share_type total_fee_per_asset_in_payout_asset;
@@ -1479,7 +1479,7 @@ void schedule_pending_dividend_balances(database& db,
          {
             payout_asset_object = &db.get_core_asset();
             total_fee_per_asset_in_payout_asset = total_fee_per_asset_in_core;
-            dlog("Fee for distributing ${payout_asset_type}: ${fee}", 
+            dlog("Fee for distributing ${payout_asset_type}: ${fee}",
                  ("payout_asset_type", asset_id_type()(db).symbol)
                  ("fee", asset(total_fee_per_asset_in_core, asset_id_type())));
          }
@@ -1495,7 +1495,7 @@ void schedule_pending_dividend_balances(database& db,
             FC_ASSERT(total_fee_per_asset.asset_id == payout_asset_type);
 
             total_fee_per_asset_in_payout_asset = total_fee_per_asset.amount;
-            dlog("Fee for distributing ${payout_asset_type}: ${fee}", 
+            dlog("Fee for distributing ${payout_asset_type}: ${fee}",
                  ("payout_asset_type", payout_asset_type(db).symbol)("fee", total_fee_per_asset_in_payout_asset));
          }
 
@@ -1508,7 +1508,7 @@ void schedule_pending_dividend_balances(database& db,
             wdump((total_fee_per_asset_in_payout_asset)(dividend_data.options));
             minimum_shares_to_distribute = minimum_amount_to_distribute.to_uint64();
          }
-         
+
          dlog("Processing dividend payments of asset type ${payout_asset_type}, delta balance is ${delta_balance}", ("payout_asset_type", payout_asset_type(db).symbol)("delta_balance", delta_balance));
          if (delta_balance > 0)
          {
@@ -1521,7 +1521,7 @@ void schedule_pending_dividend_balances(database& db,
                   db.modify(asset_dynamic_data_id_type()(db), [total_fee_per_asset_in_core](asset_dynamic_data_object& d) {
                      d.accumulated_fees += total_fee_per_asset_in_core;
                   });
-                  db.adjust_balance(dividend_data.dividend_distribution_account, 
+                  db.adjust_balance(dividend_data.dividend_distribution_account,
                                     asset(-total_fee_per_asset_in_core, asset_id_type()));
                   delta_balance -= total_fee_per_asset_in_core;
                }
@@ -1536,7 +1536,7 @@ void schedule_pending_dividend_balances(database& db,
                               ("need", asset(total_fee_per_asset_in_core, asset_id_type()))
                               ("have", asset(dynamic_data.fee_pool, payout_asset_type)));
                   // deduct the fee from the dividend distribution account
-                  db.adjust_balance(dividend_data.dividend_distribution_account, 
+                  db.adjust_balance(dividend_data.dividend_distribution_account,
                                     asset(-total_fee_per_asset_in_payout_asset, payout_asset_type));
                   // convert it to core
                   db.modify(payout_asset_object->dynamic_data(db), [total_fee_per_asset_in_core, total_fee_per_asset_in_payout_asset](asset_dynamic_data_object& d) {
@@ -1550,7 +1550,7 @@ void schedule_pending_dividend_balances(database& db,
                   delta_balance -= total_fee_per_asset_in_payout_asset;
                }
 
-               dlog("There are ${count} holders of the dividend-paying asset, with a total balance of ${total}", 
+               dlog("There are ${count} holders of the dividend-paying asset, with a total balance of ${total}",
                     ("count", holder_account_count)
                     ("total", total_balance_of_dividend_asset));
                share_type remaining_amount_to_distribute = delta_balance;
@@ -1622,7 +1622,7 @@ void schedule_pending_dividend_balances(database& db,
                       dlog("Pending payout: ${account_name}   ->   ${amount}",
                            ("account_name", pending_payout.owner(db).name)
                            ("amount", asset(pending_payout.pending_balance, pending_payout.dividend_payout_asset_type)));
-               dlog("Remaining balance not paid out: ${amount}", 
+               dlog("Remaining balance not paid out: ${amount}",
                     ("amount", asset(remaining_amount_to_distribute, payout_asset_type)));
 
                share_type distributed_amount = delta_balance - remaining_amount_to_distribute;
@@ -1652,7 +1652,7 @@ void schedule_pending_dividend_balances(database& db,
             // This should be extremely rare (caused by an override transfer by the asset owner).
             // Reduce all pending payouts proportionally
             share_type total_pending_balances;
-            auto pending_payouts_range = 
+            auto pending_payouts_range =
                pending_payout_balance_index.indices().get<by_dividend_payout_account>().equal_range(boost::make_tuple(dividend_holder_asset_obj.id, payout_asset_type));
 
             for (const pending_dividend_payout_balance_for_holder_object& pending_balance_object : boost::make_iterator_range(pending_payouts_range.first, pending_payouts_range.second))
@@ -1689,10 +1689,10 @@ void schedule_pending_dividend_balances(database& db,
       }
 
       // iterate
-      if (previous_distribution_account_balance_iter == previous_distribution_account_balance_range.second || 
+      if (previous_distribution_account_balance_iter == previous_distribution_account_balance_range.second ||
           current_distribution_account_balance_iter->second->asset_type < previous_distribution_account_balance_iter->dividend_payout_asset_type)
          ++current_distribution_account_balance_iter;
-      else if (current_distribution_account_balance_iter == current_distribution_account_balance_range.end() || 
+      else if (current_distribution_account_balance_iter == current_distribution_account_balance_range.end() ||
                previous_distribution_account_balance_iter->dividend_payout_asset_type < current_distribution_account_balance_iter->second->asset_type)
          ++previous_distribution_account_balance_iter;
       else
@@ -1734,7 +1734,7 @@ void process_dividend_assets(database& db)
          {
             try
             {
-               dlog("Dividend payout time has arrived for asset ${holder_asset}", 
+               dlog("Dividend payout time has arrived for asset ${holder_asset}",
                     ("holder_asset", dividend_holder_asset_obj.symbol));
 #ifndef NDEBUG
                // dump balances before the payouts for debugging
@@ -1746,14 +1746,14 @@ void process_dividend_assets(database& db)
 
                // when we do the payouts, we first increase the balances in all of the receiving accounts
                // and use this map to keep track of the total amount of each asset paid out.
-               // Afterwards, we decrease the distribution account's balance by the total amount paid out, 
+               // Afterwards, we decrease the distribution account's balance by the total amount paid out,
                // and modify the distributed_balances accordingly
                std::map<asset_id_type, share_type> amounts_paid_out_by_asset;
 
-               auto pending_payouts_range = 
+               auto pending_payouts_range =
                   pending_payout_balance_index.indices().get<by_dividend_account_payout>().equal_range(boost::make_tuple(dividend_holder_asset_obj.id));
                // the pending_payouts_range is all payouts for this dividend asset, sorted by the holder's account
-               // we iterate in this order so we can build up a list of payouts for each account to put in the 
+               // we iterate in this order so we can build up a list of payouts for each account to put in the
                // virtual op
                vector<asset> payouts_for_this_holder;
                fc::optional<account_id_type> last_holder_account_id;
@@ -1765,7 +1765,7 @@ void process_dividend_assets(database& db)
                   auto approved_assets_iter = approved_assets.find(asset_id);
                   if (approved_assets_iter != approved_assets.end())
                      return approved_assets_iter->second;
-                  bool is_approved = is_authorized_asset(db, dividend_distribution_account_object, 
+                  bool is_approved = is_authorized_asset(db, dividend_distribution_account_object,
                                                          asset_id(db));
                   approved_assets[asset_id] = is_approved;
                   return is_approved;
@@ -1778,8 +1778,8 @@ void process_dividend_assets(database& db)
                   if (last_holder_account_id && *last_holder_account_id != pending_balance_object.owner && payouts_for_this_holder.size())
                   {
                      // we've moved on to a new account, generate the dividend payment virtual op for the previous one
-                     db.push_applied_operation(asset_dividend_distribution_operation(dividend_holder_asset_obj.id, 
-                                                                                     *last_holder_account_id, 
+                     db.push_applied_operation(asset_dividend_distribution_operation(dividend_holder_asset_obj.id,
+                                                                                     *last_holder_account_id,
                                                                                      payouts_for_this_holder));
                      dlog("Just pushed virtual op for payout to ${account}", ("account", (*last_holder_account_id)(db).name));
                      payouts_for_this_holder.clear();
@@ -1791,14 +1791,14 @@ void process_dividend_assets(database& db)
                       is_authorized_asset(db, pending_balance_object.owner(db), pending_balance_object.dividend_payout_asset_type(db)) &&
                       is_asset_approved_for_distribution_account(pending_balance_object.dividend_payout_asset_type))
                   {
-                     dlog("Processing payout of ${asset} to account ${account}", 
+                     dlog("Processing payout of ${asset} to account ${account}",
                           ("asset", asset(pending_balance_object.pending_balance, pending_balance_object.dividend_payout_asset_type))
                           ("account", pending_balance_object.owner(db).name));
 
                      db.adjust_balance(pending_balance_object.owner,
-                                       asset(pending_balance_object.pending_balance, 
+                                       asset(pending_balance_object.pending_balance,
                                              pending_balance_object.dividend_payout_asset_type));
-                     payouts_for_this_holder.push_back(asset(pending_balance_object.pending_balance, 
+                     payouts_for_this_holder.push_back(asset(pending_balance_object.pending_balance,
                                                              pending_balance_object.dividend_payout_asset_type));
                      last_holder_account_id = pending_balance_object.owner;
                      amounts_paid_out_by_asset[pending_balance_object.dividend_payout_asset_type] += pending_balance_object.pending_balance;
@@ -1814,8 +1814,8 @@ void process_dividend_assets(database& db)
                if (last_holder_account_id && payouts_for_this_holder.size())
                {
                   // we've moved on to a new account, generate the dividend payment virtual op for the previous one
-                  db.push_applied_operation(asset_dividend_distribution_operation(dividend_holder_asset_obj.id, 
-                                                                                  *last_holder_account_id, 
+                  db.push_applied_operation(asset_dividend_distribution_operation(dividend_holder_asset_obj.id,
+                                                                                  *last_holder_account_id,
                                                                                   payouts_for_this_holder));
                   dlog("Just pushed virtual op for payout to ${account}", ("account", (*last_holder_account_id)(db).name));
                }
@@ -1828,11 +1828,11 @@ void process_dividend_assets(database& db)
                   const asset_id_type& asset_paid_out = value.first;
                   const share_type& amount_paid_out = value.second;
 
-                  db.adjust_balance(dividend_data.dividend_distribution_account, 
+                  db.adjust_balance(dividend_data.dividend_distribution_account,
                                     asset(-amount_paid_out,
                                           asset_paid_out));
-                  auto distributed_balance_iter = 
-                     distributed_dividend_balance_index.indices().get<by_dividend_payout_asset>().find(boost::make_tuple(dividend_holder_asset_obj.id, 
+                  auto distributed_balance_iter =
+                     distributed_dividend_balance_index.indices().get<by_dividend_payout_asset>().find(boost::make_tuple(dividend_holder_asset_obj.id,
                                                                                                                          asset_paid_out));
                   assert(distributed_balance_iter != distributed_dividend_balance_index.indices().get<by_dividend_payout_asset>().end());
                   if (distributed_balance_iter != distributed_dividend_balance_index.indices().get<by_dividend_payout_asset>().end())
@@ -1849,7 +1849,7 @@ void process_dividend_assets(database& db)
                   fc::optional<fc::time_point_sec> next_payout_time;
                   if (dividend_data_obj.options.payout_interval)
                   {
-                     // if there was a previous payout, make our next payment one interval 
+                     // if there was a previous payout, make our next payment one interval
                      uint32_t current_time_sec = current_head_block_time.sec_since_epoch();
                      fc::time_point_sec reference_time = *dividend_data_obj.last_scheduled_payout_time;
                      uint32_t next_possible_time_sec = dividend_data_obj.last_scheduled_payout_time->sec_since_epoch();
@@ -1864,7 +1864,7 @@ void process_dividend_assets(database& db)
                         (dividend_data_obj.last_payout_time)
                         (dividend_data_obj.options.next_payout_time));
                });
-            } 
+            }
             FC_RETHROW_EXCEPTIONS(error, "Error while paying out dividends for holder asset ${holder_asset}", ("holder_asset", dividend_holder_asset_obj.symbol))
          }
       }
@@ -1889,10 +1889,38 @@ void perform_son_tasks(database& db)
          a.lifetime_referrer_fee_percentage = GRAPHENE_100_PERCENT - GRAPHENE_DEFAULT_NETWORK_PERCENT_OF_FEE;
       });
 
-      db.modify( gpo, [&]( global_property_object& gpo ) {
+      db.modify( gpo, [&son_account]( global_property_object& gpo ) {
             gpo.parameters.extensions.value.son_account = son_account.get_id();
             if( gpo.pending_parameters )
                gpo.pending_parameters->extensions.value.son_account = son_account.get_id();
+      });
+   }
+   // create BTC asset here because son_account is the issuer of the BTC
+   if (gpo.parameters.btc_asset() == asset_id_type()  && db.head_block_time() >= HARDFORK_SON_TIME)
+   {
+      const asset_dynamic_data_object& dyn_asset =
+         db.create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
+            a.current_supply = 0;
+         });
+
+      const asset_object& btc_asset =
+         db.create<asset_object>( [&gpo, &dyn_asset]( asset_object& a ) {
+            a.symbol = "BTC";
+            a.options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
+            a.precision = 8;
+            a.options.flags = 0;
+            a.options.issuer_permissions = 0;
+            a.issuer = gpo.parameters.son_account();
+            a.options.core_exchange_rate.base.amount = 1;
+            a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
+            a.options.core_exchange_rate.quote.amount = 1;
+            a.options.core_exchange_rate.quote.asset_id = asset_id_type(0);
+            a.dynamic_asset_data_id = dyn_asset.id;
+         });
+      db.modify( gpo, [&btc_asset]( global_property_object& gpo ) {
+            gpo.parameters.extensions.value.btc_asset = btc_asset.get_id();
+            if( gpo.pending_parameters )
+               gpo.pending_parameters->extensions.value.btc_asset = btc_asset.get_id();
       });
    }
 }
@@ -2049,7 +2077,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
          }
       }
    } tally_helper(*this, gpo);
-   
+
    perform_account_maintenance( tally_helper );
    struct clear_canary {
       clear_canary(vector<uint64_t>& target): target(target){}
@@ -2094,7 +2122,21 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
          if( !p.pending_parameters->extensions.value.gpos_subperiod.valid() )
             p.pending_parameters->extensions.value.gpos_subperiod = p.parameters.extensions.value.gpos_subperiod;
          if( !p.pending_parameters->extensions.value.gpos_vesting_lockin_period.valid() )
-            p.pending_parameters->extensions.value.gpos_vesting_lockin_period = p.parameters.extensions.value.gpos_vesting_lockin_period;                              
+            p.pending_parameters->extensions.value.gpos_vesting_lockin_period = p.parameters.extensions.value.gpos_vesting_lockin_period;
+         if( !p.pending_parameters->extensions.value.son_vesting_amount.valid() )
+            p.pending_parameters->extensions.value.son_vesting_amount = p.parameters.extensions.value.son_vesting_amount;
+         if( !p.pending_parameters->extensions.value.son_vesting_period.valid() )
+            p.pending_parameters->extensions.value.son_vesting_period = p.parameters.extensions.value.son_vesting_period;
+         if( !p.pending_parameters->extensions.value.son_pay_max.valid() )
+            p.pending_parameters->extensions.value.son_pay_max = p.parameters.extensions.value.son_pay_max;
+         if( !p.pending_parameters->extensions.value.son_pay_time.valid() )
+            p.pending_parameters->extensions.value.son_pay_time = p.parameters.extensions.value.son_pay_time;
+         if( !p.pending_parameters->extensions.value.son_deregister_time.valid() )
+            p.pending_parameters->extensions.value.son_deregister_time = p.parameters.extensions.value.son_deregister_time;
+         if( !p.pending_parameters->extensions.value.son_heartbeat_frequency.valid() )
+            p.pending_parameters->extensions.value.son_heartbeat_frequency = p.parameters.extensions.value.son_heartbeat_frequency;
+         if( !p.pending_parameters->extensions.value.son_down_time.valid() )
+            p.pending_parameters->extensions.value.son_down_time = p.parameters.extensions.value.son_down_time;
          p.parameters = std::move(*p.pending_parameters);
          p.pending_parameters.reset();
       }
