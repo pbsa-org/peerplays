@@ -2104,6 +2104,8 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
             p.pending_parameters->extensions.value.son_heartbeat_frequency = p.parameters.extensions.value.son_heartbeat_frequency;
          if( !p.pending_parameters->extensions.value.son_down_time.valid() )
             p.pending_parameters->extensions.value.son_down_time = p.parameters.extensions.value.son_down_time;
+         if( !p.pending_parameters->extensions.value.son_bitcoin_min_tx_confirmations.valid() )
+            p.pending_parameters->extensions.value.son_bitcoin_min_tx_confirmations = p.parameters.extensions.value.son_bitcoin_min_tx_confirmations;
          p.parameters = std::move(*p.pending_parameters);
          p.pending_parameters.reset();
       }

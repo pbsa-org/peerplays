@@ -30,7 +30,67 @@ sidechain_net_handler_peerplays::~sidechain_net_handler_peerplays() {
 }
 
 bool sidechain_net_handler_peerplays::process_proposal(const proposal_object &po) {
-   return true;
+
+   ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", po.id)("son_id", plugin.get_current_son_id()));
+
+   bool should_approve = false;
+
+   const chain::global_property_object &gpo = database.get_global_properties();
+
+   if (po.proposed_transaction.operations.size() == 1) {
+      int32_t op_idx_0 = po.proposed_transaction.operations[0].which();
+      chain::operation op = po.proposed_transaction.operations[0];
+
+      switch (op_idx_0) {
+
+      case chain::operation::tag<chain::son_wallet_update_operation>::value: {
+         should_approve = true;
+         break;
+      }
+
+      case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
+         should_approve = true;
+         break;
+      }
+
+      case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
+         son_wallet_withdraw_id_type swwo_id = op.get<son_wallet_withdraw_process_operation>().son_wallet_withdraw_id;
+         const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
+         const auto swwo = idx.find(swwo_id);
+         if (swwo != idx.end()) {
+
+            uint32_t swwo_block_num = swwo->block_num;
+            std::string swwo_peerplays_transaction_id = swwo->peerplays_transaction_id;
+            uint32_t swwo_op_idx = std::stoll(swwo->peerplays_uid.substr(swwo->peerplays_uid.find_last_of("-") + 1));
+
+            const auto &block = database.fetch_block_by_number(swwo_block_num);
+
+            for (const auto &tx : block->transactions) {
+               if (tx.id().str() == swwo_peerplays_transaction_id) {
+                  operation op = tx.operations[swwo_op_idx];
+                  transfer_operation t_op = op.get<transfer_operation>();
+
+                  should_approve = (t_op.to == gpo.parameters.son_account()) &&
+                                   (swwo->peerplays_from == t_op.from) &&
+                                   (swwo->peerplays_asset == t_op.amount);
+                  break;
+               }
+            }
+         }
+         break;
+      }
+
+      case chain::operation::tag<chain::sidechain_transaction_create_operation>::value: {
+         should_approve = true;
+         break;
+      }
+
+      default:
+         should_approve = false;
+      }
+   }
+
+   return should_approve;
 }
 
 void sidechain_net_handler_peerplays::process_primary_wallet() {
@@ -73,6 +133,7 @@ void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {
 
             sidechain_event_data sed;
             sed.timestamp = database.head_block_time();
+            sed.block_num = database.head_block_num();
             sed.sidechain = sidechain_type::peerplays;
             sed.sidechain_uid = sidechain_uid;
             sed.sidechain_transaction_id = trx.id().str();

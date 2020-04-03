@@ -300,14 +300,12 @@ std::string bitcoin_rpc_client::encryptwallet(const std::string &passphrase) {
    return "";
 }
 
-uint64_t bitcoin_rpc_client::estimatesmartfee() {
-   static const auto confirmation_target_blocks = 6;
-
+uint64_t bitcoin_rpc_client::estimatesmartfee(uint16_t conf_target) {
    const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"estimatesmartfee\", "
-                                 "\"method\": \"estimatesmartfee\", \"params\": [") +
-                     std::to_string(confirmation_target_blocks) + std::string("] }");
+                                 "\"method\": \"estimatesmartfee\", \"params\": [" +
+                                 std::to_string(conf_target) + std::string("] }"));
 
-   const auto reply = send_post_request(body);
+   const auto reply = send_post_request(body, true);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -870,6 +868,8 @@ sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 
 bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) {
 
+   ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", po.id)("son_id", plugin.get_current_son_id()));
+
    bool should_approve = false;
 
    const chain::global_property_object &gpo = database.get_global_properties();
@@ -926,6 +926,11 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
                                 (gpo.parameters.son_bitcoin_min_tx_confirmations() <= tx_confirmations);
             }
          }
+         break;
+      }
+
+      case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
+         should_approve = true;
          break;
       }
 
@@ -1505,6 +1510,7 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
 
          sidechain_event_data sed;
          sed.timestamp = database.head_block_time();
+         sed.block_num = database.head_block_num();
          sed.sidechain = addr_itr->sidechain;
          sed.sidechain_uid = sidechain_uid;
          sed.sidechain_transaction_id = v.out.hash_tx;

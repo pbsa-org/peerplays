@@ -57,11 +57,10 @@ namespace graphene { namespace chain {
       optional < uint32_t >           son_deregister_time               = SON_DEREGISTER_TIME;
       optional < uint32_t >           son_heartbeat_frequency           = SON_HEARTBEAT_FREQUENCY;
       optional < uint32_t >           son_down_time                     = SON_DOWN_TIME;
+      optional < uint16_t >           son_bitcoin_min_tx_confirmations  = SON_BITCOIN_MIN_TX_CONFIRMATIONS;
 
       optional < account_id_type >    son_account;
       optional < asset_id_type >      btc_asset;
-
-      optional < uint16_t >           son_bitcoin_min_tx_confirmations;
    };
 
    struct chain_parameters
@@ -208,9 +207,9 @@ FC_REFLECT( graphene::chain::parameter_extension,
    (son_deregister_time)
    (son_heartbeat_frequency)
    (son_down_time)
+   (son_bitcoin_min_tx_confirmations)
    (son_account)
    (btc_asset)
-   (son_bitcoin_min_tx_confirmations)
 )
 
 FC_REFLECT( graphene::chain::chain_parameters,

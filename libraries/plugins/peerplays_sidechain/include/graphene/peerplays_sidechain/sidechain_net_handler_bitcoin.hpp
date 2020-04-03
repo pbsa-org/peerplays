@@ -29,7 +29,7 @@ public:
    std::string decodepsbt(std::string const &tx_psbt);
    std::string decoderawtransaction(std::string const &tx_hex);
    std::string encryptwallet(const std::string &passphrase);
-   uint64_t estimatesmartfee();
+   uint64_t estimatesmartfee(uint16_t conf_target = 128);
    std::string finalizepsbt(std::string const &tx_psbt);
    std::string getaddressinfo(const std::string &address);
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);

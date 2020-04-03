@@ -76,6 +76,7 @@ bool sidechain_net_handler::approve_proposal(const proposal_id_type &proposal_id
 void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_data &sed) {
    ilog("sidechain_event_data:");
    ilog("  timestamp:                ${timestamp}", ("timestamp", sed.timestamp));
+   ilog("  block_num:                ${block_num}", ("block_num", sed.block_num));
    ilog("  sidechain:                ${sidechain}", ("sidechain", sed.sidechain));
    ilog("  sidechain_uid:            ${uid}", ("uid", sed.sidechain_uid));
    ilog("  sidechain_transaction_id: ${transaction_id}", ("transaction_id", sed.sidechain_transaction_id));
@@ -99,6 +100,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             op.payer = plugin.get_son_object(son_id).son_account;
             op.son_id = son_id;
             op.timestamp = sed.timestamp;
+            op.block_num = sed.block_num;
             op.sidechain = sed.sidechain;
             op.sidechain_uid = sed.sidechain_uid;
             op.sidechain_transaction_id = sed.sidechain_transaction_id;
@@ -138,6 +140,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             op.payer = plugin.get_son_object(son_id).son_account;
             op.son_id = son_id;
             op.timestamp = sed.timestamp;
+            op.block_num = sed.block_num;
             op.sidechain = sed.sidechain;
             op.peerplays_uid = sed.sidechain_uid;
             op.peerplays_transaction_id = sed.sidechain_transaction_id;
@@ -176,6 +179,8 @@ void sidechain_net_handler::process_proposals() {
       const auto po = idx.find(proposal_id);
       if (po != idx.end()) {
 
+         ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", (*po).id)("son_id", plugin.get_current_son_id()));
+
          if (po->available_active_approvals.find(plugin.get_current_son_object().son_account) != po->available_active_approvals.end()) {
             continue;
          }
@@ -186,6 +191,8 @@ void sidechain_net_handler::process_proposals() {
 
             int32_t op_idx_0 = po->proposed_transaction.operations[0].which();
             chain::operation op = po->proposed_transaction.operations[0];
+
+            ilog("Proposal operation[0]: ${op}", ("op", op));
 
             switch (op_idx_0) {
             case chain::operation::tag<chain::son_wallet_update_operation>::value: {
@@ -221,7 +228,12 @@ void sidechain_net_handler::process_proposals() {
 
             default:
                should_process = false;
+               ilog("==================================================");
+               ilog("Proposal not processed ${po}", ("po", *po));
+               ilog("==================================================");
             }
+         } else {
+            ilog("Proposal operations count > 1: ${po}", ("po", *po));
          }
 
          if (should_process) {
@@ -334,13 +346,13 @@ void sidechain_net_handler::process_sidechain_transactions() {
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
-      ilog("Sidechain transaction to process: ${sto}", ("sto", sto));
+      ilog("Sidechain transaction to process: ${sto}", ("sto", sto.id));
 
       bool complete = false;
       std::string processed_sidechain_tx = process_sidechain_transaction(sto, complete);
 
       if (processed_sidechain_tx.empty()) {
-         wlog("Sidechain transaction not processed: ${sto}", ("sto", sto));
+         wlog("Sidechain transaction not processed: ${sto}", ("sto", sto.id));
          return;
       }
 
@@ -367,13 +379,13 @@ void sidechain_net_handler::send_sidechain_transactions() {
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
-      ilog("Sidechain transaction to send: ${sto}", ("sto", sto));
+      ilog("Sidechain transaction to send: ${sto}", ("sto", sto.id));
 
       std::string sidechain_transaction = "";
       bool sent = send_sidechain_transaction(sto, sidechain_transaction);
 
       if (!sent) {
-         wlog("Sidechain transaction not sent: ${sto}", ("sto", sto));
+         wlog("Sidechain transaction not sent: ${sto}", ("sto", sto.id));
          return;
       }
 
