@@ -60,3 +60,5 @@ add_executable( es_test ${ES_SOURCES} ${COMMON_SOURCES} )
 target_link_libraries( es_test graphene_chain graphene_app graphene_account_history graphene_elasticsearch graphene_es_objects graphene_egenesis_none fc ${PLATFORM_SPECIFIC_LIBS} )
 
 add_subdirectory( generate_empty_blocks )
+
+add_subdirectory( bitcoin_test )
