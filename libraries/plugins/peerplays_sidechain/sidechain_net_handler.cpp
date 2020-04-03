@@ -91,7 +91,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    const chain::global_property_object &gpo = database.get_global_properties();
 
    // Deposit request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("1.3.0") != 0)) {
+   if ((sed.peerplays_from == gpo.parameters.son_account()) && (sed.sidechain_currency != fc::variant(gpo.parameters.btc_asset(), 1).as<std::string>(1))) {
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
@@ -126,7 +126,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    // Withdrawal request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("1.3.0") == 0)) {
+   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency == fc::variant(gpo.parameters.btc_asset(), 1).as<std::string>(1))) {
       // BTC Payout only (for now)
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sed.peerplays_from, sidechain_type::bitcoin));
@@ -146,10 +146,10 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
             op.peerplays_transaction_id = sed.sidechain_transaction_id;
             op.peerplays_from = sed.peerplays_from;
             op.peerplays_asset = sed.peerplays_asset;
-            op.withdraw_sidechain = sidechain_type::bitcoin;        // BTC payout only (for now)
-            op.withdraw_address = addr_itr->withdraw_address;       // BTC payout only (for now)
-            op.withdraw_currency = "BTC";                           // BTC payout only (for now)
-            op.withdraw_amount = sed.peerplays_asset.amount * 1000; // BTC payout only (for now)
+            op.withdraw_sidechain = sidechain_type::bitcoin;  // BTC payout only (for now)
+            op.withdraw_address = addr_itr->withdraw_address; // BTC payout only (for now)
+            op.withdraw_currency = "BTC";                     // BTC payout only (for now)
+            op.withdraw_amount = sed.peerplays_asset.amount;  // BTC payout only (for now)
 
             signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(son_id), op);
             try {
@@ -187,7 +187,7 @@ void sidechain_net_handler::process_proposals() {
 
          bool should_process = false;
 
-         if (po->proposed_transaction.operations.size() == 1) {
+         if (po->proposed_transaction.operations.size() >= 1) {
 
             int32_t op_idx_0 = po->proposed_transaction.operations[0].which();
             chain::operation op = po->proposed_transaction.operations[0];
@@ -232,9 +232,21 @@ void sidechain_net_handler::process_proposals() {
                ilog("Proposal not processed ${po}", ("po", *po));
                ilog("==================================================");
             }
-         } else {
-            ilog("Proposal operations count > 1: ${po}", ("po", *po));
          }
+
+         //if (po->proposed_transaction.operations.size() == 2) {
+         //   int32_t op_idx_0 = proposal.proposed_transaction.operations[0].which();
+         //   int32_t op_idx_1 = proposal.proposed_transaction.operations[1].which();
+         //
+         //   if ((op_idx_0 == chain::operation::tag<chain::son_wallet_deposit_process_operation>::value) &&
+         //       (op_idx_1 == chain::operation::tag<chain::asset_issue_operation>::value)) {
+         //      return true;
+         //   }
+         //   if ((op_idx_0 == chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value) &&
+         //       (op_idx_1 == chain::operation::tag<chain::asset_reserve_operation>::value)) {
+         //      return true;
+         //   }
+         //}
 
          if (should_process) {
             bool should_approve = process_proposal(*po);
@@ -274,16 +286,16 @@ void sidechain_net_handler::process_deposits() {
       swdp_op.payer = gpo.parameters.son_account();
       swdp_op.son_wallet_deposit_id = swdo.id;
 
-      //transfer_operation t_op;
-      //t_op.fee = asset(2000000);
-      //t_op.from = swdo.peerplays_to; // gpo.parameters.son_account()
-      //t_op.to = swdo.peerplays_from;
-      //t_op.amount = swdo.peerplays_asset;
+      asset_issue_operation i_op;
+      i_op.fee = asset(2001000);
+      i_op.issuer = gpo.parameters.son_account();
+      i_op.asset_to_issue = swdo.peerplays_asset;
+      i_op.issue_to_account = swdo.peerplays_to;
 
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swdp_op);
-      //proposal_op.proposed_ops.emplace_back(t_op);
+      proposal_op.proposed_ops.emplace_back(i_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
@@ -323,9 +335,16 @@ void sidechain_net_handler::process_withdrawals() {
       swwp_op.payer = gpo.parameters.son_account();
       swwp_op.son_wallet_withdraw_id = swwo.id;
 
+      asset_reserve_operation r_op;
+      r_op.fee = asset(2001000);
+      r_op.payer = gpo.parameters.son_account();
+      asset_object btc_asset_obj = gpo.parameters.btc_asset()(database);
+      r_op.amount_to_reserve = btc_asset_obj.amount(swwo.withdraw_amount);
+
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(swwp_op);
+      proposal_op.proposed_ops.emplace_back(r_op);
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
