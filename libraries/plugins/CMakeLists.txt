@@ -12,3 +12,5 @@ add_subdirectory( debug_witness )
 add_subdirectory( snapshot )
 add_subdirectory( peerplays_sidechain )
 add_subdirectory( es_objects )
+
+add_subdirectory( libbitcoin )
