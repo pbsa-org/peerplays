@@ -1348,7 +1348,6 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
    std::cout << "Witness Script: " << witness_script.to_string(0) << std::endl;
    std::cout << "Witness Script: " << encode_base16(witness_script.to_data(0)) << std::endl;
-   std::cout << "Locking Script: " << P2SH_P2WSH.to_string(0) << std::endl;
 
    //create_multisig_address_psbt(son_pubkeys);
 
