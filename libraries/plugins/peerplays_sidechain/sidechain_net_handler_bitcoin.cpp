@@ -1317,17 +1317,87 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_psbt(const st
 
 std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
 
+   //using namespace libbitcoin;
+   //using namespace libbitcoin::chain;
+   //using namespace libbitcoin::machine;
+   //using namespace libbitcoin::wallet;
+   //
+   //uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
+   //point_list keys;
+   //for (auto son_pubkey : son_pubkeys) {
+   //   keys.push_back(ec_public(son_pubkey.first));
+   //}
+   //script witness_script = script::to_pay_multisig_pattern(nrequired, keys);
+   //
+   //// sha256 of witness script
+   //data_chunk multisig_hash = to_chunk(sha256_hash(witness_script.to_data(0)));
+   //
+   //// redeem script
+   //libbitcoin::machine::operation::list redeemscript_ops{libbitcoin::machine::operation(opcode(0)), libbitcoin::machine::operation(multisig_hash)};
+   //script redeem_script = script(redeemscript_ops);
+   //
+   //// address
+   //payment_address address = payment_address(redeem_script, payment_address::testnet_p2sh);
+   //
+   //std::stringstream ss;
+   //
+   //
+   //ss << "{\"result\": {\"address\": \"" << address.encoded() << "\", \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\"" << "}, \"error\":null}";
+   //std::string res = ss.str();
+   //
+   //std::cout << "Redeem Script Hash: " << encode_base16(address.hash()) << std::endl;
+   //std::cout << "Payment Address: " << address.encoded() << std::endl;
+   //std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
+   //std::cout << "Witness Script: " << witness_script.to_string(0) << std::endl;
+   //std::cout << "Witness Script: " << encode_base16(witness_script.to_data(0)) << std::endl;
+   //
+   //std::cout << res << std::endl;
+   ////create_multisig_address_psbt(son_pubkeys);
+   //
+   //return res;
+
    using namespace libbitcoin;
    using namespace libbitcoin::chain;
    using namespace libbitcoin::machine;
    using namespace libbitcoin::wallet;
 
-   uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
-   point_list keys;
+   libbitcoin::machine::operation::list witness_script_ops;
+
+   uint16_t idx = 0;
+   uint32_t total_weight = 0;
    for (auto son_pubkey : son_pubkeys) {
-      keys.push_back(ec_public(son_pubkey.first));
+      ec_public key = ec_public(son_pubkey.first);
+      data_chunk key_data = to_chunk(key.point());
+
+      uint16_t weight = son_pubkey.second;
+
+      total_weight = total_weight + weight;
+      if (idx == 0) {
+         witness_script_ops.emplace_back(key_data);
+         witness_script_ops.emplace_back(opcode::checksig);
+         witness_script_ops.emplace_back(opcode::if_);
+         witness_script_ops.emplace_back(opcode::push_positive_1);
+         witness_script_ops.emplace_back(opcode::else_);
+         witness_script_ops.emplace_back(opcode::push_size_0);
+         witness_script_ops.emplace_back(opcode::endif);
+      } else {
+         witness_script_ops.emplace_back(opcode::swap);
+         witness_script_ops.emplace_back(key_data);
+         witness_script_ops.emplace_back(opcode::checksig);
+         witness_script_ops.emplace_back(opcode::if_);
+         witness_script_ops.emplace_back(opcode::push_positive_1);
+         witness_script_ops.emplace_back(opcode::add);
+         witness_script_ops.emplace_back(opcode::endif);
+      }
+      idx = idx + 1;
    }
-   script witness_script = script::to_pay_multisig_pattern(nrequired, keys);
+   witness_script_ops.emplace_back(opcode::push_positive_11);
+   witness_script_ops.emplace_back(opcode::greaterthanorequal);
+
+   script witness_script = script(witness_script_ops);
+
+   std::cout << "Witness Script is valid: " << witness_script.is_valid() << std::endl;
+   std::cout << "Witness Script operations are valid: " << witness_script.is_valid_operations() << std::endl;
 
    // sha256 of witness script
    data_chunk multisig_hash = to_chunk(sha256_hash(witness_script.to_data(0)));
@@ -1340,11 +1410,11 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    payment_address address = payment_address(redeem_script, payment_address::testnet_p2sh);
 
    std::stringstream ss;
-   
-   
-   ss << "{\"result\": {\"address\": \"" << address.encoded() << "\", \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\"" << "}, \"error\":null}";
+
+   ss << "{\"result\": {\"address\": \"" << address.encoded() << "\", \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\""
+      << "}, \"error\":null}";
    std::string res = ss.str();
-   
+
    std::cout << "Redeem Script Hash: " << encode_base16(address.hash()) << std::endl;
    std::cout << "Payment Address: " << address.encoded() << std::endl;
    std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
