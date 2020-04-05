@@ -1340,18 +1340,21 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    payment_address address = payment_address(redeem_script, payment_address::testnet_p2sh);
 
    std::stringstream ss;
-   ss << "{\n    \"address\": \"" << address.encoded()
-      << "\",\n    \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\"\n}\n";
-
+   
+   
+   ss << "{\"result\": {\"address\": \"" << address.encoded() << "\", \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\"" << "}, \"error\":null}";
+   std::string res = ss.str();
+   
    std::cout << "Redeem Script Hash: " << encode_base16(address.hash()) << std::endl;
    std::cout << "Payment Address: " << address.encoded() << std::endl;
    std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
    std::cout << "Witness Script: " << witness_script.to_string(0) << std::endl;
    std::cout << "Witness Script: " << encode_base16(witness_script.to_data(0)) << std::endl;
 
+   std::cout << res << std::endl;
    //create_multisig_address_psbt(son_pubkeys);
 
-   return ss.str();
+   return res;
 }
 
 std::string sidechain_net_handler_bitcoin::create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
