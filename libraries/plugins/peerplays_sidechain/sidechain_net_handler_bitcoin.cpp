@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <thread>
 
+#include <bitcoin/bitcoin.hpp>
+
 #include <boost/algorithm/hex.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -968,16 +970,12 @@ void sidechain_net_handler_bitcoin::process_primary_wallet() {
          const chain::global_property_object &gpo = database.get_global_properties();
 
          auto active_sons = gpo.active_sons;
-         vector<string> son_pubkeys_bitcoin;
+         vector<std::pair<string, uint16_t>> son_pubkeys_bitcoin;
          for (const son_info &si : active_sons) {
-            son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+            son_pubkeys_bitcoin.push_back(std::make_pair(si.sidechain_public_keys.at(sidechain_type::bitcoin), si.weight));
          }
 
-         if (!wallet_password.empty()) {
-            bitcoin_client->walletpassphrase(wallet_password, 5);
-         }
-         uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
-         string reply_str = bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
+         string reply_str = create_multisig_address(son_pubkeys_bitcoin);
 
          std::stringstream active_pw_ss(reply_str);
          boost::property_tree::ptree active_pw_pt;
@@ -1252,6 +1250,16 @@ bool sidechain_net_handler_bitcoin::send_sidechain_transaction(const sidechain_t
    return send_transaction(sto, sidechain_transaction);
 }
 
+// Creates segwit multisig address
+// Function to actually create segwit multisig address should return json string with address info, or empty string in case of failure
+std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
+   std::string new_addr = "";
+   //new_addr = create_multisig_address_raw(son_pubkeys);
+   //new_addr = create_multisig_address_psbt(son_pubkeys);
+   new_addr = create_multisig_address_standalone(son_pubkeys);
+   return new_addr;
+}
+
 // Creates transaction in any format
 // Function to actually create transaction should return transaction string, or empty string in case of failure
 std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
@@ -1277,6 +1285,74 @@ bool sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction
    sidechain_transaction = "";
    //return send_transaction_raw(sto, sidechain_transaction);
    return send_transaction_psbt(sto, sidechain_transaction);
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address_raw(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
+   vector<std::string> pubkeys;
+   for (auto s : son_pubkeys) {
+      pubkeys.push_back(s.first);
+   }
+
+   if (!wallet_password.empty()) {
+      bitcoin_client->walletpassphrase(wallet_password, 5);
+   }
+
+   uint32_t nrequired = pubkeys.size() * 2 / 3 + 1;
+   return bitcoin_client->addmultisigaddress(nrequired, pubkeys);
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address_psbt(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
+   vector<std::string> pubkeys;
+   for (auto s : son_pubkeys) {
+      pubkeys.push_back(s.first);
+   }
+
+   if (!wallet_password.empty()) {
+      bitcoin_client->walletpassphrase(wallet_password, 5);
+   }
+
+   uint32_t nrequired = pubkeys.size() * 2 / 3 + 1;
+   return bitcoin_client->addmultisigaddress(nrequired, pubkeys);
+}
+
+std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
+
+   using namespace libbitcoin;
+   using namespace libbitcoin::chain;
+   using namespace libbitcoin::machine;
+   using namespace libbitcoin::wallet;
+
+   uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
+   point_list keys;
+   for (auto son_pubkey : son_pubkeys) {
+      keys.push_back(ec_public(son_pubkey.first));
+   }
+   script witness_script = script::to_pay_multisig_pattern(nrequired, keys);
+
+   // sha256 of witness script
+   data_chunk multisig_hash = to_chunk(sha256_hash(witness_script.to_data(0)));
+
+   // redeem script
+   libbitcoin::machine::operation::list redeemscript_ops{libbitcoin::machine::operation(opcode(0)), libbitcoin::machine::operation(multisig_hash)};
+   script redeem_script = script(redeemscript_ops);
+
+   // address
+   payment_address address = payment_address(redeem_script, payment_address::testnet_p2sh);
+
+   std::stringstream ss;
+   ss << "{\n    \"address\": \"" << address.encoded()
+      << "\",\n    \"redeemScript\": \"" << encode_base16(witness_script.to_data(0)) << "\"\n}\n";
+
+   std::cout << "Redeem Script Hash: " << encode_base16(address.hash()) << std::endl;
+   std::cout << "Payment Address: " << address.encoded() << std::endl;
+   std::cout << "Redeem Script: " << redeem_script.to_string(0) << std::endl;
+   std::cout << "Witness Script: " << witness_script.to_string(0) << std::endl;
+   std::cout << "Witness Script: " << encode_base16(witness_script.to_data(0)) << std::endl;
+   std::cout << "Locking Script: " << P2SH_P2WSH.to_string(0) << std::endl;
+
+   //create_multisig_address_psbt(son_pubkeys);
+
+   return ss.str();
 }
 
 std::string sidechain_net_handler_bitcoin::create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {

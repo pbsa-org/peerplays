@@ -105,9 +105,14 @@ private:
 
    fc::future<void> on_changed_objects_task;
 
+   std::string create_multisig_address(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
    std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string sign_transaction(const sidechain_transaction_object &sto, bool &complete);
    bool send_transaction(const sidechain_transaction_object &sto, std::string &sidechain_transaction);
+
+   std::string create_multisig_address_raw(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
+   std::string create_multisig_address_psbt(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
+   std::string create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
 
    std::string create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string create_transaction_psbt(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
