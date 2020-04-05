@@ -110,9 +110,14 @@ private:
    std::string create_deposit_transaction(const son_wallet_deposit_object &swdo);
    std::string create_withdrawal_transaction(const son_wallet_withdraw_object &swwo);
 
+   std::string create_multisig_address(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
    std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string sign_transaction(const sidechain_transaction_object &sto);
    std::string send_transaction(const sidechain_transaction_object &sto);
+
+   std::string create_multisig_address_raw(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
+   std::string create_multisig_address_psbt(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
+   std::string create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys);
 
    std::string create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
    std::string create_transaction_psbt(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
