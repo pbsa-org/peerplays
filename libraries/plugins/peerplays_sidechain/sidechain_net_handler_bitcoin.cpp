@@ -1488,34 +1488,50 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    // Online visualizer/debugger
    // https://siminchen.github.io/bitcoinIDE/build/editor.html
    //
-   // 0 03456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef275 OP_CHECKSIG
-   // 0 02d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f4 OP_CHECKSIG
+   // 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   // 03456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef275 OP_CHECKSIG
+   // OP_IF OP_1 OP_ELSE 0 OP_ENDIF
+   // OP_SWAP
+   // 02d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f4 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61 OP_CHECKSIG
+   // OP_SWAP
+   // 025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 0228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe9866 OP_CHECKSIG
+   // OP_SWAP
+   // 0228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe9866 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f666 OP_CHECKSIG
+   // OP_SWAP
+   // 037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f666 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 02ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf OP_CHECKSIG
+   // OP_SWAP
+   // 02ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 0317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f OP_CHECKSIG
+   // OP_SWAP
+   // 0317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 0266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf84 OP_CHECKSIG
+   // OP_SWAP
+   // 0266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf84 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf OP_CHECKSIG
+   // OP_SWAP
+   // 023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 0229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e5 OP_CHECKSIG
+   // OP_SWAP
+   // 0229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e5 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da OP_CHECKSIG
+   // OP_SWAP
+   // 024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 03df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c1 OP_CHECKSIG
+   // OP_SWAP
+   // 03df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c1 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 02bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8 OP_CHECKSIG
+   // OP_SWAP
+   // 02bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 0287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae8 OP_CHECKSIG
+   // OP_SWAP
+   // 0287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae8 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
-   // 0 02053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd73 OP_CHECKSIG
+   // OP_SWAP
+   // 02053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd73 OP_CHECKSIG
    // OP_IF OP_1 OP_ADD OP_ENDIF
    // 11 OP_GREATERTHANOREQUAL
 
@@ -1530,16 +1546,23 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
 
       total_weight = total_weight + weight;
 
-      witness_script_ops.emplace_back(opcode::push_size_0);
       witness_script_ops.emplace_back(key_data);
       witness_script_ops.emplace_back(opcode::checksig);
 
-      if (idx > 0) {
-         witness_script_ops.emplace_back(opcode::if_);
-         witness_script_ops.emplace_back(opcode::push_positive_1);
+      witness_script_ops.emplace_back(opcode::if_);
+      witness_script_ops.emplace_back(opcode::push_positive_1);
+      if (idx == 0) {
+         witness_script_ops.emplace_back(opcode::else_);
+         witness_script_ops.emplace_back(opcode::push_size_0);
+      } else {
          witness_script_ops.emplace_back(opcode::add);
-         witness_script_ops.emplace_back(opcode::endif);
       }
+      witness_script_ops.emplace_back(opcode::endif);
+
+      if (idx < son_pubkeys.size() - 1) {
+         witness_script_ops.emplace_back(opcode::swap);
+      }
+
       idx = idx + 1;
    }
    witness_script_ops.emplace_back(opcode::push_positive_11);
