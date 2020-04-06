@@ -1379,6 +1379,8 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
    }
 
    return create_transaction(inputs, outputs);
+}
+
 // Creates segwit multisig address
 // Function to actually create segwit multisig address should return json string with address info, or empty string in case of failure
 std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
