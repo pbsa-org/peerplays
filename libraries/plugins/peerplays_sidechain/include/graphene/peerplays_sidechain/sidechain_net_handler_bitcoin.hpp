@@ -10,6 +10,12 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
+enum class network_type {
+   mainnet,
+   testnet,
+   regtest
+};
+
 class btc_txout {
 public:
    std::string txid_;
@@ -21,12 +27,11 @@ class bitcoin_rpc_client {
 public:
    bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password);
 
-   std::string getnetworktype();
    std::string addmultisigaddress(const uint32_t nrequired, const std::vector<std::string> public_keys);
    std::string combinepsbt(const vector<std::string> &psbts);
    std::string createmultisig(const uint32_t nrequired, const std::vector<std::string> public_keys);
    std::string createpsbt(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
-   std::string convertrawtopsbt(const std::string &hex);
+   std::string converttopsbt(const std::string &hex);
    std::string createrawtransaction(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs);
    std::string createwallet(const std::string &wallet_name);
    std::string decodepsbt(std::string const &tx_psbt);
@@ -36,6 +41,7 @@ public:
    std::string finalizepsbt(std::string const &tx_psbt);
    std::string getaddressinfo(const std::string &address);
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);
+   std::string getblockchaininfo();
    std::string gettransaction(const std::string &txid, const bool include_watch_only = false);
    void importaddress(const std::string &address_or_script);
    std::vector<btc_txout> listunspent(const uint32_t minconf = 1, const uint32_t maxconf = 9999999);
@@ -105,6 +111,13 @@ private:
 
    std::unique_ptr<bitcoin_rpc_client> bitcoin_client;
    std::unique_ptr<zmq_listener> listener;
+
+   network_type network;
+   uint8_t payment_address_p2kh;
+   uint8_t payment_address_p2sh;
+   uint8_t ec_private_wif;
+   uint8_t ec_private_p2kh;
+   uint16_t ec_private_version;
 
    fc::future<void> on_changed_objects_task;
 

@@ -182,7 +182,7 @@ std::string bitcoin_rpc_client::createpsbt(const std::vector<btc_txout> &ins, co
    return "";
 }
 
-std::string bitcoin_rpc_client::convertrawtopsbt(const std::string &hex) {
+std::string bitcoin_rpc_client::converttopsbt(const std::string &hex) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"converttopsbt\", \"method\": "
                                   "\"converttopsbt\", \"params\": [\"" +
                                   hex + "\"] }");
@@ -485,6 +485,33 @@ std::string bitcoin_rpc_client::getblock(const std::string &block_hash, int32_t 
    return "";
 }
 
+std::string bitcoin_rpc_client::getblockchaininfo() {
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"getblockchaininfo\", \"method\": "
+                                  "\"getblockchaininfo\", \"params\": [] }");
+
+   const auto reply = send_post_request(body);
+
+   if (reply.body.empty()) {
+      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+      return "";
+   }
+
+   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   if (reply.status == 200) {
+      std::stringstream ss;
+      boost::property_tree::json_parser::write_json(ss, json.get_child("result"));
+      return ss.str();
+   }
+
+   if (json.count("error") && !json.get_child("error").empty()) {
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+   }
+   return "";
+}
+
 std::string bitcoin_rpc_client::gettransaction(const std::string &txid, const bool include_watch_only) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"gettransaction\", \"method\": "
                                   "\"gettransaction\", \"params\": [\"" +
@@ -716,35 +743,6 @@ std::string bitcoin_rpc_client::unloadwallet(const std::string &filename) {
    return "";
 }
 
-std::string bitcoin_rpc_client::getnetworktype()
-{
-   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletlock\", \"method\": "
-                                  "\"getblockchaininfo\", \"params\": [] }");
-
-   const auto reply = send_post_request(body);
-
-   if (reply.body.empty()) {
-      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
-      return "";
-   }
-
-   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   if (reply.status == 200) {
-      auto reply = json.get_child("result");
-      if (!reply.count("chain"))
-         return "";
-      return reply.get_child("chain").get_value<std::string>();
-   }
-
-   if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
-   }
-   return "";
-}
-
 std::string bitcoin_rpc_client::walletlock() {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletlock\", \"method\": "
                                   "\"walletlock\", \"params\": [] }");
@@ -937,6 +935,31 @@ sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain
    bitcoin_client = std::unique_ptr<bitcoin_rpc_client>(new bitcoin_rpc_client(ip, rpc_port, rpc_user, rpc_password, wallet, wallet_password));
    if (!wallet.empty()) {
       bitcoin_client->loadwallet(wallet);
+   }
+
+   std::string blockchain_info = bitcoin_client->getblockchaininfo();
+   std::stringstream bci_ss(std::string(blockchain_info.begin(), blockchain_info.end()));
+   boost::property_tree::ptree bci_json;
+   boost::property_tree::read_json(bci_ss, bci_json);
+   network = network_type::mainnet;
+   if (bci_json.count("chain")) {
+      std::string chain = bci_json.get<std::string>("chain");
+      if (chain != "mainnet") {
+         network = network_type::testnet;
+      }
+   }
+   if (network == network_type::mainnet) {
+      payment_address_p2kh = libbitcoin::wallet::payment_address::mainnet_p2kh;
+      payment_address_p2sh = libbitcoin::wallet::payment_address::mainnet_p2sh;
+      ec_private_wif = libbitcoin::wallet::ec_private::mainnet_wif;
+      ec_private_p2kh = libbitcoin::wallet::ec_private::mainnet_p2kh;
+      ec_private_version = libbitcoin::wallet::ec_private::mainnet;
+   } else {
+      payment_address_p2kh = libbitcoin::wallet::payment_address::testnet_p2kh;
+      payment_address_p2sh = libbitcoin::wallet::payment_address::testnet_p2sh;
+      ec_private_wif = libbitcoin::wallet::ec_private::testnet_wif;
+      ec_private_p2kh = libbitcoin::wallet::ec_private::testnet_p2kh;
+      ec_private_version = libbitcoin::wallet::ec_private::testnet;
    }
 
    listener = std::unique_ptr<zmq_listener>(new zmq_listener(ip, zmq_port));
@@ -1526,7 +1549,7 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    //script redeem_script = script(redeemscript_ops);
    //
    //// address
-   //payment_address address = payment_address(redeem_script, payment_address::testnet_p2sh);
+   //payment_address address = payment_address(redeem_script, payment_address_p2sh);
    //
    //std::stringstream ss;
    //
@@ -1646,7 +1669,7 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    script redeem_script = script(redeemscript_ops);
 
    // address
-   payment_address address = payment_address(redeem_script, payment_address::testnet_p2sh);
+   payment_address address = payment_address(redeem_script, payment_address_p2sh);
 
    std::stringstream ss;
 
@@ -1737,8 +1760,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
 
    libbitcoin::chain::transaction tx;
    tx.set_version(2u);
-   for(auto in: inputs)
-   {
+   for (auto in : inputs) {
       libbitcoin::chain::input bin;
       libbitcoin::hash_digest tx_id;
       libbitcoin::decode_hash(tx_id, in.txid_);
@@ -1746,21 +1768,22 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
       bin.set_sequence(max_input_sequence);
       tx.inputs().push_back(bin);
    }
-   for(auto out: outputs)
-   {
+   for (auto out : outputs) {
       libbitcoin::chain::output bout;
       uint64_t satoshis = out.second * 100000000.0;
       bout.set_value(satoshis);
       libbitcoin::wallet::payment_address addr(out.first);
-      if(addr.version() == libbitcoin::wallet::payment_address::testnet_p2sh)
-         bout.set_script(libbitcoin::chain::script::to_pay_key_hash_pattern(addr));
-      else
+      if (addr.version() == payment_address_p2sh) {
          bout.set_script(libbitcoin::chain::script::to_pay_script_hash_pattern(addr));
+      } else {
+         bout.set_script(libbitcoin::chain::script::to_pay_key_hash_pattern(addr));
+      }
       tx.outputs().push_back(bout);
    }
 
-   libbitcoin::data_chunk dc = tx.to_data();
-   return bitcoin_client->convertrawtopsbt(fc::to_hex((char*)&dc[0], dc.size()));
+   std::string tx_raw = encode_base16(tx.to_data());
+
+   return bitcoin_client->converttopsbt(tx_raw);
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto, bool &complete) {
