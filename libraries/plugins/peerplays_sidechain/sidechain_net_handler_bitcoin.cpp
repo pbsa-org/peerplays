@@ -1885,8 +1885,14 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const sidechain
 std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sidechain_transaction_object &sto, bool &complete) {
    complete = false;
 
+   std::string pubkey = plugin.get_current_son_object().signing_key.at(sidechain);
+   std::string prvkey = get_private_key(pubkey);
+   std::tx = sto.transaction;
+
+   std::tx_signature = "";
+
    complete = true;
-   return "";
+   return tx_signature;
 }
 
 bool sidechain_net_handler_bitcoin::send_transaction_raw(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
