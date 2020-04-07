@@ -182,6 +182,34 @@ std::string bitcoin_rpc_client::createpsbt(const std::vector<btc_txout> &ins, co
    return "";
 }
 
+std::string bitcoin_rpc_client::convertrawtopsbt(const std::string &hex) {
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"converttopsbt\", \"method\": "
+                                  "\"converttopsbt\", \"params\": [\"" +
+                                  hex + "\"] }");
+
+   const auto reply = send_post_request(body);
+
+   if (reply.body.empty()) {
+      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+      return "";
+   }
+
+   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   if (reply.status == 200) {
+      if (json.find("result") != json.not_found()) {
+         return json.get<std::string>("result");
+      }
+   }
+
+   if (json.count("error") && !json.get_child("error").empty()) {
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+   }
+   return "";
+}
+
 std::string bitcoin_rpc_client::createrawtransaction(const std::vector<btc_txout> &ins, const fc::flat_map<std::string, double> outs) {
    std::string body("{\"jsonrpc\": \"1.0\", \"id\":\"createrawtransaction\", "
                     "\"method\": \"createrawtransaction\", \"params\": [");
@@ -679,6 +707,35 @@ std::string bitcoin_rpc_client::unloadwallet(const std::string &filename) {
       std::stringstream ss;
       boost::property_tree::json_parser::write_json(ss, json.get_child("result"));
       return ss.str();
+   }
+
+   if (json.count("error") && !json.get_child("error").empty()) {
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+   }
+   return "";
+}
+
+std::string bitcoin_rpc_client::getnetworktype()
+{
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletlock\", \"method\": "
+                                  "\"getblockchaininfo\", \"params\": [] }");
+
+   const auto reply = send_post_request(body);
+
+   if (reply.body.empty()) {
+      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+      return "";
+   }
+
+   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   if (reply.status == 200) {
+      auto reply = json.get_child("result");
+      if (!reply.count("chain"))
+         return "";
+      return reply.get_child("chain").get_value<std::string>();
    }
 
    if (json.count("error") && !json.get_child("error").empty()) {
@@ -1392,8 +1449,8 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::ve
 std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
    std::string new_tx = "";
    //new_tx = create_transaction_raw(inputs, outputs);
-   new_tx = create_transaction_psbt(inputs, outputs);
-   //new_tx = create_transaction_standalone(inputs, outputs);
+   //new_tx = create_transaction_psbt(inputs, outputs);
+   new_tx = create_transaction_standalone(inputs, outputs);
    return new_tx;
 }
 
@@ -1696,7 +1753,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    }
 
    libbitcoin::data_chunk dc = tx.to_data();
-   return fc::to_hex((char*)&dc[0], dc.size());
+   return bitcoin_client->convertrawtopsbt(fc::to_hex((char*)&dc[0], dc.size()));
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto) {

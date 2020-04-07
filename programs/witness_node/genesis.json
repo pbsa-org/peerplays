@@ -1,5 +1,5 @@
 {
-  "initial_timestamp": "2020-01-13T06:03:15",
+  "initial_timestamp": "2020-03-03T03:03:03",
   "max_core_supply": "1000000000000000",
   "initial_parameters": {
     "current_fees": {
@@ -333,9 +333,9 @@
       "scale": 10000
     },
     "block_interval": 3,
-    "maintenance_interval": 86400,
+    "maintenance_interval": 120,
     "maintenance_skip_slots": 3,
-    "committee_proposal_review_period": 1209600,
+    "committee_proposal_review_period": 600,
     "maximum_transaction_size": 2048,
     "maximum_block_size": 1228800000,
     "maximum_time_until_expiration": 86400,
@@ -388,7 +388,8 @@
       "son_pay_time": 86400,
       "son_deregister_time": 43200,
       "son_heartbeat_frequency": 180,
-      "son_down_time": 360
+      "son_down_time": 360,
+      "son_bitcoin_min_tx_confirmations": 1
     }
   },
   "initial_bts_accounts": [],
@@ -527,6 +528,7 @@
   "immutable_parameters": {
     "min_committee_member_count": 11,
     "min_witness_count": 11,
+    "min_son_count": 5,
     "num_special_accounts": 0,
     "num_special_assets": 0
   }
