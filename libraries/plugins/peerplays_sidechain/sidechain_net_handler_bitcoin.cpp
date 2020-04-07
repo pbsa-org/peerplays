@@ -10,6 +10,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <fc/crypto/base64.hpp>
+#include <fc/crypto/hex.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 
@@ -1666,8 +1667,36 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    //    }
    //  ]
    //}
+   using namespace libbitcoin;
+   using namespace libbitcoin::machine;
+   using namespace libbitcoin::wallet;
 
-   return "";
+   libbitcoin::chain::transaction tx;
+   tx.set_version(2u);
+   for(auto in: inputs)
+   {
+      libbitcoin::chain::input bin;
+      libbitcoin::hash_digest tx_id;
+      libbitcoin::decode_hash(tx_id, in.txid_);
+      bin.set_previous_output(libbitcoin::chain::output_point(tx_id, in.out_num_));
+      bin.set_sequence(max_input_sequence);
+      tx.inputs().push_back(bin);
+   }
+   for(auto out: outputs)
+   {
+      libbitcoin::chain::output bout;
+      uint64_t satoshis = out.second * 100000000.0;
+      bout.set_value(satoshis);
+      libbitcoin::wallet::payment_address addr(out.first);
+      if(addr.version() == libbitcoin::wallet::payment_address::testnet_p2sh)
+         bout.set_script(libbitcoin::chain::script::to_pay_key_hash_pattern(addr));
+      else
+         bout.set_script(libbitcoin::chain::script::to_pay_script_hash_pattern(addr));
+      tx.outputs().push_back(bout);
+   }
+
+   libbitcoin::data_chunk dc = tx.to_data();
+   return fc::to_hex((char*)&dc[0], dc.size());
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto) {
