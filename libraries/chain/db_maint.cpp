@@ -1898,15 +1898,13 @@ void perform_son_tasks(database& db)
    // create BTC asset here because son_account is the issuer of the BTC
    if (gpo.parameters.btc_asset() == asset_id_type()  && db.head_block_time() >= HARDFORK_SON_TIME)
    {
-      auto next_asset_id = db.get_index_type<asset_index>().get_next_id();
-
       const asset_dynamic_data_object& dyn_asset =
          db.create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
             a.current_supply = 0;
          });
 
       const asset_object& btc_asset =
-         db.create<asset_object>( [&gpo, &next_asset_id, &dyn_asset]( asset_object& a ) {
+         db.create<asset_object>( [&gpo, &dyn_asset]( asset_object& a ) {
             a.symbol = "BTC";
             a.precision = 8;
             a.issuer = gpo.parameters.son_account();
@@ -1921,7 +1919,7 @@ void perform_son_tasks(database& db)
             a.options.core_exchange_rate.base.amount = 100000;
             a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
             a.options.core_exchange_rate.quote.amount = 2500; // CoinMarketCap approx value
-            a.options.core_exchange_rate.quote.asset_id = next_asset_id;
+            a.options.core_exchange_rate.quote.asset_id = a.id;
             a.options.whitelist_authorities.clear(); // accounts allowed to use asset, if not empty
             a.options.blacklist_authorities.clear(); // accounts who can blacklist other accounts to use asset, if white_list flag is set
             a.options.whitelist_markets.clear(); // might be traded with
