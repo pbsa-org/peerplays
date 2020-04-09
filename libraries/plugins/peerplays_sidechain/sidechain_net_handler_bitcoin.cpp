@@ -1417,7 +1417,7 @@ std::string sidechain_net_handler_bitcoin::create_deposit_transaction(const son_
 
    outputs[pw_address] = transfer_amount;
 
-   return create_transaction(inputs, outputs);
+   return create_transaction_psbt(inputs, outputs);
 }
 
 std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const son_wallet_withdraw_object &swwo) {
@@ -1470,8 +1470,8 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
    std::string new_addr = "";
    //new_addr = create_multisig_address_raw(son_pubkeys);
-   //new_addr = create_multisig_address_psbt(son_pubkeys);
-   new_addr = create_multisig_address_standalone(son_pubkeys);
+   new_addr = create_multisig_address_psbt(son_pubkeys);
+   //new_addr = create_multisig_address_standalone(son_pubkeys);
    return new_addr;
 }
 
@@ -1491,7 +1491,11 @@ std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_tran
    complete = false;
    std::string new_tx = "";
    //new_tx = sign_transaction_raw(sto, complete);
-   new_tx = sign_transaction_psbt(sto, complete);
+   if (sto.object_id.type() == 30) {
+      new_tx = sign_transaction_psbt(sto, complete);
+   } else {
+      new_tx = sign_transaction_standalone(sto, complete);
+   }
    //new_tx = sign_transaction_standalone(sto, complete);
    return new_tx;
 }
@@ -1499,7 +1503,12 @@ std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_tran
 bool sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
    sidechain_transaction = "";
    //return send_transaction_raw(sto, sidechain_transaction);
-   return send_transaction_psbt(sto, sidechain_transaction);
+   //return send_transaction_psbt(sto, sidechain_transaction);
+   if (sto.object_id.type() == 30) {
+      return send_transaction_psbt(sto, sidechain_transaction);
+   } else {
+      return send_transaction_standalone(sto, sidechain_transaction);
+   }
 }
 
 std::string sidechain_net_handler_bitcoin::create_multisig_address_raw(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
@@ -1528,6 +1537,56 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_psbt(const st
 
    uint32_t nrequired = pubkeys.size() * 2 / 3 + 1;
    return bitcoin_client->addmultisigaddress(nrequired, pubkeys);
+}
+
+std::vector<std::vector<unsigned char>> read_byte_arrays_from_string(const std::string &string_buf)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   std::vector<bytes> data;
+   for(auto &v: json)
+   {
+      std::string hex = v.second.data();
+      bytes item;
+      item.resize(hex.size() / 2);
+      fc::from_hex(hex, (char*)&item[0], item.size());
+      data.push_back(item);
+   }
+   return data;
+}
+
+std::string write_byte_arrays_to_string(const std::vector<std::vector<unsigned char>>& data)
+{
+   std::string res = "[";
+   for (unsigned int idx = 0; idx < data.size(); ++idx) {
+      res += "\"" + fc::to_hex((char*)&data[idx][0], data[idx].size()) + "\"";
+      if (idx != data.size() - 1)
+         res += ",";
+   }
+   res += "]";
+   return res;
+}
+
+libbitcoin::chain::script get_multisig_witness_script(const std::vector<libbitcoin::wallet::ec_public> &son_pubkeys)
+{
+   libbitcoin::point_list keys;
+   for (auto& key : son_pubkeys) {
+      keys.push_back(key.point());
+   }
+
+   uint32_t nrequired = son_pubkeys.size() * 2 / 3 + 1;
+   libbitcoin::chain::script multisig = libbitcoin::chain::script::to_pay_multisig_pattern(nrequired, keys);
+   return multisig;
+}
+
+libbitcoin::chain::script getRedeemScript(const std::vector<libbitcoin::wallet::ec_public> &son_pubkeys) {
+   libbitcoin::chain::script multisig = get_multisig_witness_script(son_pubkeys);
+   libbitcoin::data_chunk multisig_hash = libbitcoin::to_chunk(libbitcoin::sha256_hash(multisig.to_data(0)));
+   libbitcoin::machine::operation::list redeemscript_ops {libbitcoin::machine::operation(libbitcoin::machine::opcode(0)), libbitcoin::machine::operation(multisig_hash)};
+   libbitcoin::chain::script redeem_script = libbitcoin::chain::script(redeemscript_ops);
+   return redeem_script;
 }
 
 libbitcoin::chain::script get_unlock_script(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys)
@@ -1930,6 +1989,8 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
 
 
    libbitcoin::data_chunk data;
+   libbitcoin::ec_secret key;
+   libbitcoin::decode_base16(key, prvkey);
    std::vector<uint64_t> in_amounts;
    read_tx_data_from_string(sto.transaction, data, in_amounts);
    libbitcoin::chain::transaction tx;
@@ -1938,12 +1999,19 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
       return "";
    }
 
-   std::vector<std::pair<std::string, uint16_t>> son_pubkeys;
-   libbitcoin::chain::script witness_script = get_unlock_script(son_pubkeys);
+   std::vector<ec_public> son_pubkeys;
+   for (auto& son: sto.signers) {
+      std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
+      son_pubkeys.push_back(ec_public(pub_key));
+   }
+   libbitcoin::chain::script witness_script = get_multisig_witness_script(son_pubkeys);
+   vector<endorsement> sigs;
+   sigs.resize(tx.inputs().size());
+   for (unsigned int itr = 0; itr < sigs.size(); itr++) {
+      libbitcoin::chain::script::create_endorsement(sigs.at(itr), key, witness_script, tx, itr, sighash_algorithm::all, script_version::zero, in_amounts[itr]);
+   }
 
-
-   std::string tx_signature = "";
-
+   std::string tx_signature = write_byte_arrays_to_string(sigs);
    complete = true;
    return tx_signature;
 }
@@ -1997,6 +2065,12 @@ bool sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain_transa
 
    return false;
 } // namespace peerplays_sidechain
+
+bool sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
+   sidechain_transaction = "";
+
+   return bitcoin_client->sendrawtransaction(sto.transaction);
+}
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
    std::string block = bitcoin_client->getblock(event_data);
