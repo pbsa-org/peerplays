@@ -20,7 +20,7 @@ class btc_txout {
 public:
    std::string txid_;
    unsigned int out_num_;
-   double amount_;
+   uint64_t amount_;
 };
 
 class bitcoin_rpc_client {
