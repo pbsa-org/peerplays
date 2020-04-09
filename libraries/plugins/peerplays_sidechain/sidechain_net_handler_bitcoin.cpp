@@ -18,6 +18,7 @@
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -1794,6 +1795,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    //}
    libbitcoin::chain::transaction tx;
    tx.set_version(2u);
+   std::vector<uint64_t> in_amounts;
    for (auto in : inputs) {
       libbitcoin::chain::input bin;
       libbitcoin::hash_digest tx_id;
@@ -1801,6 +1803,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
       bin.set_previous_output(libbitcoin::chain::output_point(tx_id, in.out_num_));
       bin.set_sequence(libbitcoin::max_input_sequence);
       tx.inputs().push_back(bin);
+      in_amounts.push_back(in.amount_);
    }
    for (auto out : outputs) {
       libbitcoin::chain::output bout;
@@ -1815,7 +1818,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
       tx.outputs().push_back(bout);
    }
 
-   std::string tx_raw = libbitcoin::encode_base16(tx.to_data());
+   std::string tx_raw = save_tx_data_to_string(tx.to_data(), in_amounts);
 
    return tx_raw;
 }
@@ -1927,10 +1930,8 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
 
 
    libbitcoin::data_chunk data;
-   if (!libbitcoin::decode_base16(data, sto.transaction)) {
-      elog("Failed to decode transaction ${tx}", ("tx", sto.transaction));
-      return "";
-   }
+   std::vector<uint64_t> in_amounts;
+   read_tx_data_from_string(sto.transaction, data, in_amounts);
    libbitcoin::chain::transaction tx;
    if (!tx.from_data(data)) {
       elog("Failed to decode transaction ${tx}", ("tx", sto.transaction));
