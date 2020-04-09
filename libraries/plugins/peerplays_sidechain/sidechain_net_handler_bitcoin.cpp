@@ -1708,6 +1708,36 @@ std::string save_tx_data_to_string(const std::vector<unsigned char> &tx, const s
    return res;
 }
 
+std::vector<std::vector<unsigned char>> read_byte_arrays_from_string(const std::string &string_buf)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   std::vector<bytes> data;
+   for(auto &v: json)
+   {
+      std::string hex = v.second.data();
+      bytes item;
+      item.resize(hex.size() / 2);
+      fc::from_hex(hex, (char*)&item[0], item.size());
+      data.push_back(item);
+   }
+   return data;
+}
+
+std::string write_byte_arrays_to_string(const std::vector<std::vector<unsigned char>>& data)
+{
+   std::string res = "[";
+   for (unsigned int idx = 0; idx < data.size(); ++idx) {
+      res += "\"" + fc::to_hex((char*)&data[idx][0], data[idx].size()) + "\"";
+      if (idx != data.size() - 1)
+         res += ",";
+   }
+   res += "]";
+   return res;
+}
+
 std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
 
    //using namespace libbitcoin;
