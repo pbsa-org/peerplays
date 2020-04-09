@@ -585,7 +585,9 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent(const uint32_t minconf, c
             btc_txout txo;
             txo.txid_ = entry.second.get_child("txid").get_value<std::string>();
             txo.out_num_ = entry.second.get_child("vout").get_value<unsigned int>();
-            txo.amount_ = entry.second.get_child("amount").get_value<double>();
+            string amount = entry.second.get_child("amount").get_value<std::string>();
+            amount.erase(std::remove(amount.begin(), amount.end(), '.'), amount.end());
+            txo.amount_ = std::stoll(amount);
             result.push_back(txo);
          }
       }
@@ -623,7 +625,9 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent_by_address_and_amount(con
             btc_txout txo;
             txo.txid_ = entry.second.get_child("txid").get_value<std::string>();
             txo.out_num_ = entry.second.get_child("vout").get_value<unsigned int>();
-            txo.amount_ = entry.second.get_child("amount").get_value<double>();
+            string amount = entry.second.get_child("amount").get_value<std::string>();
+            amount.erase(std::remove(amount.begin(), amount.end(), '.'), amount.end());
+            txo.amount_ = std::stoll(amount);
             result.push_back(txo);
          }
       }
@@ -1353,8 +1357,7 @@ std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction() {
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
 
-   double min_amount = ((double)fee_rate / 100000000.0); // Account only for relay fee for now
-   double total_amount = 0.0;
+   uint64_t total_amount = 0.0;
    std::vector<btc_txout> inputs = bitcoin_client->listunspent_by_address_and_amount(prev_pw_address, 0);
 
    if (inputs.size() == 0) {
@@ -1365,14 +1368,14 @@ std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction() {
          total_amount += utx.amount_;
       }
 
-      if (min_amount >= total_amount) {
+      if (fee_rate >= total_amount) {
          elog("Failed not enough BTC to transfer from ${fa}", ("fa", prev_pw_address));
          return "";
       }
    }
 
    fc::flat_map<std::string, double> outputs;
-   outputs[active_pw_address] = total_amount - min_amount;
+   outputs[active_pw_address] = double(total_amount - fee_rate) / 100000000.0;
 
    return create_transaction(inputs, outputs);
 }
@@ -1435,8 +1438,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
 
-   double min_amount = ((double)(swwo.withdraw_amount.value + fee_rate) / 100000000.0); // Account only for relay fee for now
-   double total_amount = 0.0;
+   uint64_t total_amount = 0;
    std::vector<btc_txout> inputs = bitcoin_client->listunspent_by_address_and_amount(pw_address, 0);
 
    if (inputs.size() == 0) {
@@ -1447,7 +1449,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
          total_amount += utx.amount_;
       }
 
-      if (min_amount > total_amount) {
+      if (fee_rate > total_amount) {
          elog("Failed not enough BTC to spend for ${pw}", ("pw", pw_address));
          return "";
       }
@@ -1455,8 +1457,8 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 
    fc::flat_map<std::string, double> outputs;
    outputs[swwo.withdraw_address] = swwo.withdraw_amount.value / 100000000.0;
-   if ((total_amount - min_amount) > 0.0) {
-      outputs[pw_address] = total_amount - min_amount;
+   if ((total_amount - fee_rate) > 0.0) {
+      outputs[pw_address] = double(total_amount - fee_rate) / 100000000.0;
    }
 
    return create_transaction(inputs, outputs);
