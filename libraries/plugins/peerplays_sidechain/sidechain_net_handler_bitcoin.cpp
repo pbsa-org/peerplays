@@ -1025,13 +1025,12 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
 
          if (son_sets_equal) {
             auto active_sons = gpo.active_sons;
-            vector<string> son_pubkeys_bitcoin;
+            vector<pair<string, uint16_t>> son_pubkeys_bitcoin;
             for (const son_info &si : active_sons) {
-               son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+               son_pubkeys_bitcoin.push_back(make_pair(si.sidechain_public_keys.at(sidechain_type::bitcoin), si.weight));
             }
 
-            uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
-            string reply_str = bitcoin_client->createmultisig(nrequired, son_pubkeys_bitcoin);
+            string reply_str = create_multisig_address(son_pubkeys_bitcoin);
 
             std::stringstream active_pw_ss(reply_str);
             boost::property_tree::ptree active_pw_pt;
@@ -1470,8 +1469,8 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 std::string sidechain_net_handler_bitcoin::create_multisig_address(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys) {
    std::string new_addr = "";
    //new_addr = create_multisig_address_raw(son_pubkeys);
-   new_addr = create_multisig_address_psbt(son_pubkeys);
-   //new_addr = create_multisig_address_standalone(son_pubkeys);
+   //new_addr = create_multisig_address_psbt(son_pubkeys);
+   new_addr = create_multisig_address_standalone(son_pubkeys);
    return new_addr;
 }
 
@@ -1605,7 +1604,7 @@ libbitcoin::machine::operation script_num(uint32_t val)
    return result;
 }
 
-libbitcoin::chain::script get_unlock_script(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys)
+libbitcoin::chain::script get_weighted_multisig_witness_script(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys)
 {
    using namespace libbitcoin;
    using namespace libbitcoin::chain;
@@ -1770,7 +1769,7 @@ std::string sidechain_net_handler_bitcoin::create_multisig_address_standalone(co
    using namespace libbitcoin::machine;
    using namespace libbitcoin::wallet;
 
-   script witness_script = get_unlock_script(son_pubkeys);
+   script witness_script = get_weighted_multisig_witness_script(son_pubkeys);
 
    std::cout << "Witness Script is valid: " << witness_script.is_valid() << std::endl;
    std::cout << "Witness Script operations are valid: " << witness_script.is_valid_operations() << std::endl;
@@ -1998,6 +1997,7 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
    complete = false;
 
    std::string pubkey = plugin.get_current_son_object().sidechain_public_keys.at(sidechain);
+   uint16_t weight = 0;
    std::string prvkey = get_private_key(pubkey);
    using namespace libbitcoin;
    using namespace libbitcoin::machine;
@@ -2015,12 +2015,14 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
       return "";
    }
 
-   std::vector<ec_public> son_pubkeys;
+   std::vector<std::pair<std::string, uint16_t>> son_pubkeys;
    for (auto& son: sto.signers) {
       std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
-      son_pubkeys.push_back(ec_public(pub_key));
+      son_pubkeys.push_back(std::make_pair(pub_key, son.weight));
+      if (son.son_id == plugin.get_current_son_id())
+         weight = son.weight;
    }
-   libbitcoin::chain::script witness_script = get_multisig_witness_script(son_pubkeys);
+   libbitcoin::chain::script witness_script = get_weighted_multisig_witness_script(son_pubkeys);
    vector<endorsement> sigs;
    sigs.resize(tx.inputs().size());
    for (unsigned int itr = 0; itr < sigs.size(); itr++) {
@@ -2028,7 +2030,7 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
    }
 
    std::string tx_signature = write_byte_arrays_to_string(sigs);
-   complete = true;
+   complete = (sto.current_weight + weight > sto.threshold);
    return tx_signature;
 }
 
@@ -2085,7 +2087,49 @@ bool sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain_transa
 bool sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto, std::string &sidechain_transaction) {
    sidechain_transaction = "";
 
-   return bitcoin_client->sendrawtransaction(sto.transaction);
+   libbitcoin::data_chunk tx_buf;
+   std::vector<uint64_t> in_amounts;
+   read_tx_data_from_string(sto.transaction, tx_buf, in_amounts);
+   libbitcoin::chain::transaction tx;
+   if (!tx.from_data(tx_buf)) {
+      elog("Failed to decode transaction ${tx}", ("tx", sto.transaction));
+      return "";
+   }
+
+   std::vector<std::pair<std::string, uint16_t>> son_pubkeys;
+   for (auto& son: sto.signers) {
+      std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
+      son_pubkeys.push_back(std::make_pair(pub_key, son.weight));
+   }
+   libbitcoin::chain::script witness_script = get_weighted_multisig_witness_script(son_pubkeys);
+
+   std::vector<libbitcoin::data_stack> scripts;
+   for (uint32_t idx = 0; idx < tx.inputs().size(); idx++)
+      scripts.push_back({witness_script.to_data(0)});
+
+   for (auto sig_data: sto.signatures) {
+      if (sig_data.second.size()) {
+         std::vector<libbitcoin::data_chunk> sigs = read_byte_arrays_from_string(sig_data.second);
+         FC_ASSERT(sigs.size() == scripts.size());
+         // place signatures in reverse order
+         for (uint32_t idx = 0; idx < scripts.size(); idx++)
+         {
+            auto& s = scripts.at(idx);
+            s.insert(s.begin(), sigs[idx]);
+         }
+      } else {
+         for (uint32_t idx = 0; idx < scripts.size(); idx++)
+         {
+            auto& s = scripts.at(idx);
+            s.insert(s.begin(), libbitcoin::data_chunk());
+         }
+      }
+   }
+
+   for (uint32_t idx = 0; idx < tx.inputs().size(); idx++)
+      tx.inputs()[idx].set_witness(scripts[idx]);
+
+   return bitcoin_client->sendrawtransaction(libbitcoin::encode_base16(tx.to_data()));
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
