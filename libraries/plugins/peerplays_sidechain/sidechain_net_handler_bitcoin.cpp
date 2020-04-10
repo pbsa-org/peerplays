@@ -1583,6 +1583,22 @@ libbitcoin::chain::script getRedeemScript(const std::vector<libbitcoin::wallet::
    return redeem_script;
 }
 
+libbitcoin::machine::operation script_num(uint32_t val)
+{
+   if (val < 16)
+      return libbitcoin::machine::operation::opcode_from_positive(val & 0xff);
+   libbitcoin::data_chunk result;
+   while (val) {
+      result.push_back(val & 0xff);
+      val >>= 8;
+   }
+   //    - If the most significant byte is >= 0x80 and the value is positive, push a
+   //    new zero-byte to make the significant byte < 0x80 again.
+   if (result.back() & 0x80)
+       result.push_back(0);
+   return result;
+}
+
 libbitcoin::chain::script get_unlock_script(const std::vector<std::pair<std::string, uint16_t>> &son_pubkeys)
 {
    using namespace libbitcoin;
@@ -1655,7 +1671,7 @@ libbitcoin::chain::script get_unlock_script(const std::vector<std::pair<std::str
       witness_script_ops.emplace_back(opcode::checksig);
 
       witness_script_ops.emplace_back(opcode::if_);
-      witness_script_ops.emplace_back(opcode::push_positive_1);
+      witness_script_ops.emplace_back(script_num(weight));
       if (idx == 0) {
          witness_script_ops.emplace_back(opcode::else_);
          witness_script_ops.emplace_back(opcode::push_size_0);
@@ -1670,7 +1686,7 @@ libbitcoin::chain::script get_unlock_script(const std::vector<std::pair<std::str
 
       idx = idx + 1;
    }
-   witness_script_ops.emplace_back(opcode::push_positive_11);
+   witness_script_ops.emplace_back(script_num(total_weight * 2 / 3));
    witness_script_ops.emplace_back(opcode::greaterthanorequal);
 
    return script(witness_script_ops);
@@ -1699,36 +1715,6 @@ std::string save_tx_data_to_string(const std::vector<unsigned char> &tx, const s
          res += ",";
    }
    res += "]}";
-   return res;
-}
-
-std::vector<std::vector<unsigned char>> read_byte_arrays_from_string(const std::string &string_buf)
-{
-   std::stringstream ss(string_buf);
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   std::vector<bytes> data;
-   for(auto &v: json)
-   {
-      std::string hex = v.second.data();
-      bytes item;
-      item.resize(hex.size() / 2);
-      fc::from_hex(hex, (char*)&item[0], item.size());
-      data.push_back(item);
-   }
-   return data;
-}
-
-std::string write_byte_arrays_to_string(const std::vector<std::vector<unsigned char>>& data)
-{
-   std::string res = "[";
-   for (unsigned int idx = 0; idx < data.size(); ++idx) {
-      res += "\"" + fc::to_hex((char*)&data[idx][0], data[idx].size()) + "\"";
-      if (idx != data.size() - 1)
-         res += ",";
-   }
-   res += "]";
    return res;
 }
 
