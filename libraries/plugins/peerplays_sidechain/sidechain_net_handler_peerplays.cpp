@@ -149,6 +149,10 @@ std::string sidechain_net_handler_peerplays::send_sidechain_transaction(const si
    return sto.transaction;
 }
 
+std::string sidechain_net_handler_peerplays::process_sidechain_transaction_result(const sidechain_transaction_object &sto) {
+   return sto.transaction;
+}
+
 void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {
    for (const auto &trx : b.transactions) {
       size_t operation_index = -1;

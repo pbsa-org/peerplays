@@ -75,4 +75,10 @@ void sidechain_net_manager::send_sidechain_transactions() {
    }
 }
 
+void sidechain_net_manager::process_sidechain_transaction_results() {
+   for (size_t i = 0; i < net_handlers.size(); i++) {
+      net_handlers.at(i)->process_sidechain_transaction_results();
+   }
+}
+
 }} // namespace graphene::peerplays_sidechain

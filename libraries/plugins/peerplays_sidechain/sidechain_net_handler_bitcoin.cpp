@@ -1238,6 +1238,46 @@ std::string sidechain_net_handler_bitcoin::send_sidechain_transaction(const side
    return send_transaction(sto);
 }
 
+std::string sidechain_net_handler_bitcoin::process_sidechain_transaction_result(const sidechain_transaction_object &sto) {
+
+   if (sto.sidechain_transaction.empty()) {
+      return "";
+   }
+
+   std::string tx_str = bitcoin_client->gettransaction(sto.sidechain_transaction);
+   std::stringstream tx_ss(tx_str);
+   boost::property_tree::ptree tx_json;
+   boost::property_tree::read_json(tx_ss, tx_json);
+
+   if ((tx_json.count("error")) && (!tx_json.get_child("error").empty())) {
+      return "";
+   }
+
+   std::string tx_txid = tx_json.get<std::string>("result.txid");
+   uint32_t tx_confirmations = tx_json.get<uint32_t>("result.confirmations");
+   std::string tx_address = "";
+   uint64_t tx_amount = 0;
+   uint64_t tx_vout = 0;
+
+   for (auto &input : tx_json.get_child("result.details")) {
+      tx_address = input.second.get<std::string>("address");
+      std::string tx_amount_s = input.second.get<std::string>("amount");
+      tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
+      tx_amount = std::stoll(tx_amount_s);
+      std::string tx_vout_s = input.second.get<std::string>("vout");
+      tx_vout = std::stoll(tx_vout_s);
+      break;
+   }
+
+   if (sto.object_id.is<son_wallet_deposit_id_type>()) {
+   }
+
+   if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
+   }
+
+   return "";
+}
+
 std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction() {
    const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
    const auto &active_sw = swi.rbegin();

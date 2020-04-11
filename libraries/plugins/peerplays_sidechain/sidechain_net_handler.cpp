@@ -366,7 +366,6 @@ void sidechain_net_handler::process_sidechain_transactions() {
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
       ilog("Sidechain transaction to process: ${sto}", ("sto", sto.id));
 
-      bool complete = false;
       std::string processed_sidechain_tx = process_sidechain_transaction(sto);
 
       if (processed_sidechain_tx.empty()) {
@@ -422,6 +421,37 @@ void sidechain_net_handler::send_sidechain_transactions() {
    });
 }
 
+void sidechain_net_handler::process_sidechain_transaction_results() {
+   const auto &idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_sidechain_and_complete_and_sent>();
+   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, true));
+
+   std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
+      ilog("Sidechain transaction to send: ${sto}", ("sto", sto.id));
+
+      std::string sidechain_transaction = process_sidechain_transaction_result(sto);
+
+      if (sidechain_transaction.empty()) {
+         wlog("Sidechain transaction not sent: ${sto}", ("sto", sto.id));
+         return;
+      }
+
+      sidechain_transaction_send_operation sts_op;
+      sts_op.payer = plugin.get_current_son_object().son_account;
+      sts_op.sidechain_transaction_id = sto.id;
+      sts_op.sidechain_transaction = sidechain_transaction;
+
+      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+      trx.validate();
+      try {
+         database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+         if (plugin.app().p2p_node())
+            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      } catch (fc::exception e) {
+         elog("Sending proposal for sidechain transaction send operation failed with exception ${e}", ("e", e.what()));
+      }
+   });
+}
+
 bool sidechain_net_handler::process_proposal(const proposal_object &po) {
    FC_ASSERT(false, "process_proposal not implemented");
 }
@@ -444,6 +474,10 @@ std::string sidechain_net_handler::process_sidechain_transaction(const sidechain
 
 std::string sidechain_net_handler::send_sidechain_transaction(const sidechain_transaction_object &sto) {
    FC_ASSERT(false, "send_sidechain_transaction not implemented");
+}
+
+std::string sidechain_net_handler::process_sidechain_transaction_result(const sidechain_transaction_object &sto) {
+   FC_ASSERT(false, "process_sidechain_transaction_result not implemented");
 }
 
 }} // namespace graphene::peerplays_sidechain
