@@ -119,6 +119,11 @@ bool sidechain_net_handler_peerplays::process_proposal(const proposal_object &po
       break;
    }
 
+   case chain::operation::tag<chain::sidechain_transaction_settle_operation>::value: {
+      should_approve = true;
+      break;
+   }
+
    default:
       should_approve = false;
       elog("==================================================");
@@ -149,8 +154,9 @@ std::string sidechain_net_handler_peerplays::send_sidechain_transaction(const si
    return sto.transaction;
 }
 
-std::string sidechain_net_handler_peerplays::process_sidechain_transaction_result(const sidechain_transaction_object &sto) {
-   return sto.transaction;
+int64_t sidechain_net_handler_peerplays::settle_sidechain_transaction(const sidechain_transaction_object &sto) {
+   int64_t settle_amount = -1;
+   return settle_amount;
 }
 
 void sidechain_net_handler_peerplays::on_applied_block(const signed_block &b) {

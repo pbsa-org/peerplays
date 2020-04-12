@@ -57,7 +57,7 @@ public:
    void process_withdrawals();
    void process_sidechain_transactions();
    void send_sidechain_transactions();
-   void process_sidechain_transaction_results();
+   void settle_sidechain_transactions();
 
 private:
    peerplays_sidechain_plugin &plugin;
@@ -403,7 +403,7 @@ void peerplays_sidechain_plugin_impl::son_processing() {
 
             send_sidechain_transactions();
 
-            process_sidechain_transaction_results();
+            settle_sidechain_transactions();
          }
       }
    }
@@ -589,8 +589,8 @@ void peerplays_sidechain_plugin_impl::send_sidechain_transactions() {
    net_manager->send_sidechain_transactions();
 }
 
-void peerplays_sidechain_plugin_impl::process_sidechain_transaction_results() {
-   net_manager->process_sidechain_transaction_results();
+void peerplays_sidechain_plugin_impl::settle_sidechain_transactions() {
+   net_manager->settle_sidechain_transactions();
 }
 
 void peerplays_sidechain_plugin_impl::on_applied_block(const signed_block &b) {

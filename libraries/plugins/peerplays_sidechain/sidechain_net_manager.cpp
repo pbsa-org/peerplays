@@ -75,9 +75,9 @@ void sidechain_net_manager::send_sidechain_transactions() {
    }
 }
 
-void sidechain_net_manager::process_sidechain_transaction_results() {
+void sidechain_net_manager::settle_sidechain_transactions() {
    for (size_t i = 0; i < net_handlers.size(); i++) {
-      net_handlers.at(i)->process_sidechain_transaction_results();
+      net_handlers.at(i)->settle_sidechain_transactions();
    }
 }
 
