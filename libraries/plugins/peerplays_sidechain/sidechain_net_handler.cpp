@@ -426,7 +426,7 @@ void sidechain_net_handler::settle_sidechain_transactions() {
 
       int64_t settle_amount = settle_sidechain_transaction(sto);
 
-      if (settle_amount == -1) {
+      if (settle_amount < 0) {
          wlog("Sidechain transaction not settled: ${sto}", ("sto", sto.id));
          return;
       }
@@ -437,29 +437,29 @@ void sidechain_net_handler::settle_sidechain_transactions() {
       sts_op.payer = gpo.parameters.son_account();
       sts_op.sidechain_transaction_id = sto.id;
 
-      operation s_op;
-
-      if (sto.object_id.is<son_wallet_deposit_id_type>()) {
-         asset_issue_operation ai_op;
-         ai_op.fee = asset(2001000);
-         ai_op.issuer = gpo.parameters.son_account();
-         ai_op.asset_to_issue = asset(settle_amount, database.get_global_properties().parameters.btc_asset());
-         ai_op.issue_to_account = database.get<son_wallet_deposit_object>(sto.object_id).peerplays_from;
-         s_op = ai_op;
-      }
-
-      if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
-         asset_reserve_operation ar_op;
-         ar_op.fee = asset(2001000);
-         ar_op.payer = gpo.parameters.son_account();
-         ar_op.amount_to_reserve = asset(settle_amount, database.get_global_properties().parameters.btc_asset());
-         s_op = ar_op;
-      }
-
       proposal_create_operation proposal_op;
       proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
       proposal_op.proposed_ops.emplace_back(sts_op);
-      proposal_op.proposed_ops.emplace_back(s_op);
+
+      if (settle_amount != 0) {
+         if (sto.object_id.is<son_wallet_deposit_id_type>()) {
+            asset_issue_operation ai_op;
+            ai_op.fee = asset(2001000);
+            ai_op.issuer = gpo.parameters.son_account();
+            ai_op.asset_to_issue = asset(settle_amount, database.get_global_properties().parameters.btc_asset());
+            ai_op.issue_to_account = database.get<son_wallet_deposit_object>(sto.object_id).peerplays_from;
+            proposal_op.proposed_ops.emplace_back(ai_op);
+         }
+
+         if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
+            asset_reserve_operation ar_op;
+            ar_op.fee = asset(2001000);
+            ar_op.payer = gpo.parameters.son_account();
+            ar_op.amount_to_reserve = asset(settle_amount, database.get_global_properties().parameters.btc_asset());
+            proposal_op.proposed_ops.emplace_back(ar_op);
+         }
+      }
+
       uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
