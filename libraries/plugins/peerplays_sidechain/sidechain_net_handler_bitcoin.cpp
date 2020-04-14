@@ -917,46 +917,79 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
       op_obj_idx_0 = po.proposed_transaction.operations[0];
    }
 
+   int32_t op_idx_1 = -1;
+   chain::operation op_obj_idx_1;
+
+   if (po.proposed_transaction.operations.size() >= 2) {
+      op_idx_1 = po.proposed_transaction.operations[1].which();
+      op_obj_idx_1 = po.proposed_transaction.operations[1];
+   }
+
    switch (op_idx_0) {
 
    case chain::operation::tag<chain::son_wallet_update_operation>::value: {
-      //son_wallet_id_type swo_id = op_obj_idx_0.get<son_wallet_update_operation>().son_wallet_id;
-      //const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
-      //const auto swo = idx.find(swo_id);
-      //if (swo != idx.end()) {
-      //   auto active_sons = gpo.active_sons;
-      //   vector<son_info> wallet_sons = swo->sons;
-      //
-      //   bool son_sets_equal = (active_sons.size() == wallet_sons.size());
-      //
-      //   if (son_sets_equal) {
-      //      for (size_t i = 0; i < active_sons.size(); i++) {
-      //         son_sets_equal = son_sets_equal && active_sons.at(i) == wallet_sons.at(i);
-      //      }
-      //   }
-      //
-      //   if (son_sets_equal) {
-      //      auto active_sons = gpo.active_sons;
-      //      vector<string> son_pubkeys_bitcoin;
-      //      for (const son_info &si : active_sons) {
-      //         son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
-      //      }
-      //
-      //      uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
-      //      string reply_str = bitcoin_client->createmultisig(nrequired, son_pubkeys_bitcoin);
-      //
-      //      std::stringstream active_pw_ss(reply_str);
-      //      boost::property_tree::ptree active_pw_pt;
-      //      boost::property_tree::read_json(active_pw_ss, active_pw_pt);
-      //      if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
-      //         std::stringstream res;
-      //         boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
-      //
-      //         should_approve = (op_obj_idx_0.get<son_wallet_update_operation>().address == res.str());
-      //      }
-      //   }
-      //}
-      should_approve = true;
+
+      bool address_ok = false;
+      son_wallet_id_type swo_id = op_obj_idx_0.get<son_wallet_update_operation>().son_wallet_id;
+      const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+      const auto swo = idx.find(swo_id);
+      if (swo != idx.end()) {
+         auto active_sons = gpo.active_sons;
+         vector<son_info> wallet_sons = swo->sons;
+
+         bool son_sets_equal = (active_sons.size() == wallet_sons.size());
+
+         if (son_sets_equal) {
+            for (size_t i = 0; i < active_sons.size(); i++) {
+               son_sets_equal = son_sets_equal && active_sons.at(i) == wallet_sons.at(i);
+            }
+         }
+
+         if (son_sets_equal) {
+            auto active_sons = gpo.active_sons;
+            vector<string> son_pubkeys_bitcoin;
+            for (const son_info &si : active_sons) {
+               son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
+            }
+
+            uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
+            string reply_str = bitcoin_client->createmultisig(nrequired, son_pubkeys_bitcoin);
+
+            std::stringstream active_pw_ss(reply_str);
+            boost::property_tree::ptree active_pw_pt;
+            boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+            if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
+               std::stringstream res;
+               boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
+
+               address_ok = (op_obj_idx_0.get<son_wallet_update_operation>().address == res.str());
+            }
+         }
+      }
+
+      bool transaction_ok = false;
+      object_id_type object_id = op_obj_idx_1.get<sidechain_transaction_create_operation>().object_id;
+      std::string op_tx_str = op_obj_idx_1.get<sidechain_transaction_create_operation>().transaction;
+
+      const auto &st_idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_object_id>();
+      const auto st = st_idx.find(object_id);
+      if (st == st_idx.end()) {
+
+         std::string tx_str = "";
+
+         if (object_id.is<son_wallet_id_type>()) {
+            const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+            const auto swo = idx.find(object_id);
+            if (swo != idx.end()) {
+               tx_str = op_tx_str; //create_primary_wallet_transaction();
+            }
+         }
+
+         transaction_ok = (op_tx_str == tx_str);
+      }
+
+      should_approve = address_ok &&
+                       transaction_ok;
       break;
    }
 
@@ -1018,14 +1051,6 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
       if (st == st_idx.end()) {
 
          std::string tx_str = "";
-
-         if (object_id.is<son_wallet_id_type>()) {
-            const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
-            const auto swo = idx.find(object_id);
-            if (swo != idx.end()) {
-               tx_str = op_tx_str; //create_primary_wallet_transaction();
-            }
-         }
 
          if (object_id.is<son_wallet_deposit_id_type>()) {
             const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
