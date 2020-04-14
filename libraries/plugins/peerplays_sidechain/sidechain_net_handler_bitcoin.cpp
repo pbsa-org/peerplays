@@ -46,7 +46,7 @@ std::string bitcoin_rpc_client::addmultisigaddress(const uint32_t nrequired, con
    params = params + pubkeys + std::string("]");
    body = body + params + std::string(", null, \"p2sh-segwit\"] }");
 
-   const auto reply = send_post_request(body, true);
+   const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -115,7 +115,7 @@ std::string bitcoin_rpc_client::createmultisig(const uint32_t nrequired, const s
    params = params + pubkeys + std::string("]");
    body = body + params + std::string(", \"p2sh-segwit\" ] }");
 
-   const auto reply = send_post_request(body, true);
+   const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -341,7 +341,7 @@ uint64_t bitcoin_rpc_client::estimatesmartfee(uint16_t conf_target) {
                                  "\"method\": \"estimatesmartfee\", \"params\": [" +
                                  std::to_string(conf_target) + std::string("] }"));
 
-   const auto reply = send_post_request(body, true);
+   const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -460,7 +460,7 @@ std::string bitcoin_rpc_client::gettransaction(const std::string &txid, const bo
                                   "\"gettransaction\", \"params\": [\"" +
                                   txid + "\"] }");
 
-   const auto reply = send_post_request(body, true);
+   const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -609,7 +609,7 @@ std::string bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
                                  "\"method\": \"sendrawtransaction\", \"params\": [") +
                      std::string("\"") + tx_hex + std::string("\"") + std::string("] }");
 
-   const auto reply = send_post_request(body, true);
+   const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
