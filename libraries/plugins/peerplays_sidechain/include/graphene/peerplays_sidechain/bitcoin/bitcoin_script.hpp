@@ -25,14 +25,20 @@ enum class op {
    _16 = 0x60,
 
    // control
+   IF = 0x63,
+   ENDIF = 0x68,
    RETURN = 0x6a,
 
    // stack ops
    DUP = 0x76,
+   SWAP = 0x7c,
 
    // bit logic
    EQUAL = 0x87,
    EQUALVERIFY = 0x88,
+   ADD = 0x93,
+   GREATERTHAN = 0xa0,
+   GREATERTHANOREQUAL = 0xa2,
 
    // crypto
    HASH160 = 0xa9,
@@ -46,7 +52,7 @@ public:
 
    script_builder& operator<<( op opcode );
 
-   script_builder& operator<<( uint8_t number );
+   script_builder& operator<<( uint32_t number );
 
    script_builder& operator<<( size_t size );
 
