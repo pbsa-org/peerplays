@@ -15,6 +15,8 @@
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
+#include <graphene/peerplays_sidechain/bitcoin/serialize.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -527,7 +529,9 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent(const uint32_t minconf, c
             btc_txout txo;
             txo.txid_ = entry.second.get_child("txid").get_value<std::string>();
             txo.out_num_ = entry.second.get_child("vout").get_value<unsigned int>();
-            txo.amount_ = entry.second.get_child("amount").get_value<double>();
+            string amount = entry.second.get_child("amount").get_value<std::string>();
+            amount.erase(std::remove(amount.begin(), amount.end(), '.'), amount.end());
+            txo.amount_ = std::stoll(amount);
             result.push_back(txo);
          }
       }
@@ -565,7 +569,9 @@ std::vector<btc_txout> bitcoin_rpc_client::listunspent_by_address_and_amount(con
             btc_txout txo;
             txo.txid_ = entry.second.get_child("txid").get_value<std::string>();
             txo.out_num_ = entry.second.get_child("vout").get_value<unsigned int>();
-            txo.amount_ = entry.second.get_child("amount").get_value<double>();
+            string amount = entry.second.get_child("amount").get_value<std::string>();
+            amount.erase(std::remove(amount.begin(), amount.end(), '.'), amount.end());
+            txo.amount_ = std::stoll(amount);
             result.push_back(txo);
          }
       }
@@ -1269,8 +1275,7 @@ std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction() {
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
 
-   double min_amount = ((double)fee_rate / 100000000.0); // Account only for relay fee for now
-   double total_amount = 0.0;
+   uint64_t total_amount = 0.0;
    std::vector<btc_txout> inputs = bitcoin_client->listunspent_by_address_and_amount(prev_pw_address, 0);
 
    if (inputs.size() == 0) {
@@ -1281,14 +1286,15 @@ std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction() {
          total_amount += utx.amount_;
       }
 
-      if (min_amount >= total_amount) {
+      if (fee_rate >= total_amount) {
          elog("Failed not enough BTC to transfer from ${fa}", ("fa", prev_pw_address));
          return "";
       }
    }
 
    fc::flat_map<std::string, double> outputs;
-   outputs[active_pw_address] = total_amount - min_amount;
+   //outputs[active_pw_address] = total_amount - min_amount;
+   outputs[active_pw_address] = double(total_amount - fee_rate) / 100000000.0;
 
    return create_transaction(inputs, outputs);
 }
@@ -1329,7 +1335,8 @@ std::string sidechain_net_handler_bitcoin::create_deposit_transaction(const son_
 
    outputs[pw_address] = transfer_amount;
 
-   return create_transaction(inputs, outputs);
+   //return create_transaction(inputs, outputs);
+   return create_transaction_psbt(inputs, outputs);
 }
 
 std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const son_wallet_withdraw_object &swwo) {
@@ -1351,8 +1358,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
    uint64_t min_fee_rate = 1000;
    fee_rate = std::max(fee_rate, min_fee_rate);
 
-   double min_amount = ((double)(swwo.withdraw_amount.value + fee_rate) / 100000000.0); // Account only for relay fee for now
-   double total_amount = 0.0;
+   uint64_t total_amount = 0;
    std::vector<btc_txout> inputs = bitcoin_client->listunspent_by_address_and_amount(pw_address, 0);
 
    if (inputs.size() == 0) {
@@ -1363,7 +1369,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
          total_amount += utx.amount_;
       }
 
-      if (min_amount > total_amount) {
+      if (fee_rate > total_amount) {
          elog("Failed not enough BTC to spend for ${pw}", ("pw", pw_address));
          return "";
       }
@@ -1371,8 +1377,8 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 
    fc::flat_map<std::string, double> outputs;
    outputs[swwo.withdraw_address] = swwo.withdraw_amount.value / 100000000.0;
-   if ((total_amount - min_amount) > 0.0) {
-      outputs[pw_address] = total_amount - min_amount;
+   if ((total_amount - fee_rate) > 0.0) {
+      outputs[pw_address] = double(total_amount - fee_rate) / 100000000.0;
    }
 
    return create_transaction(inputs, outputs);
@@ -1383,8 +1389,8 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
    std::string new_tx = "";
    //new_tx = create_transaction_raw(inputs, outputs);
-   new_tx = create_transaction_psbt(inputs, outputs);
-   //new_tx = create_transaction_standalone(inputs, outputs);
+   //new_tx = create_transaction_psbt(inputs, outputs);
+   new_tx = create_transaction_standalone(inputs, outputs);
    return new_tx;
 }
 
@@ -1393,14 +1399,90 @@ std::string sidechain_net_handler_bitcoin::create_transaction(const std::vector<
 std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_transaction_object &sto) {
    std::string new_tx = "";
    //new_tx = sign_transaction_raw(sto);
-   new_tx = sign_transaction_psbt(sto);
-   //new_tx = sign_transaction_standalone(sto);
+   if (sto.object_id.type() == 30) {
+      new_tx = sign_transaction_psbt(sto);
+   } else {
+      new_tx = sign_transaction_standalone(sto);
+   }
    return new_tx;
 }
 
 std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_transaction_object &sto) {
    //return send_transaction_raw(sto);
-   return send_transaction_psbt(sto);
+   //return send_transaction_psbt(sto);
+   if (sto.object_id.type() == 30) {
+      return send_transaction_psbt(sto);
+   } else {
+      return send_transaction_standalone(sto);
+   }
+}
+
+std::vector<std::vector<unsigned char>> read_byte_arrays_from_string(const std::string &string_buf)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   std::vector<bytes> data;
+   for(auto &v: json)
+   {
+      std::string hex = v.second.data();
+      bytes item;
+      item.resize(hex.size() / 2);
+      fc::from_hex(hex, (char*)&item[0], item.size());
+      data.push_back(item);
+   }
+   return data;
+}
+
+std::string write_byte_arrays_to_string(const std::vector<std::vector<unsigned char>>& data)
+{
+   std::string res = "[";
+   for (unsigned int idx = 0; idx < data.size(); ++idx) {
+      res += "\"" + fc::to_hex((char*)&data[idx][0], data[idx].size()) + "\"";
+      if (idx != data.size() - 1)
+         res += ",";
+   }
+   res += "]";
+   return res;
+}
+
+void read_tx_data_from_string(const std::string &string_buf, std::vector<unsigned char> &tx, std::vector<uint64_t> &in_amounts)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+   std::string tx_hex = json.get<std::string>("tx_hex");
+   tx.clear();
+   tx.resize(tx_hex.size() / 2);
+   fc::from_hex(tx_hex, (char*)&tx[0], tx.size());
+   in_amounts.clear();
+   for(auto &v: json.get_child("in_amounts"))
+      in_amounts.push_back(fc::to_uint64(v.second.data()));
+}
+
+std::string save_tx_data_to_string(const std::vector<unsigned char> &tx, const std::vector<uint64_t> &in_amounts)
+{
+   std::string res = "{\"tx_hex\":\"" + fc::to_hex((const char*)&tx[0], tx.size()) + "\",\"in_amounts\":[";
+   for (unsigned int idx = 0; idx < in_amounts.size(); ++idx) {
+      res += fc::to_string(in_amounts[idx]);
+      if (idx != in_amounts.size() - 1)
+         res += ",";
+   }
+   res += "]}";
+   return res;
+}
+
+std::string save_tx_data_to_string(const std::string &tx, const std::vector<uint64_t> &in_amounts)
+{
+   std::string res = "{\"tx_hex\":\"" + tx + "\",\"in_amounts\":[";
+   for (unsigned int idx = 0; idx < in_amounts.size(); ++idx) {
+      res += fc::to_string(in_amounts[idx]);
+      if (idx != in_amounts.size() - 1)
+         res += ",";
+   }
+   res += "]}";
+   return res;
 }
 
 std::string sidechain_net_handler_bitcoin::create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs) {
@@ -1468,8 +1550,30 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    //    }
    //  ]
    //}
+   using namespace bitcoin;
+   bitcoin_transaction_builder tb;
+   std::vector<uint64_t> in_amounts;
 
-   return "";
+   tb.set_version( 2 );
+   for (auto in : inputs) {
+      tb.add_in( payment_type::P2WSH, fc::sha256(in.txid_), in.out_num_, bitcoin::bytes() );
+      in_amounts.push_back(in.amount_);
+   }
+
+   for (auto out : outputs) {
+      uint64_t satoshis = out.second * 100000000.0;
+      tb.add_out( payment_type::P2WPKH, satoshis, out.first);
+   }
+
+   const auto tx = tb.get_transaction();
+
+   std::string hex_tx = fc::to_hex( pack( tx ) );
+
+   std::string tx_raw = save_tx_data_to_string(hex_tx, in_amounts);
+
+   wlog("skoneru: Raw transaction ${tx}", ("tx", tx_raw));
+
+   return tx_raw;
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_raw(const sidechain_transaction_object &sto) {
@@ -1563,7 +1667,10 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const sidechain
 }
 
 std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sidechain_transaction_object &sto) {
+   std::string pubkey = plugin.get_current_son_object().sidechain_public_keys.at(sidechain);
+   std::string prvkey = get_private_key(pubkey);
 
+   
    return "";
 }
 
@@ -1611,6 +1718,10 @@ std::string sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain
    }
 
    return "";
+}
+
+std::string sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto) {
+   return bitcoin_client->sendrawtransaction(sto.transaction);
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {

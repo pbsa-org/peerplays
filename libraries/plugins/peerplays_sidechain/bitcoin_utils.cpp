@@ -5,6 +5,7 @@
 #include <fc/io/raw.hpp>
 #include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 #include <secp256k1.h>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 

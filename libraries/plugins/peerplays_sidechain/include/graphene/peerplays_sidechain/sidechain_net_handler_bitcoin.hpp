@@ -14,7 +14,7 @@ class btc_txout {
 public:
    std::string txid_;
    unsigned int out_num_;
-   double amount_;
+   uint64_t amount_;
 };
 
 class bitcoin_rpc_client {
@@ -124,6 +124,7 @@ private:
 
    std::string send_transaction_raw(const sidechain_transaction_object &sto);
    std::string send_transaction_psbt(const sidechain_transaction_object &sto);
+   std::string send_transaction_standalone(const sidechain_transaction_object &sto);
 
    void handle_event(const std::string &event_data);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);
