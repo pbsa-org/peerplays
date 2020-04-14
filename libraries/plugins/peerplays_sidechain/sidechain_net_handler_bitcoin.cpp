@@ -17,8 +17,7 @@
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
 
-namespace graphene {
-namespace peerplays_sidechain {
+namespace graphene { namespace peerplays_sidechain {
 
 // =============================================================================
 
@@ -1317,21 +1316,6 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
 }
 
 std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction(const son_wallet_object &prev_swo, std::string new_sw_address) {
-   const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
-   const auto &active_sw = swi.rbegin();
-   if (active_sw == swi.rend() || active_sw->addresses.find(sidechain_type::bitcoin) == active_sw->addresses.end()) {
-      return "";
-   }
-
-   const auto &prev_sw = std::next(active_sw);
-   if (prev_sw == swi.rend()) {
-      return "";
-   }
-
-   std::stringstream active_pw_ss(active_sw->addresses.find(sidechain_type::bitcoin)->second);
-   boost::property_tree::ptree active_pw_pt;
-   boost::property_tree::read_json(active_pw_ss, active_pw_pt);
-   std::string active_pw_address = active_pw_pt.get_child("result").get<std::string>("address");
 
    std::stringstream prev_sw_ss(prev_swo.addresses.find(sidechain_type::bitcoin)->second);
    boost::property_tree::ptree prev_sw_pt;
@@ -1810,5 +1794,4 @@ void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id
 }
 
 // =============================================================================
-}
-} // namespace graphene::peerplays_sidechain
+}} // namespace graphene::peerplays_sidechain

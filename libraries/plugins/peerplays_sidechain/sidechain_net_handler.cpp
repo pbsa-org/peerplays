@@ -531,4 +531,28 @@ void sidechain_net_handler::settle_sidechain_transactions() {
    });
 }
 
+bool sidechain_net_handler::process_proposal(const proposal_object &po) {
+   FC_ASSERT(false, "process_proposal not implemented");
+}
+
+void sidechain_net_handler::process_primary_wallet() {
+   FC_ASSERT(false, "process_primary_wallet not implemented");
+}
+
+bool sidechain_net_handler::process_deposit(const son_wallet_deposit_object &swdo) {
+   FC_ASSERT(false, "process_deposit not implemented");
+}
+
+bool sidechain_net_handler::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+   FC_ASSERT(false, "process_withdrawal not implemented");
+}
+
+std::string sidechain_net_handler::process_sidechain_transaction(const sidechain_transaction_object &sto) {
+   FC_ASSERT(false, "process_sidechain_transaction not implemented");
+}
+
+std::string sidechain_net_handler::send_sidechain_transaction(const sidechain_transaction_object &sto) {
+   FC_ASSERT(false, "send_sidechain_transaction not implemented");
+}
+
 }} // namespace graphene::peerplays_sidechain
