@@ -1309,7 +1309,7 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
    return settle_amount;
 }
 
-std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction() {
+std::string sidechain_net_handler_bitcoin::create_primary_wallet_transaction(const son_wallet_object &prev_swo, std::string new_sw_address) {
    const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
    const auto &active_sw = swi.rbegin();
    if (active_sw == swi.rend() || active_sw->addresses.find(sidechain_type::bitcoin) == active_sw->addresses.end()) {
