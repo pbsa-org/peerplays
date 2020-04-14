@@ -1136,6 +1136,10 @@ void sidechain_net_handler_bitcoin::process_primary_wallet() {
 
 bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
 
+   if (proposal_exists(chain::operation::tag<chain::sidechain_transaction_create_operation>::value, swdo.id)) {
+      return false;
+   }
+
    std::string tx_str = create_deposit_transaction(swdo);
 
    if (!tx_str.empty()) {
@@ -1170,6 +1174,10 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 }
 
 bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+
+   if (proposal_exists(chain::operation::tag<chain::sidechain_transaction_create_operation>::value, swwo.id)) {
+      return false;
+   }
 
    std::string tx_str = create_withdrawal_transaction(swwo);
 
