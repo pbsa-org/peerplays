@@ -983,10 +983,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
                   const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
                   const auto swo = idx.find(object_id);
                   if (swo != idx.end()) {
-                     const auto prec_swo = idx.find(son_wallet_id_type(object_id.instance() - 1));
-                     if (prec_swo != idx.end()) {
-                        tx_str = create_primary_wallet_transaction(*prec_swo, new_pw_address);
-                     }
+                     tx_str = create_primary_wallet_transaction(*swo, new_pw_address);
                   }
                }
 
