@@ -610,7 +610,7 @@ std::string bitcoin_rpc_client::sendrawtransaction(const std::string &tx_hex) {
                                  "\"method\": \"sendrawtransaction\", \"params\": [") +
                      std::string("\"") + tx_hex + std::string("\"") + std::string("] }");
 
-   const auto reply = send_post_request(body, true);
+   const auto reply = send_post_request(body);
 
    if (reply.body.empty()) {
       wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
@@ -984,8 +984,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
                   const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
                   const auto swo = idx.find(object_id);
                   if (swo != idx.end()) {
-                     const auto prec_swo = std::next(swo);
-                     tx_str = create_primary_wallet_transaction(*prec_swo, new_pw_address);
+                     tx_str = create_primary_wallet_transaction(*swo, new_pw_address);
                   }
                }
 
