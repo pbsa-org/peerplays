@@ -1379,7 +1379,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
    fc::flat_map<std::string, double> outputs;
    outputs[swwo.withdraw_address] = swwo.withdraw_amount.value / 100000000.0;
    if ((total_amount - fee_rate) > 0.0) {
-      outputs[pw_address] = double(total_amount - fee_rate) / 100000000.0;
+      outputs[pw_address] = double(total_amount - swwo.withdraw_amount.value - fee_rate) / 100000000.0;
    }
 
    return create_transaction(inputs, outputs);
@@ -1689,6 +1689,8 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
 
    read_tx_data_from_string(sto.transaction, tx_hex, in_amounts);
 
+   wlog("skoneru: sign transaction retreived: ${s}", ("s", tx_hex));
+
    accounts_keys son_pubkeys;
    for (auto& son: sto.signers) {
       std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
@@ -1708,7 +1710,7 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
 
    std::string tx_signature = write_byte_arrays_to_string(sigs);
 
-   wlog("skoneru: signatures: ${s}", ("s", tx_signature));
+   wlog("skoneru: signatures: son-id = ${son}, pkey = ${prvkey}, tx_signature = ${s}", ("son", plugin.get_current_son_id())("prvkey", prvkey)("s", tx_signature));
 
    return tx_signature;
 }
@@ -1765,6 +1767,7 @@ std::string sidechain_net_handler_bitcoin::send_transaction_standalone(const sid
    std::string tx_hex;
 
    read_tx_data_from_string(sto.transaction, tx_hex, in_amounts);
+   wlog("skoneru: send transaction retreived: ${s}", ("s", tx_hex));
 
    accounts_keys son_pubkeys;
    for (auto& son: sto.signers) {
