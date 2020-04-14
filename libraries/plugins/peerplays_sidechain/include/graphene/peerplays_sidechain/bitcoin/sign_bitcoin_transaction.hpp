@@ -8,6 +8,8 @@ namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
 class bitcoin_transaction;
 
+const secp256k1_context_t *btc_context();
+
 fc::sha256 get_signature_hash( const bitcoin_transaction& tx, const bytes& scriptPubKey, int64_t amount,
                                size_t in_index, int hash_type, bool is_witness );
 

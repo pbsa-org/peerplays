@@ -5,6 +5,10 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
+fc::ecc::public_key_data create_public_key_data( const std::vector<char>& public_key );
+
+bytes get_privkey_bytes( const std::string& privkey_base58 );
+
 bytes parse_hex( const std::string& str );
 
 std::vector<bytes> get_pubkey_from_redeemScript( bytes script );

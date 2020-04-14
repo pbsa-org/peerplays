@@ -3,6 +3,12 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 
+const secp256k1_context_t *btc_context()
+{
+   static secp256k1_context_t *ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
+   return ctx;
+}
+
 fc::sha256 get_signature_hash( const bitcoin_transaction& tx, const bytes& scriptCode, int64_t amount,
                                size_t in_index, int hash_type, bool is_witness )
 {

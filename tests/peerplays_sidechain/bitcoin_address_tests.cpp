@@ -149,6 +149,7 @@ BOOST_AUTO_TEST_CASE( create_segwit_address_10_of_14_test )
    std::vector<char> public_key14 = parse_hex( "0287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae8" );
 
    std::vector<char> witness_script = parse_hex("0020b70a52b55974d3c8c1a2055bf23e2d6421942135c7be1f786ad8cbce2f532cef");
+   std::vector<char> redeem_script = parse_hex("5a2103456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef2752102d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f421025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61210228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe986621037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f6662102ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf210317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f210266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf8421023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf210229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e521024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da2103df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c12102bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8210287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae85eae");
 
    fc::ecc::public_key_data key1 = create_public_key_data( public_key1 );
    fc::ecc::public_key_data key2 = create_public_key_data( public_key2 );
@@ -170,6 +171,7 @@ BOOST_AUTO_TEST_CASE( create_segwit_address_10_of_14_test )
    { son_id_type(8), public_key_type(key8) }, { son_id_type(9), public_key_type(key9) }, { son_id_type(10), public_key_type(key10) }, { son_id_type(11), public_key_type(key11) },
    { son_id_type(12), public_key_type(key12) }, { son_id_type(13), public_key_type(key13) }, { son_id_type(14), public_key_type(key14) },});
    BOOST_CHECK( address.get_witness_script() == witness_script );
+   BOOST_CHECK( address.get_redeem_script() == redeem_script );
    BOOST_CHECK( address.get_address() == "2MwhYhBrZeb6mTf1kaWcYfLBCCQoMqQybFZ" );
 }
 

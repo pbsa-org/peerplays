@@ -17,6 +17,7 @@
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/serialize.hpp>
+#include <graphene/peerplays_sidechain/bitcoin/sign_bitcoin_transaction.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -1435,7 +1436,7 @@ std::vector<std::vector<unsigned char>> read_byte_arrays_from_string(const std::
    return data;
 }
 
-std::string write_byte_arrays_to_string(const std::vector<std::vector<unsigned char>>& data)
+std::string write_byte_arrays_to_string(const std::vector<bitcoin::bytes>& data)
 {
    std::string res = "[";
    for (unsigned int idx = 0; idx < data.size(); ++idx) {
@@ -1456,6 +1457,17 @@ void read_tx_data_from_string(const std::string &string_buf, std::vector<unsigne
    tx.clear();
    tx.resize(tx_hex.size() / 2);
    fc::from_hex(tx_hex, (char*)&tx[0], tx.size());
+   in_amounts.clear();
+   for(auto &v: json.get_child("in_amounts"))
+      in_amounts.push_back(fc::to_uint64(v.second.data()));
+}
+
+void read_tx_data_from_string(const std::string &string_buf, std::string &tx_hex, std::vector<uint64_t> &in_amounts)
+{
+   std::stringstream ss(string_buf);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+   tx_hex = json.get<std::string>("tx_hex");
    in_amounts.clear();
    for(auto &v: json.get_child("in_amounts"))
       in_amounts.push_back(fc::to_uint64(v.second.data()));
@@ -1669,9 +1681,36 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_psbt(const sidechain
 std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sidechain_transaction_object &sto) {
    std::string pubkey = plugin.get_current_son_object().sidechain_public_keys.at(sidechain);
    std::string prvkey = get_private_key(pubkey);
+   using namespace bitcoin;
+   std::vector<uint64_t> in_amounts;
+   std::string tx_hex;
 
-   
-   return "";
+   const auto privkey_signing = get_privkey_bytes( prvkey );
+
+   read_tx_data_from_string(sto.transaction, tx_hex, in_amounts);
+
+   accounts_keys son_pubkeys;
+   for (auto& son: sto.signers) {
+      std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
+      son_pubkeys[son.son_id] = create_public_key_data( parse_hex(pub_key) );
+   }
+
+   uint32_t nrequired = sto.signers.size() * 2 / 3 + 1;
+   btc_multisig_segwit_address pw_address(nrequired, son_pubkeys);
+
+   bitcoin_transaction tx = unpack(parse_hex(tx_hex));
+
+   bitcoin::bytes rscript = pw_address.get_redeem_script();
+
+   std::vector<bitcoin::bytes> redeem_scripts(tx.vin.size(), rscript);
+
+   auto sigs = sign_witness_transaction_part( tx, redeem_scripts, in_amounts, privkey_signing, btc_context(), 1 );
+
+   std::string tx_signature = write_byte_arrays_to_string(sigs);
+
+   wlog("skoneru: signatures: ${s}", ("s", tx_signature));
+
+   return tx_signature;
 }
 
 std::string sidechain_net_handler_bitcoin::send_transaction_raw(const sidechain_transaction_object &sto) {

@@ -1,6 +1,24 @@
 #include <graphene/peerplays_sidechain/bitcoin/utils.hpp>
+#include <fc/crypto/base58.hpp>
 
 namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
+
+fc::ecc::public_key_data create_public_key_data( const std::vector<char>& public_key )
+{
+   FC_ASSERT( public_key.size() == 33 );
+   fc::ecc::public_key_data key;
+   for(size_t i = 0; i < 33; i++) {
+      key.at(i) = public_key[i];
+   }
+   return key;
+}
+
+bytes get_privkey_bytes( const std::string& privkey_base58 )
+{
+   const auto privkey = fc::from_base58( privkey_base58 );
+   // Remove version and hash
+   return bytes( privkey.cbegin() + 1, privkey.cbegin() + 1 + 32 );
+}
 
 bytes parse_hex( const std::string& str )
 {
