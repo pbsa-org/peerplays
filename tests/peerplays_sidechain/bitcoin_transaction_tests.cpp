@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE( serialize_bitcoin_transaction_test )
 
     BOOST_CHECK_EQUAL_COLLECTIONS( serialized.cbegin(), serialized.cend(), expected.cbegin(), expected.cend() );
 }
-/*
+
 BOOST_AUTO_TEST_CASE( deserialize_bitcoin_transaction_test )
 {
     bitcoin_transaction tx = unpack(parse_hex( "02000000019a4b71b82745879f7a5ef5081bceb3eb53dac44ef272fcdf00fdc1bd162edf890000000048473044022025f722981037f23949df7ac020e9895f6b4d35f98d04dadc43a8897d756b02f202203d4df0a81dac49be676657357f083d06f57b2d6b1199511ebdbd3bf82feff24101feffffff0200c39dd0000000001976a914d377a5fd22419f8180f6d0d12215daffdd15b80088ac00206859000000001976a914e71562730a2d7b2c2c7f2f137d6ddf80e8ee024288ac65000000" ) );
@@ -58,17 +58,17 @@ BOOST_AUTO_TEST_CASE( deserialize_bitcoin_transaction_test )
     BOOST_CHECK( fc::to_hex( tx.vout[0].scriptPubKey ) == "76a914d377a5fd22419f8180f6d0d12215daffdd15b80088ac" );
     BOOST_CHECK_EQUAL(tx.vout[1].value, 1499996160);
     BOOST_CHECK( fc::to_hex( tx.vout[1].scriptPubKey ) == "76a914e71562730a2d7b2c2c7f2f137d6ddf80e8ee024288ac" );
-}*/
+}
 
-/*
+
 BOOST_AUTO_TEST_CASE( btc_tx_methods_test ) {
-    const auto tx = unpack<bitcoin_transaction>( parse_hex( "0100000000010115e180dc28a2327e687facc33f10f2a20da717e5548406f7ae8b4c811072f856040000002322002001d5d92effa6ffba3efa379f9830d0f75618b13393827152d26e4309000e88b1ffffffff0188b3f505000000001976a9141d7cd6c75c2e86f4cbf98eaed221b30bd9a0b92888ac02473044022038421164c6468c63dc7bf724aa9d48d8e5abe3935564d38182addf733ad4cd81022076362326b22dd7bfaf211d5b17220723659e4fe3359740ced5762d0e497b7dcc012321038262a6c6cec93c2d3ecd6c6072efea86d02ff8e3328bbd0242b20af3425990acac00000000" ) );
+    const auto tx = unpack( parse_hex( "0100000000010115e180dc28a2327e687facc33f10f2a20da717e5548406f7ae8b4c811072f856040000002322002001d5d92effa6ffba3efa379f9830d0f75618b13393827152d26e4309000e88b1ffffffff0188b3f505000000001976a9141d7cd6c75c2e86f4cbf98eaed221b30bd9a0b92888ac02473044022038421164c6468c63dc7bf724aa9d48d8e5abe3935564d38182addf733ad4cd81022076362326b22dd7bfaf211d5b17220723659e4fe3359740ced5762d0e497b7dcc012321038262a6c6cec93c2d3ecd6c6072efea86d02ff8e3328bbd0242b20af3425990acac00000000" ) );
 
     BOOST_CHECK( tx.get_hash().str() == "a5947589e2762107ff650958ba0e3a3cf341f53281d15593530bf9762c4edab1" );
     BOOST_CHECK( tx.get_txid().str() == "954f43dbb30ad8024981c07d1f5eb6c9fd461e2cf1760dd1283f052af746fc88" );
     BOOST_CHECK( tx.get_vsize() == 148 );
 }
-*/
+
 BOOST_AUTO_TEST_CASE( bitcoin_transaction_builder_test )
 {
    // All tests are only to verefy the compilation of transactions, the transactions are not real(not valid)

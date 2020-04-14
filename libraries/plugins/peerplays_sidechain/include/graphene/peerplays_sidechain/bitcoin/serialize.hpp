@@ -80,6 +80,13 @@ inline uint64_t unpack_compact_size( Stream& s )
    return size_ret;
 }
 
+
+template<typename Stream>
+inline void unpack( Stream& s, int64_t& u, uint32_t _max_depth=FC_PACK_MAX_DEPTH ) { s.read( (char*)&u, sizeof(u) ); }
+
+template<typename Stream>
+inline void unpack( Stream& s, int32_t& u, uint32_t _max_depth=FC_PACK_MAX_DEPTH ) { s.read( (char*)&u, sizeof(u) ); }
+
 template<typename Stream>
 inline void pack( Stream& s, const std::vector<char>& v )
 {
