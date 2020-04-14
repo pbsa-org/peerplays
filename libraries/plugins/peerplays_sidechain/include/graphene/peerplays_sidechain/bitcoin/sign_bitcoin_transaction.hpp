@@ -26,4 +26,6 @@ bool verify_sig( const bytes& sig, const bytes& pubkey, const bytes& msg, const 
 std::vector<std::vector<bytes>> sort_sigs( const bitcoin_transaction& tx, const std::vector<bytes>& redeem_scripts,
                                            const std::vector<uint64_t>& amounts, const secp256k1_context_t* context );
 
+void add_signatures_to_transaction( bitcoin_transaction &tx, std::vector<std::vector<bytes>> &signature_set );
+
 } } }

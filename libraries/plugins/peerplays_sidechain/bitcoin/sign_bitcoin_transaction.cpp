@@ -128,4 +128,14 @@ std::vector<std::vector<bytes>> sort_sigs( const bitcoin_transaction& tx, const 
    return new_stacks;
 }
 
+void add_signatures_to_transaction( bitcoin_transaction &tx, std::vector<std::vector<bytes>> &signature_set )
+{
+   for (unsigned int i = 0; i < signature_set.size(); i++) {
+      std::vector<bytes> signatures = signature_set[i];
+      FC_ASSERT(signatures.size() == tx.vin.size(), "Invalid signatures number");
+      for (unsigned int i = 0; i < tx.vin.size(); i++)
+         tx.vin[i].scriptWitness.push_back(signatures[i]);
+   }
+}
+
 } } }

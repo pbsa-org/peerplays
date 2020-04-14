@@ -1418,17 +1418,17 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_tran
    }
 }
 
-std::vector<std::vector<unsigned char>> read_byte_arrays_from_string(const std::string &string_buf)
+std::vector<bitcoin::bytes> read_byte_arrays_from_string(const std::string &string_buf)
 {
    std::stringstream ss(string_buf);
    boost::property_tree::ptree json;
    boost::property_tree::read_json(ss, json);
 
-   std::vector<bytes> data;
+   std::vector<bitcoin::bytes> data;
    for(auto &v: json)
    {
       std::string hex = v.second.data();
-      bytes item;
+      bitcoin::bytes item;
       item.resize(hex.size() / 2);
       fc::from_hex(hex, (char*)&item[0], item.size());
       data.push_back(item);
@@ -1760,7 +1760,44 @@ std::string sidechain_net_handler_bitcoin::send_transaction_psbt(const sidechain
 }
 
 std::string sidechain_net_handler_bitcoin::send_transaction_standalone(const sidechain_transaction_object &sto) {
-   return bitcoin_client->sendrawtransaction(sto.transaction);
+   using namespace bitcoin;
+   std::vector<uint64_t> in_amounts;
+   std::string tx_hex;
+
+   read_tx_data_from_string(sto.transaction, tx_hex, in_amounts);
+
+   accounts_keys son_pubkeys;
+   for (auto& son: sto.signers) {
+      std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
+      son_pubkeys[son.son_id] = create_public_key_data( parse_hex(pub_key) );
+   }
+
+   uint32_t nrequired = sto.signers.size() * 2 / 3 + 1;
+   btc_multisig_segwit_address pw_address(nrequired, son_pubkeys);
+
+   bitcoin_transaction tx = unpack(parse_hex(tx_hex));
+
+   bitcoin::bytes rscript = pw_address.get_redeem_script();
+
+   std::vector<bitcoin::bytes> redeem_scripts(tx.vin.size(), rscript);
+
+   vector<vector<bitcoin::bytes>> signatures;
+   for (unsigned idx = 0; idx < sto.signatures.size(); ++idx) {
+      if(!sto.signatures[idx].second.empty())
+         signatures.push_back(read_byte_arrays_from_string(sto.signatures[idx].second));
+   }
+
+   add_signatures_to_transaction(tx, signatures);
+
+   sign_witness_transaction_finalize(tx, redeem_scripts);
+
+   std::string final_tx_hex = fc::to_hex( pack( tx ) );
+
+   std::string res = bitcoin_client->sendrawtransaction(final_tx_hex);
+
+   wlog("skoneru: send_transaction_standalone: ${tx}, [${res}]", ("tx", final_tx_hex)("res", res));
+
+   return res;
 }
 
 void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) {
