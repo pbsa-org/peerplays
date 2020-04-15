@@ -222,4 +222,25 @@ BOOST_AUTO_TEST_CASE( create_segwit_address_11_of_15_test )
    BOOST_CHECK( address.get_address() == "2NAL3YhMF4VcbRQdectN8XPMJipvATGefTZ" );
 }
 
+BOOST_AUTO_TEST_CASE( btc_weighted_multisig_address_test )
+{
+   std::vector<fc::ecc::private_key> priv_old;
+   for(uint32_t i = 0; i < 15; ++i)
+   {
+      const char* seed = reinterpret_cast<const char*>(&i);
+      fc::sha256 h = fc::sha256::hash(seed, sizeof(i));
+      priv_old.push_back(fc::ecc::private_key::generate_from_seed(h));
+   }
+   std::vector<fc::ecc::public_key> pub_old;
+   for(auto& key: priv_old)
+      pub_old.push_back(key.get_public_key());
+   // key weights
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights;
+   for(uint16_t i = 0; i < 15; ++i)
+      weights.push_back(std::make_pair(pub_old[i], i + 1));
+
+   btc_weighted_multisig_address addr(weights, btc_weighted_multisig_address::network::testnet);
+   BOOST_CHECK(addr.get_address() == "tb1qge84w896lcacc492h0wwslqznwytqnqd6eeunn2e4wy00tt08fpqng5fxx");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
