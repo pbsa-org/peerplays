@@ -155,4 +155,61 @@ BOOST_AUTO_TEST_CASE( same_signatures_test )
    }
 }
 
+BOOST_AUTO_TEST_CASE( weighted_multisig_spend_test )
+{
+   // create weighted multisig addess in testnet
+   std::vector<fc::ecc::private_key> priv_keys;
+   for(uint32_t i = 0; i < 15; ++i)
+   {
+      const char* seed = reinterpret_cast<const char*>(&i);
+      fc::sha256 h = fc::sha256::hash(seed, sizeof(i));
+      priv_keys.push_back(fc::ecc::private_key::generate_from_seed(h));
+   }
+   std::vector<fc::ecc::public_key> pub_keys;
+   for(auto& key: priv_keys)
+      pub_keys.push_back(key.get_public_key());
+   // key weights
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights;
+   for(uint16_t i = 0; i < 15; ++i)
+      weights.push_back(std::make_pair(pub_keys[i], i + 1));
+
+   btc_weighted_multisig_address addr(weights, btc_weighted_multisig_address::network::testnet);
+   BOOST_CHECK(addr.get_address() == "tb1qge84w896lcacc492h0wwslqznwytqnqd6eeunn2e4wy00tt08fpqng5fxx");
+
+   // this address was filled with testnet transaction
+   // id 81cd056b1d3b7454373b588fafc1dcec8d9d48924ad2adc7e9669ea1b96a95c5
+   // output 0
+   // you can see it at https://api.blockcypher.com/v1/btc/test3/txs/81cd056b1d3b7454373b588fafc1dcec8d9d48924ad2adc7e9669ea1b96a95c5?limit=50&includeHex=true
+
+   // now send it back to faucet address 2NGZrVvZG92qGYqzTLjCAewvPZ7JE8S8VxE
+   bitcoin_transaction tx;
+   tx.nVersion = 2;
+   tx.vin.resize( 1 );
+   tx.vout.resize( 1 );
+   tx.nLockTime = 0;
+
+   tx.vin[0].prevout.hash = fc::sha256( "81cd056b1d3b7454373b588fafc1dcec8d9d48924ad2adc7e9669ea1b96a95c5" );
+   tx.vin[0].prevout.n = 0;
+   tx.vin[0].nSequence = 4294967295;
+
+   tx.vout[0].value = 9000;
+   bitcoin_address to_address("2NGZrVvZG92qGYqzTLjCAewvPZ7JE8S8VxE");
+   tx.vout[0].scriptPubKey = to_address.get_script();
+
+   uint64_t amount = 10000;
+   int32_t hash_type = 1;
+   bytes redeem_script = addr.get_redeem_script();
+
+   for (auto& key: priv_keys) {
+      bytes key_data(key.get_secret().data(), key.get_secret().data() + key.get_secret().data_size());
+      // insert signatures in reverse order
+      std::vector<bytes> sigs = sign_witness_transaction_part( tx, { redeem_script }, { amount }, key_data, btc_context(), hash_type);
+      tx.vin[0].scriptWitness.insert( tx.vin[0].scriptWitness.begin(), sigs[0]);
+   }
+   sign_witness_transaction_finalize( tx, { redeem_script } );
+
+   ilog( fc::to_hex( pack( tx ) ) );
+   BOOST_CHECK( fc::to_hex( pack( tx ) ) == "0100000000010145310e878941a1b2bc2d33797ee4d89d95eaaf2e13488063a2aa9a74490f510a0100000023220020b6744de4f6ec63cc92f7c220cdefeeb1b1bed2b66c8e5706d80ec247d37e65a1ffffffff01002d3101000000001976a9143ebc40e411ed3c76f86711507ab952300890397288ac0400473044022001dd489a5d4e2fbd8a3ade27177f6b49296ba7695c40dbbe650ea83f106415fd02200b23a0602d8ff1bdf79dee118205fc7e9b40672bf31563e5741feb53fb86388501483045022100f88f040e90cc5dc6c6189d04718376ac19ed996bf9e4a3c29c3718d90ffd27180220761711f16c9e3a44f71aab55cbc0634907a1fa8bb635d971a9a01d368727bea10169522103b3623117e988b76aaabe3d63f56a4fc88b228a71e64c4cc551d1204822fe85cb2103dd823066e096f72ed617a41d3ca56717db335b1ea47a1b4c5c9dbdd0963acba621033d7c89bd9da29fa8d44db7906a9778b53121f72191184a9fee785c39180e4be153ae00000000" );
+}
+
 BOOST_AUTO_TEST_SUITE_END()
