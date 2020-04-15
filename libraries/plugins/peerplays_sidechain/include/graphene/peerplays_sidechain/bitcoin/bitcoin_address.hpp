@@ -127,23 +127,31 @@ class btc_weighted_multisig_address : public bitcoin_address
 {
 
 public:
+   enum network
+   {
+      mainnet,
+      testnet,
+      regtest
+   };
 
    btc_weighted_multisig_address() = default;
 
-   btc_weighted_multisig_address( const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data );
+   btc_weighted_multisig_address( const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data,
+                                  network network_type = network::regtest);
 
+   bytes get_redeem_script() const { return redeem_script_; }
    bytes get_witness_script() const { return witness_script_; }
-
+   network get_network_type() const { return network_type_; }
 private:
 
-   void create_redeem_script();
+   void create_redeem_script(const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data);
    void create_witness_script();
    void create_segwit_address();
 
 public:
+   network network_type_;
    bytes redeem_script_;
    bytes witness_script_;
-   std::vector<std::pair<fc::ecc::public_key, uint16_t>> keys_data_;
 };
 
 } } }
@@ -154,3 +162,13 @@ FC_REFLECT_DERIVED( graphene::peerplays_sidechain::bitcoin::btc_multisig_address
    (redeem_script)(keys_required)(witnesses_keys) );
 
 FC_REFLECT_DERIVED( graphene::peerplays_sidechain::bitcoin::btc_multisig_segwit_address, (graphene::peerplays_sidechain::bitcoin::btc_multisig_address), (witness_script) );
+
+FC_REFLECT_ENUM(graphene::peerplays_sidechain::bitcoin::btc_weighted_multisig_address::network,
+                (mainnet)
+                (testnet)
+                (regtest)
+                )
+
+FC_REFLECT_DERIVED( graphene::peerplays_sidechain::bitcoin::btc_weighted_multisig_address,
+                    (graphene::peerplays_sidechain::bitcoin::bitcoin_address),
+                    (network_type_)(redeem_script_)(witness_script_) );

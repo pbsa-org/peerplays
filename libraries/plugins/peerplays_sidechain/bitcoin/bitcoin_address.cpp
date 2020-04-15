@@ -255,21 +255,23 @@ bytes btc_multisig_segwit_address::get_address_bytes( const bytes& script_hash )
    return address_bytes;
 }
 
-btc_weighted_multisig_address::btc_weighted_multisig_address(const std::vector<std::pair<fc::ecc::public_key, uint16_t> > &keys_data) :
-   keys_data_(keys_data)
+
+btc_weighted_multisig_address::btc_weighted_multisig_address(const std::vector<std::pair<fc::ecc::public_key, uint16_t> > &keys_data,
+                                                             network network_type) :
+   network_type_(network_type)
 {
-   create_redeem_script();
+   create_redeem_script(keys_data);
    create_witness_script();
    create_segwit_address();
    type = payment_type::P2WSH;
 }
 
-void btc_weighted_multisig_address::create_redeem_script()
+void btc_weighted_multisig_address::create_redeem_script(const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data)
 {
    script_builder builder;
    uint32_t total_weight = 0;
    builder << uint32_t(0);
-   for (auto &p : keys_data_) {
+   for (auto &p : keys_data) {
       total_weight += p.second;
       builder << op::SWAP;
       builder << p.first.serialize();
@@ -284,6 +286,9 @@ void btc_weighted_multisig_address::create_redeem_script()
    builder << op::GREATERTHANOREQUAL;
 
    redeem_script_ = builder;
+
+   fc::sha256 sh = fc::sha256::hash(redeem_script_);
+   raw_address = bytes(sh.data(), sh.data() + sh.data_size());
 }
 
 void btc_weighted_multisig_address::create_witness_script()
@@ -297,7 +302,22 @@ void btc_weighted_multisig_address::create_witness_script()
 
 void btc_weighted_multisig_address::create_segwit_address()
 {
-
+   std::string hrp;
+   switch(network_type_)
+   {
+   case(network::mainnet):
+      hrp = "bc";
+      break;
+   case(network::testnet):
+      hrp = "tb";
+      break;
+   case(network::regtest):
+      hrp = "bcrt";
+      break;
+   }
+   fc::sha256 sh = fc::sha256::hash(redeem_script_);
+   std::vector<uint8_t> hash_data(sh.data(), sh.data() + sh.data_size());
+   address = segwit_addr::encode(hrp, 0, hash_data);
 }
 
 } } }
