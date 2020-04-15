@@ -255,4 +255,49 @@ bytes btc_multisig_segwit_address::get_address_bytes( const bytes& script_hash )
    return address_bytes;
 }
 
+btc_weighted_multisig_address::btc_weighted_multisig_address(const std::vector<std::pair<fc::ecc::public_key, uint16_t> > &keys_data) :
+   keys_data_(keys_data)
+{
+   create_redeem_script();
+   create_witness_script();
+   create_segwit_address();
+   type = payment_type::P2WSH;
+}
+
+void btc_weighted_multisig_address::create_redeem_script()
+{
+   script_builder builder;
+   uint32_t total_weight = 0;
+   builder << uint32_t(0);
+   for (auto &p : keys_data_) {
+      total_weight += p.second;
+      builder << op::SWAP;
+      builder << p.first.serialize();
+      builder << op::CHECKSIG;
+      builder << op::IF;
+      builder << uint32_t(p.second);
+      builder << op::ADD;
+      builder << op::ENDIF;
+   }
+   uint32_t threshold_weight = 2 * total_weight / 3;
+   builder << threshold_weight;
+   builder << op::GREATERTHANOREQUAL;
+
+   redeem_script_ = builder;
+}
+
+void btc_weighted_multisig_address::create_witness_script()
+{
+   script_builder builder;
+   builder << op::_0;
+   builder << fc::sha256::hash( redeem_script_.data(), redeem_script_.size() );
+
+   witness_script_ = builder;
+}
+
+void btc_weighted_multisig_address::create_segwit_address()
+{
+
+}
+
 } } }

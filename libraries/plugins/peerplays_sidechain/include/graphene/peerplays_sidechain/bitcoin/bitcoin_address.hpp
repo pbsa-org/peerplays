@@ -123,6 +123,29 @@ public:
 
 };
 
+class btc_weighted_multisig_address : public bitcoin_address
+{
+
+public:
+
+   btc_weighted_multisig_address() = default;
+
+   btc_weighted_multisig_address( const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data );
+
+   bytes get_witness_script() const { return witness_script_; }
+
+private:
+
+   void create_redeem_script();
+   void create_witness_script();
+   void create_segwit_address();
+
+public:
+   bytes redeem_script_;
+   bytes witness_script_;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t>> keys_data_;
+};
+
 } } }
 
 FC_REFLECT( graphene::peerplays_sidechain::bitcoin::bitcoin_address, (address)(type)(raw_address) );
