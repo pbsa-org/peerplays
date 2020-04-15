@@ -9,12 +9,12 @@ add_library( peerplays_sidechain
              bitcoin_utils.cpp
            )
 
-if (SUPPORT_MULTIPLE_SONS)
-   message ("Multiple SONs per software instance are supported")
-   target_compile_definitions(peerplays_sidechain PRIVATE SUPPORT_MULTIPLE_SONS)
+if (ENABLE_DEV_FEATURES)
+   message ("Dev features enabled")
+   target_compile_definitions(peerplays_sidechain PRIVATE ENABLE_DEV_FEATURES)
 endif()
-unset(SUPPORT_MULTIPLE_SONS)
-unset(SUPPORT_MULTIPLE_SONS CACHE)
+unset(ENABLE_DEV_FEATURES)
+unset(ENABLE_DEV_FEATURES CACHE)
 
 target_link_libraries( peerplays_sidechain graphene_chain graphene_app fc zmq )
 target_include_directories( peerplays_sidechain

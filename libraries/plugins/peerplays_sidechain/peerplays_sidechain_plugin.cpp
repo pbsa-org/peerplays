@@ -142,8 +142,10 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
          boost::insert(sons, fc::json::from_string(options.at("son-ids").as<string>()).as<vector<chain::son_id_type>>(5));
       config_ready_son = config_ready_son && !sons.empty();
 
-#ifndef SUPPORT_MULTIPLE_SONS
-      FC_ASSERT(sons.size() == 1, "Multiple SONs not supported");
+#ifndef ENABLE_DEV_FEATURES
+      if (sons.size() > 1) {
+         FC_THROW("Invalid configuration, multiple SON IDs provided");
+      }
 #endif
 
       if (options.count("peerplays-private-key")) {

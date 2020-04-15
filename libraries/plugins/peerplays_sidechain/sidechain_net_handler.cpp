@@ -151,8 +151,18 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                                   fc::to_string(btc_asset_id.type_id) + "." +
                                   fc::to_string((uint64_t)btc_asset_id.instance);
 
+#ifdef ENABLE_DEV_FEATURES
+   // Accepts BTC and peerplays asset deposits
+   bool deposit_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) != 0));
+   bool withdraw_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) == 0));
+#else
+   // Accepts BTC deposits only
+   bool deposit_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("BTC") == 0));
+   bool withdraw_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) == 0));
+#endif
+
    // Deposit request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) != 0)) {
+   if (deposit_condition) {
 
       for (son_id_type son_id : plugin.get_sons()) {
          if (plugin.is_active_son(son_id)) {
@@ -187,7 +197,7 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
    }
 
    // Withdrawal request
-   if ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) == 0)) {
+   if (withdraw_condition) {
       // BTC Payout only (for now)
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_account_and_sidechain>();
       const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sed.peerplays_from, sidechain_type::bitcoin));
@@ -226,8 +236,6 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
       }
       return;
    }
-
-   FC_ASSERT(false, "Invalid sidechain event");
 }
 
 void sidechain_net_handler::process_proposals() {
