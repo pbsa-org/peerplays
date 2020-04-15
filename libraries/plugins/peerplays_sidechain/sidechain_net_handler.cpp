@@ -242,8 +242,6 @@ void sidechain_net_handler::process_proposals() {
       const auto po = idx.find(proposal_id);
       if (po != idx.end()) {
 
-         ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", (*po).id)("son_id", plugin.get_current_son_id()));
-
          if (po->available_active_approvals.find(plugin.get_current_son_object().son_account) != po->available_active_approvals.end()) {
             continue;
          }
@@ -308,16 +306,16 @@ void sidechain_net_handler::process_proposals() {
          }
 
          if (should_process) {
-            ilog("Proposal ${po} will be processed by sidechain handler ${sidechain}", ("po", (*po).id)("sidechain", sidechain));
+            //ilog("Proposal ${po} will be processed by sidechain handler ${sidechain}", ("po", (*po).id)("sidechain", sidechain));
             bool should_approve = process_proposal(*po);
             if (should_approve) {
-               ilog("Proposal ${po} will be approved", ("po", *po));
+               //ilog("Proposal ${po} will be approved", ("po", (*po).id));
                approve_proposal(po->id, plugin.get_current_son_id());
             } else {
-               ilog("Proposal ${po} is not approved", ("po", (*po).id));
+               //ilog("Proposal ${po} is not approved", ("po", (*po).id));
             }
          } else {
-            ilog("Proposal ${po} will not be processed by sidechain handler ${sidechain}", ("po", (*po).id)("sidechain", sidechain));
+            //ilog("Proposal ${po} will not be processed by sidechain handler ${sidechain}", ("po", (*po).id)("sidechain", sidechain));
          }
       }
    }

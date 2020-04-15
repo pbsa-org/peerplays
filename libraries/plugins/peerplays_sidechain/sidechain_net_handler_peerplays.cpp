@@ -249,7 +249,7 @@ std::string sidechain_net_handler_peerplays::send_sidechain_transaction(const si
          plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       return trx.id().str();
    } catch (fc::exception e) {
-      elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+      elog("Sidechain transaction failed with exception ${e}", ("e", e.what()));
       return "";
    }
 
