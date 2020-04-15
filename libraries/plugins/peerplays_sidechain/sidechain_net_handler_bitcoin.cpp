@@ -18,6 +18,7 @@
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/serialize.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/sign_bitcoin_transaction.hpp>
+#include <graphene/utilities/key_conversion.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -1563,12 +1564,26 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
    //  ]
    //}
    using namespace bitcoin;
+   const chain::global_property_object &gpo = database.get_global_properties();
+
+   accounts_keys son_pubkeys;
+   for (auto& son: gpo.active_sons) {
+      std::string pub_key = son.sidechain_public_keys.at(sidechain_type::bitcoin);
+      son_pubkeys[son.son_id] = create_public_key_data( parse_hex(pub_key) );
+   }
+
+   uint32_t nrequired = gpo.active_sons.size() * 2 / 3 + 1;
+   btc_multisig_segwit_address pw_address(nrequired, son_pubkeys);
+
    bitcoin_transaction_builder tb;
    std::vector<uint64_t> in_amounts;
 
+   std::string script = "22" + fc::to_hex(pw_address.get_witness_script());
+   bitcoin::bytes witness_script = parse_hex(script);
+
    tb.set_version( 2 );
    for (auto in : inputs) {
-      tb.add_in( payment_type::P2WSH, fc::sha256(in.txid_), in.out_num_, bitcoin::bytes() );
+      tb.add_in( payment_type::P2SH_WSH, fc::sha256(in.txid_), in.out_num_, witness_script );
       in_amounts.push_back(in.amount_);
    }
 
@@ -1583,7 +1598,7 @@ std::string sidechain_net_handler_bitcoin::create_transaction_standalone(const s
 
    std::string tx_raw = save_tx_data_to_string(hex_tx, in_amounts);
 
-   wlog("skoneru: Raw transaction ${tx}", ("tx", tx_raw));
+   ilog("Raw transaction ${tx}", ("tx", tx_raw));
 
    return tx_raw;
 }
@@ -1685,11 +1700,21 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
    std::vector<uint64_t> in_amounts;
    std::string tx_hex;
 
-   const auto privkey_signing = get_privkey_bytes( prvkey );
+   //const auto privkey_signing = get_privkey_bytes( prvkey );
+
+   fc::optional<fc::ecc::private_key> btc_private_key = graphene::utilities::wif_to_key(prvkey);
+   if (!btc_private_key)
+   {
+      elog("Invalid private key ${pk}", ("pk", prvkey));
+      return "";
+   }
+
+   const auto secret = btc_private_key->get_secret();
+   bitcoin::bytes privkey_signing(secret.data(), secret.data() + secret.data_size());
 
    read_tx_data_from_string(sto.transaction, tx_hex, in_amounts);
 
-   wlog("skoneru: sign transaction retreived: ${s}", ("s", tx_hex));
+   ilog("Sign transaction retreived: ${s}", ("s", tx_hex));
 
    accounts_keys son_pubkeys;
    for (auto& son: sto.signers) {
@@ -1710,7 +1735,7 @@ std::string sidechain_net_handler_bitcoin::sign_transaction_standalone(const sid
 
    std::string tx_signature = write_byte_arrays_to_string(sigs);
 
-   wlog("skoneru: signatures: son-id = ${son}, pkey = ${prvkey}, tx_signature = ${s}", ("son", plugin.get_current_son_id())("prvkey", prvkey)("s", tx_signature));
+   ilog("Signatures: son-id = ${son}, pkey = ${prvkey}, tx_signature = ${s}", ("son", plugin.get_current_son_id())("prvkey", prvkey)("s", tx_signature));
 
    return tx_signature;
 }
@@ -1767,7 +1792,8 @@ std::string sidechain_net_handler_bitcoin::send_transaction_standalone(const sid
    std::string tx_hex;
 
    read_tx_data_from_string(sto.transaction, tx_hex, in_amounts);
-   wlog("skoneru: send transaction retreived: ${s}", ("s", tx_hex));
+
+   ilog("Send transaction retreived: ${s}", ("s", tx_hex));
 
    accounts_keys son_pubkeys;
    for (auto& son: sto.signers) {
@@ -1798,7 +1824,7 @@ std::string sidechain_net_handler_bitcoin::send_transaction_standalone(const sid
 
    std::string res = bitcoin_client->sendrawtransaction(final_tx_hex);
 
-   wlog("skoneru: send_transaction_standalone: ${tx}, [${res}]", ("tx", final_tx_hex)("res", res));
+   ilog("Send_transaction_standalone: ${tx}, [${res}]", ("tx", final_tx_hex)("res", res));
 
    return res;
 }
