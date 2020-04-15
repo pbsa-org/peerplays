@@ -167,49 +167,52 @@ BOOST_AUTO_TEST_CASE( weighted_multisig_spend_test )
    }
    std::vector<fc::ecc::public_key> pub_keys;
    for(auto& key: priv_keys)
+   {
       pub_keys.push_back(key.get_public_key());
+   }
    // key weights
    std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights;
    for(uint16_t i = 0; i < 15; ++i)
       weights.push_back(std::make_pair(pub_keys[i], i + 1));
 
-   btc_weighted_multisig_address addr(weights, btc_weighted_multisig_address::network::testnet);
-   BOOST_CHECK(addr.get_address() == "tb1qge84w896lcacc492h0wwslqznwytqnqd6eeunn2e4wy00tt08fpqng5fxx");
+   btc_weighted_multisig_address addr(weights);
+   BOOST_CHECK(addr.get_address() == "bcrt1qaeuy4c0qnudq5u2c8pndd7zyudal3g5eew7y9396592udxdcje4s364udp");
 
-   // this address was filled with testnet transaction
-   // id 81cd056b1d3b7454373b588fafc1dcec8d9d48924ad2adc7e9669ea1b96a95c5
-   // output 0
-   // you can see it at https://api.blockcypher.com/v1/btc/test3/txs/81cd056b1d3b7454373b588fafc1dcec8d9d48924ad2adc7e9669ea1b96a95c5?limit=50&includeHex=true
+   bytes redeem_script = addr.get_redeem_script();
 
-   // now send it back to faucet address 2NGZrVvZG92qGYqzTLjCAewvPZ7JE8S8VxE
+   // this address was filled with regtest transaction
+   // id 8c67ac4899aadb68672775df338d7d857604f12784e24fa1fc1471a73b5df012
+   // output 1, 10000 satoshis
+
+   // now send it back to bcrt1qavkxpjkc30x0euepxup8qe2yfzpjyepzq0qctu
    bitcoin_transaction tx;
    tx.nVersion = 2;
    tx.vin.resize( 1 );
    tx.vout.resize( 1 );
    tx.nLockTime = 0;
 
-   tx.vin[0].prevout.hash = fc::sha256( "81cd056b1d3b7454373b588fafc1dcec8d9d48924ad2adc7e9669ea1b96a95c5" );
-   tx.vin[0].prevout.n = 0;
-   tx.vin[0].nSequence = 4294967295;
+   tx.vin[0].prevout.hash = fc::sha256( "8c67ac4899aadb68672775df338d7d857604f12784e24fa1fc1471a73b5df012" );
+   tx.vin[0].prevout.n = 1;
+   tx.vin[0].nSequence = 0xffffffff;
 
    tx.vout[0].value = 9000;
-   bitcoin_address to_address("2NGZrVvZG92qGYqzTLjCAewvPZ7JE8S8VxE");
+   bitcoin_address to_address("bcrt1qavkxpjkc30x0euepxup8qe2yfzpjyepzq0qctu");
    tx.vout[0].scriptPubKey = to_address.get_script();
 
    uint64_t amount = 10000;
-   int32_t hash_type = 1;
-   bytes redeem_script = addr.get_redeem_script();
+   int32_t hash_type = 1; // implement SIGHASH_ALL scheme
 
    for (auto& key: priv_keys) {
       bytes key_data(key.get_secret().data(), key.get_secret().data() + key.get_secret().data_size());
-      // insert signatures in reverse order
       std::vector<bytes> sigs = sign_witness_transaction_part( tx, { redeem_script }, { amount }, key_data, btc_context(), hash_type);
+      // insert signatures in reverse order
       tx.vin[0].scriptWitness.insert( tx.vin[0].scriptWitness.begin(), sigs[0]);
    }
-   sign_witness_transaction_finalize( tx, { redeem_script } );
+   sign_witness_transaction_finalize( tx, { redeem_script }, false );
 
-   ilog( fc::to_hex( pack( tx ) ) );
-   BOOST_CHECK( fc::to_hex( pack( tx ) ) == "0100000000010145310e878941a1b2bc2d33797ee4d89d95eaaf2e13488063a2aa9a74490f510a0100000023220020b6744de4f6ec63cc92f7c220cdefeeb1b1bed2b66c8e5706d80ec247d37e65a1ffffffff01002d3101000000001976a9143ebc40e411ed3c76f86711507ab952300890397288ac0400473044022001dd489a5d4e2fbd8a3ade27177f6b49296ba7695c40dbbe650ea83f106415fd02200b23a0602d8ff1bdf79dee118205fc7e9b40672bf31563e5741feb53fb86388501483045022100f88f040e90cc5dc6c6189d04718376ac19ed996bf9e4a3c29c3718d90ffd27180220761711f16c9e3a44f71aab55cbc0634907a1fa8bb635d971a9a01d368727bea10169522103b3623117e988b76aaabe3d63f56a4fc88b228a71e64c4cc551d1204822fe85cb2103dd823066e096f72ed617a41d3ca56717db335b1ea47a1b4c5c9dbdd0963acba621033d7c89bd9da29fa8d44db7906a9778b53121f72191184a9fee785c39180e4be153ae00000000" );
+   BOOST_CHECK( fc::to_hex( pack( tx ) ) == "0200000000010112f05d3ba77114fca14fe28427f10476857d8d33df75276768dbaa9948ac678c0100000000ffffffff012823000000000000160014eb2c60cad88bccfcf3213702706544488322642210473044022036b79512d547927c7e285aea1403fbf00efdca2be752a0ec6d37144b20365992022073fa2373af073fb0b66e55d958cb301ed473352f8ae29a7fcf9bf7bf6974057d014730440220243edabbec391f070f1167a9fa09fd72d35958da8c6c24252b97401e2dfa7b7d0220629bcaaa8bdba62c1d551d061b6d47014325cbf492c31340f2f1f9de033566380148304502210080bdc7cca6d9b7899d6cf69bdcca150260363cfe01b4a382671abaefce4e9ccf02200bd041441fd2c40a564fee80107ea4ffb9a427b4382235ed0b8fa6706ad18a760147304402206a1e6976a054cea828c856cc8e08f4a84a3edb310e35bc786d19178f4d1bd9ae022073982176a827f53b5eda735602ea07fda258c3381b545c439a5b7e2356274b3c01483045022100eaad11b5de0d2b2d8ca99d863d5d6d800ef5055750cb2aff670718df38a81ca8022011c08e83664c1a16fec693d7437b3984683a6eb67223247fc860565ab8f076fc014830450221008b26a8b5c9a2f1d10a34005698672730a3a933008f49cd379dbec66cc8df4d7602207734aed9afb75efcf3a807a8d99878abc83f917b1e391e13cf382bbf42aec6af01473044022041393a16e4c14e017939524296d96176bff955c83ca68e1b9bf58d5e57ad6be102207f0a8efcab6d6dcb782987dfd3ad55c8343c9563ad614ef12bf722d004858276014730440220670e1c79f96f98bb244cee62c2b23206d3de7d3901d52feecd4861583be86cea02203b1f5214b2295ca03262d2e40a272ff861f03ca852efbb38d8c947a29e37d45e01483045022100e0fa5b20a3c82303d36c41fe56a055a038476645f11441d252a457533987b3d10220356950292144a4b56ba7dde31dcba1774486a9a22be9b8f1be9a9121f95ca4e801483045022100de5679f833d47ba63a947dc5cd0507b63b9fa3e9c1f1e77991c43f965d8921700220152961a323de0e2f44bdd9ee6782bca834f3a023e8597aee9907ed23dcd153880147304402203eea68df28f2963d05850531d4a27ec4eedc3c81f49c4e1476e4514e2a8b0d3d0220494ecdb8750eb01903a6203a1f5a1ede722e7ed6f5a02a4156cf8f9ea1a01cc401473044022033662119e15efb098df8e3e31ff3a2437ce2f5d72df414938985f10757aa7a7e022044c17def78afcb82f0f86ed0ead4c28732e574e3981823a53f5bb84fea703e020147304402206f5f7b8cbe0b9a80083341f3c57704ccfbe062e4649c3fdbf5883557bc8739b902202104a68fa4764832ff61082e02f8ba971cb8db81eaa9eb9a84a61067f8515eef014830450221009c80e3500e5fdcb4a72a3e1e1c3ce72602d380eb295b322c3964c6abf91fd22b022063afa4017b9de88dd492a38072f0bbad514660d6ed38d5f73759e7262b87ed76014730440220273d6a97b382c0bdceb5df7ff59542ec3851d09b2a760fae6f023eb9f927638602201f486799014a9388596c7e4b86efa6365c2d5f8f65be6a119c08a2e6ceb8943001fd5c02007c21030e88484f2bb5dcfc0b326e9eb565c27c8291efb064d060d226916857a2676e62ac635193687c2102151ad794a3aeb3cf9c190120da3d13d36cd8bdf21ca1ccb15debd61c601314b0ac635293687c2103b45a5955ea7847d121225c752edaeb4a5d731a056a951a876caaf6d1f69adb7dac635393687c2102def03a6ffade4ffb0017c8d93859a247badd60e2d76d00e2a3713f6621932ec1ac635493687c21035f17aa7d58b8c3ee0d87240fded52b27f3f12768a0a54ba2595e0a929dd87155ac635593687c2103c8582ac6b0bd20cc1b02c6a86bad2ea10cadb758fedd754ba0d97be85b63b5a7ac635693687c21028148a1f9669fc4471e76f7a371d7cc0563b26e0821d9633fd37649744ff54edaac635793687c2102f0313701b0035f0365a59ce1a3d7ae7045e1f2fb25c4656c08071e5baf51483dac635893687c21024c4c25d08173b3c4d4e1375f8107fd7040c2dc0691ae1bf6fe82b8c88a85185fac635993687c210360fe2daa8661a3d25d0df79875d70b1c3d443ade731caafda7488cb68b4071b0ac635a93687c210250e41a6a4abd7b0b3a49eaec24a6fafa99e5aa7b1e3a5aabe60664276df3d937ac635b93687c2103045a32125930ca103c7d7c79b6f379754796cd4ea7fb0059da926e415e3877d3ac635c93687c210344943249d7ca9b47316fef0c2a413dda3a75416a449a29f310ab7fc9d052ed70ac635d93687c2103c62967320b63df5136ff1ef4c7959ef5917ee5a44f75c83e870bc488143d4d69ac635e93687c21020429f776e15770e4dc52bd6f72e6ed6908d51de1c4a64878433c4e3860a48dc4ac635f93680150a200000000" );
+   // this transaction was published in regtest and was accepted,
+   // its id is 08a997948feb50850df809e8f0c7b41a7bd0d249a75b83813d8626d5b51affba
 }
 
 BOOST_AUTO_TEST_SUITE_END()

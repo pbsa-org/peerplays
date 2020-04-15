@@ -315,7 +315,7 @@ void btc_weighted_multisig_address::create_segwit_address()
       hrp = "bcrt";
       break;
    }
-   fc::sha256 sh = fc::sha256::hash(redeem_script_);
+   fc::sha256 sh = fc::sha256::hash(&redeem_script_[0], redeem_script_.size());
    std::vector<uint8_t> hash_data(sh.data(), sh.data() + sh.data_size());
    address = segwit_addr::encode(hrp, 0, hash_data);
 }

@@ -19,15 +19,17 @@ script_builder& script_builder::operator<<( uint32_t number )
    } else if ( number <= 16) {
       script.push_back( static_cast<uint8_t>( op::_1 ) + number - 1 );
    } else {
+      bytes pack_buf;
       while (number) {
-         script.push_back(number & 0xff);
+         pack_buf.push_back(number & 0xff);
          number >>= 8;
       }
       // - If the most significant byte is >= 0x80 and the value is positive, push a
       // new zero-byte to make the significant byte < 0x80 again. So,  the result can
       // be 5 bytes max.
-      if (script.back() & 0x80)
-          script.push_back(0);
+      if (pack_buf.back() & 0x80)
+          pack_buf.push_back(0);
+      *this << pack_buf;
    }
 
    return *this;
