@@ -9,7 +9,8 @@ namespace graphene { namespace peerplays_sidechain { namespace bitcoin {
 bool bitcoin_address::operator==( const bitcoin_address& btc_addr ) const {
    return ( this->address == btc_addr.address ) &&
           ( this->type == btc_addr.type ) &&
-          ( this->raw_address == btc_addr.raw_address );
+          ( this->raw_address == btc_addr.raw_address ) &&
+          ( this->network_type == btc_addr.network_type);
 }
 
 bytes bitcoin_address::get_script() const
@@ -257,9 +258,9 @@ bytes btc_multisig_segwit_address::get_address_bytes( const bytes& script_hash )
 
 
 btc_weighted_multisig_address::btc_weighted_multisig_address(const std::vector<std::pair<fc::ecc::public_key, uint16_t> > &keys_data,
-                                                             network network_type) :
-   network_type_(network_type)
+                                                             network ntype)
 {
+   network_type = ntype;
    create_redeem_script(keys_data);
    create_witness_script();
    create_segwit_address();
@@ -303,7 +304,7 @@ void btc_weighted_multisig_address::create_witness_script()
 void btc_weighted_multisig_address::create_segwit_address()
 {
    std::string hrp;
-   switch(network_type_)
+   switch(network_type)
    {
    case(network::mainnet):
       hrp = "bc";
@@ -322,8 +323,8 @@ void btc_weighted_multisig_address::create_segwit_address()
 
 btc_one_or_m_of_n_multisig_address::btc_one_or_m_of_n_multisig_address(const fc::ecc::public_key &user_key_data,
                                                                        const uint8_t nrequired, const std::vector<fc::ecc::public_key> &keys_data,
-                                                                       network network_type) {
-   network_type_ = network_type;
+                                                                       network ntype) {
+   network_type = ntype;
    create_redeem_script(user_key_data, nrequired, keys_data);
    create_witness_script();
    create_segwit_address();
@@ -355,7 +356,7 @@ void btc_one_or_m_of_n_multisig_address::create_witness_script() {
 }
 void btc_one_or_m_of_n_multisig_address::create_segwit_address() {
    std::string hrp;
-   switch (network_type_) {
+   switch (network_type) {
    case (network::mainnet):
       hrp = "bc";
       break;
