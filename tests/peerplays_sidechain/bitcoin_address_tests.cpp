@@ -48,6 +48,9 @@ BOOST_AUTO_TEST_CASE( addresses_type_test )
 
    std::string p2sh_testnet( "2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc" );
    BOOST_CHECK( bitcoin_address( p2sh_testnet ).get_type() == payment_type::P2SH );
+
+   std::string p2sh_regtest1( "2NAL3YhMF4VcbRQdectN8XPMJipvATGefTZ" );
+   BOOST_CHECK( bitcoin_address( p2sh_regtest1 ).get_type() == payment_type::P2SH );
 }
 
 BOOST_AUTO_TEST_CASE( addresses_raw_test )
