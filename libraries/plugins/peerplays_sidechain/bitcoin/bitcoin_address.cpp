@@ -388,7 +388,9 @@ void btc_one_or_weighted_multisig_address::create_redeem_script(const fc::ecc::p
    script_builder builder;
    builder << user_key_data.serialize();
    builder << op::CHECKSIG;
-   builder << op::NOTIF;
+   builder << op::IF;
+   builder << op::_1;
+   builder << op::ELSE;
    uint32_t total_weight = 0;
    builder << uint32_t(0);
    for (auto &p : keys_data) {
