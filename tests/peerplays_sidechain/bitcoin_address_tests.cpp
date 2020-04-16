@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE( btc_weighted_multisig_address_test )
       weights.push_back(std::make_pair(pub_old[i], i + 1));
 
    btc_weighted_multisig_address addr(weights, btc_weighted_multisig_address::network::testnet);
-//   BOOST_CHECK(addr.get_address() == "tb1qge84w896lcacc492h0wwslqznwytqnqd6eeunn2e4wy00tt08fpqng5fxx");
+   BOOST_CHECK(addr.get_address() == "tb1qaeuy4c0qnudq5u2c8pndd7zyudal3g5eew7y9396592udxdcje4surl6cm");
 }
 
 BOOST_AUTO_TEST_CASE( create_1_or_2_of_15_segwit_address_test )

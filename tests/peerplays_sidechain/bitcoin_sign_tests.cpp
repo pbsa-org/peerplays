@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE( same_signatures_test )
 
 BOOST_AUTO_TEST_CASE( weighted_multisig_spend_test )
 {
-   // create weighted multisig addess in testnet
+   // create weighted multisig addess in regtest
    std::vector<fc::ecc::private_key> priv_keys;
    for(uint32_t i = 0; i < 15; ++i)
    {
@@ -297,6 +297,108 @@ BOOST_AUTO_TEST_CASE( user_sig_one_or_2_of_15_multisig_spend_test )
    sign_witness_transaction_finalize( tx2, { redeem_script }, false);
 
    BOOST_CHECK( fc::to_hex( pack( tx2 ) ) == "0200000000010152a58161faf22cedceb10fe5a2a5a98eaff9bc0458a463f387f58894da287b390100000000ffffffff01c0aff62901000000220020cad7fa7232fdf593c357304106872c303602d7c97ca7348fb94565065e1bcab80500483045022100ed26e6a78f87a50f2b3998c3c47ef5beca112b7d4359486239b37f48d37457da02201ab89289678b9626459f91307fcd3ba1de833cad29c78f3dcab60845df73217d0147304402207d7caa06a956fbb1191a0768a8652b0530d9124a2f3a95685d4a39a3469c227302202d78c0cc7bc17e93eae1d592aed01cdc4d3297763e11ebee5f6f85e1923683140100fd270263210368dc31b2b547c74f52abfc67c7fc768c68115d8ab96430d9bb4996fa660121cdac67522103456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef2752102d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f421025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61210228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe986621037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f6662102ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf210317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f210266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf8421023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf210229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e521024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da2103df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c12102bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8210287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae82102053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd735fae6800000000" );
+}
+
+BOOST_AUTO_TEST_CASE( user_sig_one_or_weighted_multisig_spend_test )
+{
+   std::vector<fc::ecc::private_key> priv_keys;
+   for(uint32_t i = 0; i < 15; ++i)
+   {
+      const char* seed = reinterpret_cast<const char*>(&i);
+      fc::sha256 h = fc::sha256::hash(seed, sizeof(i));
+      priv_keys.push_back(fc::ecc::private_key::generate_from_seed(h));
+   }
+   std::vector<fc::ecc::public_key> pub_keys;
+   for(auto& key: priv_keys)
+   {
+      pub_keys.push_back(key.get_public_key());
+   }
+   // key weights
+   std::vector<std::pair<fc::ecc::public_key, uint16_t> > weights;
+   for(uint16_t i = 0; i < 15; ++i)
+      weights.push_back(std::make_pair(pub_keys[i], i + 1));
+
+   fc::sha256 h = fc::sha256::hash("user", 4);
+   fc::ecc::private_key user_key = fc::ecc::private_key::generate_from_seed(h);
+   fc::ecc::public_key user_pub_key = user_key.get_public_key();
+
+   btc_one_or_weighted_multisig_address addr(user_pub_key, weights);
+   BOOST_CHECK(addr.get_address() == "bcrt1q8vvjs50thpujagzvmx22czzrq9qgr3w4qqcwv697w09fahhq8c3syahmxz");
+
+   bytes redeem_script = addr.get_redeem_script();
+
+   {
+      // this address was filled with regtest transaction
+      // id b28a0a75fae5eb72aa61766e765cc97002af1ec2d38e6cea7e8723c299009560
+      // output 0, 10000 satoshis
+
+      // now send it to 2MtH9U8fEZbRmco3GYVMjSg9NfUyPn5RDN1
+      // with single user signature
+      bitcoin_transaction tx;
+      tx.nVersion = 2;
+      tx.vin.resize( 1 );
+      tx.vout.resize( 1 );
+      tx.nLockTime = 0;
+
+      tx.vin[0].prevout.hash = fc::sha256( "b28a0a75fae5eb72aa61766e765cc97002af1ec2d38e6cea7e8723c299009560" );
+      tx.vin[0].prevout.n = 0;
+      tx.vin[0].nSequence = 0xffffffff;
+
+      tx.vout[0].value = 9000;
+      bitcoin_address to_address("2MtH9U8fEZbRmco3GYVMjSg9NfUyPn5RDN1");
+      tx.vout[0].scriptPubKey = to_address.get_script();
+
+      uint64_t amount = 10000;
+      int32_t hash_type = 1; // implement SIGHASH_ALL scheme
+
+      bytes key_data(user_key.get_secret().data(), user_key.get_secret().data() + user_key.get_secret().data_size());
+      std::vector<bytes> sigs = sign_witness_transaction_part( tx, { redeem_script }, { amount }, key_data, btc_context(), hash_type);
+      tx.vin[0].scriptWitness.push_back( sigs[0] );
+      sign_witness_transaction_finalize( tx, { redeem_script }, false );
+
+      // this transaction was published in regtest and was accepted,
+      // its id is 56d6804b142a7ec49d980304ac5efb7472c626e04a8499aa182574955de0a2ef
+      BOOST_CHECK( fc::to_hex( pack( tx ) ) == "0200000000010160950099c223877eea6c8ed3c21eaf0270c95c766e7661aa72ebe5fa750a8ab20000000000ffffffff01282300000000000017a9140b552f4a72cb614717878b20743d9e38e618130a8702483045022100f763578fea27776100a06341816a2a0a84a5c50848d33dfc941c11c64c9fdb6e022061d85666f70aed96cf73be299712cba84706527cb138c21a2229cb32d72a4c7c01fd83022102d2c1cb1575d323b6120b6e5bcc9ce5ad373e88e73e675030f1c2c5261b4dbc86ac635167007c21030e88484f2bb5dcfc0b326e9eb565c27c8291efb064d060d226916857a2676e62ac635193687c2102151ad794a3aeb3cf9c190120da3d13d36cd8bdf21ca1ccb15debd61c601314b0ac635293687c2103b45a5955ea7847d121225c752edaeb4a5d731a056a951a876caaf6d1f69adb7dac635393687c2102def03a6ffade4ffb0017c8d93859a247badd60e2d76d00e2a3713f6621932ec1ac635493687c21035f17aa7d58b8c3ee0d87240fded52b27f3f12768a0a54ba2595e0a929dd87155ac635593687c2103c8582ac6b0bd20cc1b02c6a86bad2ea10cadb758fedd754ba0d97be85b63b5a7ac635693687c21028148a1f9669fc4471e76f7a371d7cc0563b26e0821d9633fd37649744ff54edaac635793687c2102f0313701b0035f0365a59ce1a3d7ae7045e1f2fb25c4656c08071e5baf51483dac635893687c21024c4c25d08173b3c4d4e1375f8107fd7040c2dc0691ae1bf6fe82b8c88a85185fac635993687c210360fe2daa8661a3d25d0df79875d70b1c3d443ade731caafda7488cb68b4071b0ac635a93687c210250e41a6a4abd7b0b3a49eaec24a6fafa99e5aa7b1e3a5aabe60664276df3d937ac635b93687c2103045a32125930ca103c7d7c79b6f379754796cd4ea7fb0059da926e415e3877d3ac635c93687c210344943249d7ca9b47316fef0c2a413dda3a75416a449a29f310ab7fc9d052ed70ac635d93687c2103c62967320b63df5136ff1ef4c7959ef5917ee5a44f75c83e870bc488143d4d69ac635e93687c21020429f776e15770e4dc52bd6f72e6ed6908d51de1c4a64878433c4e3860a48dc4ac635f93680150a26800000000" );
+   }
+
+   {
+      // this address was filled again with regtest transaction
+      // id 1e6641086684a42533a3d62538ab1c82ee5f650f2ab1a5cc7354ecebb33cc858
+      // output 0, 10000 satoshis
+
+      // now send it to the primary wallet with sons signatures
+      bitcoin_transaction tx;
+      tx.nVersion = 2;
+      tx.vin.resize( 1 );
+      tx.vout.resize( 1 );
+      tx.nLockTime = 0;
+
+      tx.vin[0].prevout.hash = fc::sha256( "1e6641086684a42533a3d62538ab1c82ee5f650f2ab1a5cc7354ecebb33cc858" );
+      tx.vin[0].prevout.n = 0;
+      tx.vin[0].nSequence = 0xffffffff;
+
+      tx.vout[0].value = 9000;
+      btc_weighted_multisig_address to_address(weights);
+      tx.vout[0].scriptPubKey = to_address.get_script();
+
+      uint64_t amount = 10000;
+      int32_t hash_type = 1; // implement SIGHASH_ALL scheme
+
+      for (auto& key: priv_keys) {
+         bytes key_data(key.get_secret().data(), key.get_secret().data() + key.get_secret().data_size());
+         std::vector<bytes> sigs = sign_witness_transaction_part( tx, { redeem_script }, { amount }, key_data, btc_context(), hash_type);
+         // insert signatures in reverse order
+         tx.vin[0].scriptWitness.insert( tx.vin[0].scriptWitness.begin(), sigs[0]);
+      }
+      // add empty sig for user signature
+      tx.vin[0].scriptWitness.push_back( bytes() );
+
+      sign_witness_transaction_finalize( tx, { redeem_script }, false );
+
+      // this transaction was published in regtest and was accepted,
+      // its id is d22c9ffbfaa96ab1fe547f1117eaf1b37a8936bce4f281ac57547bbfff903c57
+      BOOST_CHECK( fc::to_hex( pack( tx ) ) == "0200000000010158c83cb3ebec5473cca5b12a0f655fee821cab3825d6a33325a484660841661e0000000000ffffffff012823000000000000220020d237e9a42a33b434462d7e353cf51f40cd29c24504793fc02a3bc6e90ef72d9311483045022100b01c553bf72adee13cd88f7bd63f513a3c1b73f4e35ad84a97978f9c8aa178f002203008b49303349bfb4037fedbb637e510839dfbaf6a397cf57e9af6232f59af270147304402205f84acce6907810a59042474d64ed74de644e471944a319c7306ff4dd0df359302204f6d265a4e93f48659efb517d65bc1fa0057dee7fb81a01d5bb44223d8b0cef001483045022100f89f5bbcd55b6ae182f69a23bc66de4a0b14ecd900acf3fafbb14522bdce04c2022058ddb079bf0d99653a5f4e1aed32ac374cc961564337babdcae05b1e609c2b4001473044022018335d12abde4c3d6857720082560e82a3587662eadabf3c42e750fea380b0c502204507a76b902333aedbd0bdafa9986d16c86ceae2e3e88e1bc50914d4696951c5014730440220379c869e443cd3173b005a42e863ce47094a8e548d785c40b19c18f2da12e45802201154928e181036ad206f67aae239c16f155dcd9d97df85cd5070db79649f1f1d014830450221008833a468bee3192ed0394a00b4ceb187af5ff0b53dca74679d682651a4514c63022022d3410aeaf10c17f2f14b32edef64c2ab3c9e6bc9bf4166ef6245cfdc7faf350147304402206d006c240ca3bd09a0e5a82126fd7d4ad7da0f97aa5db926f4baf57f395400bc0220254f4e0b41bf49846d0da971ffe66dfc6db64465e40f72ccf37de778f38a634f0147304402205eb030ad8c6e13cf1ccd1e11c5fd5843988707711a005388dfbabc1325d2203d022013a5833e13ea64749af9b55ef731e3dcf2cfe63619d7a73c539b6e89a5104f650147304402203971c81233314c12293a7294d06d5eac4dcf534ecfb60a3b64474b5a2018b836022005accaf77da74177663a6c150bd74ed0b435b051f9d1cb3921799daf37ee3d5301473044022075686e69342526ba233defa2c9bea78b6d5090dc787eb028def26b1a317b023b0220477a407a0e054122445ae6e9cf2a5de3db7c76fa111bc5df735605581113836b01483045022100badf6da6a34ca1a6f8b21095aee2fa1f7a343c4b18e929451c5179c48f35685e022042342caaeeb3c960720cbf81c2df809d6daca6485a1e5fb827d58f4fa272365201483045022100c707d2cde92b35bd3a675d9b5ed087dcbe8d870d3e436e5118b7b98cd74932680220215224192fda8468e234bda7ab71826fb93c56e9aebbae24e9f937d476905ba001483045022100f1def0f6f6cb19d289df32ef1d300fc821fdb9f53d6bb28c93eb127f95dadf4702203bcdfcb5b9aff850e57c8b193931698831de899f052e7e9da587dfbf65f57c5601483045022100ece59a1ff30d3976a2b7e9d94e461ca35b2cb7ec0778a0afaa3088293f85d24c022028a3cf1fe597674769b175fab2555c282eaf004bd33d5554c3e26169ae508793014830450221008159b605a1c39cb1bba0f28fe60fdbc1fee7af54e7fd35edef74e7b9067b696a022005b8460e35fa253be00989bec86471c1c32d1e8309ad16676bf99170345eb7990100fd83022102d2c1cb1575d323b6120b6e5bcc9ce5ad373e88e73e675030f1c2c5261b4dbc86ac635167007c21030e88484f2bb5dcfc0b326e9eb565c27c8291efb064d060d226916857a2676e62ac635193687c2102151ad794a3aeb3cf9c190120da3d13d36cd8bdf21ca1ccb15debd61c601314b0ac635293687c2103b45a5955ea7847d121225c752edaeb4a5d731a056a951a876caaf6d1f69adb7dac635393687c2102def03a6ffade4ffb0017c8d93859a247badd60e2d76d00e2a3713f6621932ec1ac635493687c21035f17aa7d58b8c3ee0d87240fded52b27f3f12768a0a54ba2595e0a929dd87155ac635593687c2103c8582ac6b0bd20cc1b02c6a86bad2ea10cadb758fedd754ba0d97be85b63b5a7ac635693687c21028148a1f9669fc4471e76f7a371d7cc0563b26e0821d9633fd37649744ff54edaac635793687c2102f0313701b0035f0365a59ce1a3d7ae7045e1f2fb25c4656c08071e5baf51483dac635893687c21024c4c25d08173b3c4d4e1375f8107fd7040c2dc0691ae1bf6fe82b8c88a85185fac635993687c210360fe2daa8661a3d25d0df79875d70b1c3d443ade731caafda7488cb68b4071b0ac635a93687c210250e41a6a4abd7b0b3a49eaec24a6fafa99e5aa7b1e3a5aabe60664276df3d937ac635b93687c2103045a32125930ca103c7d7c79b6f379754796cd4ea7fb0059da926e415e3877d3ac635c93687c210344943249d7ca9b47316fef0c2a413dda3a75416a449a29f310ab7fc9d052ed70ac635d93687c2103c62967320b63df5136ff1ef4c7959ef5917ee5a44f75c83e870bc488143d4d69ac635e93687c21020429f776e15770e4dc52bd6f72e6ed6908d51de1c4a64878433c4e3860a48dc4ac635f93680150a26800000000" );
+   }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
