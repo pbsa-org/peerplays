@@ -26,6 +26,7 @@ enum class op {
 
    // control
    IF = 0x63,
+   NOTIF = 0x64,
    ELSE = 0x67,
    ENDIF = 0x68,
    RETURN = 0x6a,
