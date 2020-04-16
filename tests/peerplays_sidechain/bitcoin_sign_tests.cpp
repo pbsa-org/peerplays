@@ -215,4 +215,88 @@ BOOST_AUTO_TEST_CASE( weighted_multisig_spend_test )
    // its id is 08a997948feb50850df809e8f0c7b41a7bd0d249a75b83813d8626d5b51affba
 }
 
+
+BOOST_AUTO_TEST_CASE( user_sig_one_or_2_of_15_multisig_spend_test )
+{
+   const auto user_pkey = get_privkey_bytes( "cPzX5utDDBt2kfK4uz43e78zMxZSdfiGrV9wnkmqrqPnxfQCB2Rc" );
+   const auto son1_pkey = get_privkey_bytes( "cSKyTeXidmj93dgbMFqgzD7yvxzA7QAYr5j9qDnY9seyhyv7gH2m" );
+   const auto son2_pkey = get_privkey_bytes( "cQBBNyEw6P3pgc2NjPpKR2YoCpio9s3qEMkFkY7v9hByLAxeLQ3s" );
+   const auto son3_pkey = get_privkey_bytes( "cQLKc4UgKyCdXY3PosndszEZTsB6mTrg4avZF6kDphrULKd2W6L4" );
+   const auto son4_pkey = get_privkey_bytes( "cN43k9sqQimgzChZm9Qz1V1bdkjVwB3mcSHsEuj6bfUa4SP2AsTk" );
+
+   auto public_key1 = fc::ecc::public_key(create_public_key_data(parse_hex( "03456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef275" )));
+   auto public_key2 = fc::ecc::public_key(create_public_key_data(parse_hex( "02d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f4" )));
+   auto public_key3 = fc::ecc::public_key(create_public_key_data(parse_hex( "025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61" )));
+   auto public_key4 = fc::ecc::public_key(create_public_key_data(parse_hex( "0228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe9866" )));
+   auto public_key5 = fc::ecc::public_key(create_public_key_data(parse_hex( "037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f666" )));
+   auto public_key6 = fc::ecc::public_key(create_public_key_data(parse_hex( "02ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf" )));
+   auto public_key7 = fc::ecc::public_key(create_public_key_data(parse_hex( "0317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f" )));
+   auto public_key8 = fc::ecc::public_key(create_public_key_data(parse_hex( "0266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf84" )));
+   auto public_key9 = fc::ecc::public_key(create_public_key_data(parse_hex( "023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf" )));
+   auto public_key10 = fc::ecc::public_key(create_public_key_data(parse_hex( "0229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e5" )));
+   auto public_key11 = fc::ecc::public_key(create_public_key_data(parse_hex( "024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da" )));
+   auto public_key12 = fc::ecc::public_key(create_public_key_data(parse_hex( "03df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c1" )));
+   auto public_key13 = fc::ecc::public_key(create_public_key_data(parse_hex( "02bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8" )));
+   auto public_key14 = fc::ecc::public_key(create_public_key_data(parse_hex( "0287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae8" )));
+   auto public_key15 = fc::ecc::public_key(create_public_key_data(parse_hex( "02053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd73" )));
+
+   auto user_key = fc::ecc::public_key(create_public_key_data(parse_hex( "0368dc31b2b547c74f52abfc67c7fc768c68115d8ab96430d9bb4996fa660121cd" )));
+
+   btc_one_or_m_of_n_multisig_address addr( user_key, 2, {public_key1, public_key2, public_key3, public_key4, public_key5, public_key6, public_key7, public_key8, public_key9, public_key10, public_key11, public_key12, public_key13, public_key14, public_key15});
+
+   BOOST_CHECK(addr.get_address() == "bcrt1qp8vplzrn7alzpjq8cw4ynd6xqzassmefrh48dzsj0krvkq85dywq9txkqr");
+   BOOST_CHECK(addr.get_redeem_script() == parse_hex("63210368dc31b2b547c74f52abfc67c7fc768c68115d8ab96430d9bb4996fa660121cdac67522103456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef2752102d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f421025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61210228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe986621037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f6662102ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf210317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f210266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf8421023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf210229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e521024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da2103df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c12102bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8210287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae82102053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd735fae68"));
+
+   bytes redeem_script = addr.get_redeem_script();
+   //User spend
+   bitcoin_transaction tx1;
+   tx1.nVersion = 2;
+   tx1.vin.resize( 1 );
+   tx1.vout.resize( 1 );
+   tx1.nLockTime = 0;
+
+   tx1.vin[0].prevout.hash = fc::sha256( "52fceb33bee6d44c34161ef8cf26ff1c4dd8f89833a99769039a62582967770c" );
+   tx1.vin[0].prevout.n = 0;
+   tx1.vin[0].nSequence = 0xffffffff;
+
+   tx1.vout[0].value = 4999000000;
+   bitcoin_address to_address("bcrt1qettl5u3jlh6e8s6hxpqsdpevxqmq947f0jnnfraeg4jsvhsme2uqplzjgt");
+   tx1.vout[0].scriptPubKey = to_address.get_script();
+
+   uint64_t amount = 5000000000;
+   int32_t hash_type = 1; // implement SIGHASH_ALL scheme
+
+   tx1.vin[0].scriptWitness.push_back( sign_witness_transaction_part( tx1, { redeem_script }, { amount }, user_pkey, btc_context(), hash_type)[0] );
+   bytes one = {0x01};
+   tx1.vin[0].scriptWitness.push_back(one);
+
+   sign_witness_transaction_finalize( tx1, { redeem_script }, false );
+
+   BOOST_CHECK( fc::to_hex( pack( tx1 ) ) == "020000000001010c77672958629a036997a93398f8d84d1cff26cff81e16344cd4e6be33ebfc520000000000ffffffff01c0aff62901000000220020cad7fa7232fdf593c357304106872c303602d7c97ca7348fb94565065e1bcab803483045022100d885af9d14af025b475c66ddd8ce0afa6d45edee1bb2ac8e840f8b6d70bc3c2702202a7231c10b3f6198343b45a56728e8241ec8ba14ad66d498b67db2ce8268e6fd010101fd270263210368dc31b2b547c74f52abfc67c7fc768c68115d8ab96430d9bb4996fa660121cdac67522103456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef2752102d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f421025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61210228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe986621037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f6662102ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf210317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f210266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf8421023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf210229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e521024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da2103df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c12102bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8210287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae82102053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd735fae6800000000" );
+
+   //SON Spend
+   bitcoin_transaction tx2;
+   tx2.nVersion = 2;
+   tx2.vin.resize( 1 );
+   tx2.vout.resize( 1 );
+   tx2.nLockTime = 0;
+
+   tx2.vin[0].prevout.hash = fc::sha256( "397b28da9488f587f363a45804bcf9af8ea9a5a2e50fb1ceed2cf2fa6181a552" );
+   tx2.vin[0].prevout.n = 1;
+   tx2.vin[0].nSequence = 0xffffffff;
+
+   tx2.vout[0].value = 4999000000;
+   tx2.vout[0].scriptPubKey = to_address.get_script();
+
+
+   tx2.vin[0].scriptWitness.push_back(bytes());
+   tx2.vin[0].scriptWitness.push_back( sign_witness_transaction_part( tx2, { redeem_script }, { amount }, son2_pkey, btc_context(), hash_type)[0] );
+   tx2.vin[0].scriptWitness.push_back( sign_witness_transaction_part( tx2, { redeem_script }, { amount }, son4_pkey, btc_context(), hash_type)[0] );
+   tx2.vin[0].scriptWitness.push_back(bytes());
+
+   sign_witness_transaction_finalize( tx2, { redeem_script }, false);
+
+   BOOST_CHECK( fc::to_hex( pack( tx2 ) ) == "0200000000010152a58161faf22cedceb10fe5a2a5a98eaff9bc0458a463f387f58894da287b390100000000ffffffff01c0aff62901000000220020cad7fa7232fdf593c357304106872c303602d7c97ca7348fb94565065e1bcab80500483045022100ed26e6a78f87a50f2b3998c3c47ef5beca112b7d4359486239b37f48d37457da02201ab89289678b9626459f91307fcd3ba1de833cad29c78f3dcab60845df73217d0147304402207d7caa06a956fbb1191a0768a8652b0530d9124a2f3a95685d4a39a3469c227302202d78c0cc7bc17e93eae1d592aed01cdc4d3297763e11ebee5f6f85e1923683140100fd270263210368dc31b2b547c74f52abfc67c7fc768c68115d8ab96430d9bb4996fa660121cdac67522103456772301e221026269d3095ab5cb623fc239835b583ae4632f99a15107ef2752102d67c26cf20153fe7625ca1454222d3b3aeb53b122d8a0f7d32a3dd4b2c2016f421025f7cfda933516fd590c5a34ad4a68e3143b6f4155a64b3aab2c55fb851150f61210228155bb1ddcd11c7f14a2752565178023aa963f84ea6b6a052bddebad6fe986621037500441cfb4484da377073459511823b344f1ef0d46bac1efd4c7c466746f6662102ef0d79bfdb99ab0be674b1d5d06c24debd74bffdc28d466633d6668cc281cccf210317941e4219548682fb8d8e172f0a8ce4d83ce21272435c85d598558c8e060b7f210266065b27f7e3d3ad45b471b1cd4e02de73fc4737dc2679915a45e293c5adcf8421023821cc3da7be9e8cdceb8f146e9ddd78a9519875ecc5b42fe645af690544bccf210229ff2b2106b76c27c393e82d71c20eec32bcf1f0cf1a9aca8a237269a67ff3e521024d113381cc09deb8a6da62e0470644d1a06de82be2725b5052668c8845a4a8da2103df2462a5a2f681a3896f61964a65566ff77448be9a55a6da18506fd9c6c051c12102bafba3096f546cc5831ce1e49ba7142478a659f2d689bbc70ed37235255172a8210287bcbd4f5d357f89a86979b386402445d7e9a5dccfd16146d1d2ab0dc2c32ae82102053859d76aa375d6f343a60e3678e906c008015e32fe4712b1fd2b26473bdd735fae6800000000" );
+}
+
 BOOST_AUTO_TEST_SUITE_END()

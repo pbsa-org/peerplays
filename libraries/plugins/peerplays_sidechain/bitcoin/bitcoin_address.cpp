@@ -320,4 +320,55 @@ void btc_weighted_multisig_address::create_segwit_address()
    address = segwit_addr::encode(hrp, 0, hash_data);
 }
 
+btc_one_or_m_of_n_multisig_address::btc_one_or_m_of_n_multisig_address(const fc::ecc::public_key &user_key_data,
+                                                                       const uint8_t nrequired, const std::vector<fc::ecc::public_key> &keys_data,
+                                                                       network network_type) {
+   network_type_ = network_type;
+   create_redeem_script(user_key_data, nrequired, keys_data);
+   create_witness_script();
+   create_segwit_address();
+   type = payment_type::P2WSH;
+}
+void btc_one_or_m_of_n_multisig_address::create_redeem_script(const fc::ecc::public_key &user_key_data,
+                                                              const uint8_t nrequired, const std::vector<fc::ecc::public_key> &keys_data) {
+   script_builder builder;
+   builder << op::IF;
+   builder << user_key_data.serialize();
+   builder << op::CHECKSIG;
+   builder << op::ELSE;
+   builder << static_cast<uint32_t>(nrequired);
+   for (auto &key : keys_data) {
+      builder << key.serialize();
+   }
+   builder << static_cast<uint32_t>(keys_data.size());
+   builder << op::CHECKMULTISIG;
+   builder << op::ENDIF;
+   redeem_script_ = builder;
+   fc::sha256 sh = fc::sha256::hash(redeem_script_);
+   raw_address = bytes(sh.data(), sh.data() + sh.data_size());
+}
+void btc_one_or_m_of_n_multisig_address::create_witness_script() {
+   script_builder builder;
+   builder << op::_0;
+   builder << fc::sha256::hash(redeem_script_.data(), redeem_script_.size());
+   witness_script_ = builder;
+}
+void btc_one_or_m_of_n_multisig_address::create_segwit_address() {
+   std::string hrp;
+   switch (network_type_) {
+   case (network::mainnet):
+      hrp = "bc";
+      break;
+   case (network::testnet):
+      hrp = "tb";
+      break;
+   case (network::regtest):
+      hrp = "bcrt";
+      break;
+   }
+   fc::sha256 sh = fc::sha256::hash(&redeem_script_[0], redeem_script_.size());
+   std::vector<uint8_t> hash_data(sh.data(), sh.data() + sh.data_size());
+   address = segwit_addr::encode(hrp, 0, hash_data);
+}
+
 } } }

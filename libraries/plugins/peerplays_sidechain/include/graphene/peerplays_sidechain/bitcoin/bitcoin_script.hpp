@@ -26,6 +26,7 @@ enum class op {
 
    // control
    IF = 0x63,
+   ELSE = 0x67,
    ENDIF = 0x68,
    RETURN = 0x6a,
 
@@ -44,6 +45,9 @@ enum class op {
    HASH160 = 0xa9,
    CHECKSIG = 0xac,
    CHECKMULTISIG = 0xae,
+   // Locktime
+   CHECKLOCKTIMEVERIFY = 0xb1,
+   CHECKSEQUENCEVERIFY = 0xb2,
 };
 
 class script_builder {
