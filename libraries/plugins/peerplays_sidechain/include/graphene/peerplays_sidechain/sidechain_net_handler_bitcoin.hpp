@@ -108,7 +108,7 @@ private:
 
    std::string create_multisig_address_standalone(const std::vector<son_info> &son_pubkeys);
 
-   std::string create_primary_wallet_transaction();
+   std::string create_primary_wallet_transaction(const son_wallet_object &prev_swo, std::string new_sw_address);
    std::string create_deposit_transaction(const son_wallet_deposit_object &swdo);
    std::string create_withdrawal_transaction(const son_wallet_withdraw_object &swwo);
 
