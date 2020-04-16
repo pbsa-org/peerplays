@@ -175,6 +175,26 @@ public:
    bytes witness_script_;
 };
 
+class btc_one_or_weighted_multisig_address : public bitcoin_address {
+public:
+   btc_one_or_weighted_multisig_address() = default;
+   btc_one_or_weighted_multisig_address(const fc::ecc::public_key &user_key_data, const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data,
+                                      network network_type = network::regtest);
+   bytes get_redeem_script() const {
+      return redeem_script_;
+   }
+   bytes get_witness_script() const {
+      return witness_script_;
+   }
+private:
+   void create_redeem_script(const fc::ecc::public_key &user_key_data, const std::vector<std::pair<fc::ecc::public_key, uint16_t>>& keys_data);
+   void create_witness_script();
+   void create_segwit_address();
+public:
+   bytes redeem_script_;
+   bytes witness_script_;
+};
+
 } } }
 
 FC_REFLECT_ENUM(graphene::peerplays_sidechain::bitcoin::bitcoin_address::network,
