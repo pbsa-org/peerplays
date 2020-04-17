@@ -25,57 +25,6 @@ namespace graphene { namespace peerplays_sidechain {
 
 // =============================================================================
 
-std::vector<bitcoin::bytes> read_byte_arrays_from_string(const std::string &string_buf) {
-   std::stringstream ss(string_buf);
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   std::vector<bitcoin::bytes> data;
-   for (auto &v : json) {
-      std::string hex = v.second.data();
-      bitcoin::bytes item;
-      item.resize(hex.size() / 2);
-      fc::from_hex(hex, (char *)&item[0], item.size());
-      data.push_back(item);
-   }
-   return data;
-}
-
-std::string write_transaction_signatures(const std::vector<bitcoin::bytes> &data) {
-   std::string res = "[";
-   for (unsigned int idx = 0; idx < data.size(); ++idx) {
-      res += "\"" + fc::to_hex((char *)&data[idx][0], data[idx].size()) + "\"";
-      if (idx != data.size() - 1)
-         res += ",";
-   }
-   res += "]";
-   return res;
-}
-
-void read_transaction_data(const std::string &string_buf, std::string &tx_hex, std::vector<uint64_t> &in_amounts, std::string &redeem_script) {
-   std::stringstream ss(string_buf);
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-   tx_hex = json.get<std::string>("tx_hex");
-   in_amounts.clear();
-   for (auto &v : json.get_child("in_amounts"))
-      in_amounts.push_back(fc::to_uint64(v.second.data()));
-   redeem_script = json.get<std::string>("redeem_script");
-}
-
-std::string write_transaction_data(const std::string &tx, const std::vector<uint64_t> &in_amounts, const std::string &redeem_script) {
-   std::string res = "{\"tx_hex\":\"" + tx + "\",\"in_amounts\":[";
-   for (unsigned int idx = 0; idx < in_amounts.size(); ++idx) {
-      res += fc::to_string(in_amounts[idx]);
-      if (idx != in_amounts.size() - 1)
-         res += ",";
-   }
-   res += "],\"redeem_script\":\"" + redeem_script + "\"}";
-   return res;
-}
-
-// =============================================================================
-
 bitcoin_rpc_client::bitcoin_rpc_client(std::string _ip, uint32_t _rpc, std::string _user, std::string _password, std::string _wallet, std::string _wallet_password) :
       ip(_ip),
       rpc_port(_rpc),
