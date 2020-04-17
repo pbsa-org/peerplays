@@ -1997,6 +1997,7 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address>();
 
       for (const auto &v : vins) {
+         // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT
          const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, v.address));
          if (addr_itr == sidechain_addresses_idx.end())
             continue;
