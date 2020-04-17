@@ -1,3 +1,4 @@
+#include <boost/property_tree/json_parser.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
@@ -5,7 +6,6 @@
 #include <fc/io/raw.hpp>
 #include <graphene/peerplays_sidechain/bitcoin_utils.hpp>
 #include <secp256k1.h>
-#include <boost/property_tree/json_parser.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 

@@ -274,7 +274,7 @@ bool peerplays_sidechain_plugin_impl::is_son_deleted(son_id_type son_id) {
    auto son_obj = idx.find(son_id);
    if (son_obj == idx.end())
       return true;
-   
+
    return false;
 }
 

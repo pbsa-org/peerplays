@@ -54,27 +54,26 @@ enum class op {
 class script_builder {
 
 public:
+   script_builder &operator<<(op opcode);
 
-   script_builder& operator<<( op opcode );
+   script_builder &operator<<(uint32_t number);
 
-   script_builder& operator<<( uint32_t number );
+   script_builder &operator<<(size_t size);
 
-   script_builder& operator<<( size_t size );
+   script_builder &operator<<(const bytes &sc);
 
-   script_builder& operator<<( const bytes& sc );
+   script_builder &operator<<(const fc::sha256 &hash);
 
-   script_builder& operator<<( const fc::sha256& hash );
+   script_builder &operator<<(const fc::ripemd160 &hash);
 
-   script_builder& operator<<( const fc::ripemd160& hash );
+   script_builder &operator<<(const fc::ecc::public_key_data &pubkey_data);
 
-   script_builder& operator<<( const fc::ecc::public_key_data& pubkey_data );
-
-   operator bytes() const { return std::move( script ); }
+   operator bytes() const {
+      return std::move(script);
+   }
 
 private:
-
    bytes script;
-
 };
 
-} } }
+}}} // namespace graphene::peerplays_sidechain::bitcoin
