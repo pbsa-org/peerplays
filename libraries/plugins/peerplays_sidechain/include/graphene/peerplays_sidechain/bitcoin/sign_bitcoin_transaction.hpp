@@ -30,4 +30,6 @@ void add_signatures_to_transaction_multisig(bitcoin_transaction &tx, std::vector
 
 void add_signatures_to_transaction_weighted_multisig(bitcoin_transaction &tx, std::vector<std::vector<bytes>> &signature_set);
 
+void add_signatures_to_transaction_user_weighted_multisig(bitcoin_transaction &tx, std::vector<std::vector<bytes>> &signature_set);
+
 }}} // namespace graphene::peerplays_sidechain::bitcoin

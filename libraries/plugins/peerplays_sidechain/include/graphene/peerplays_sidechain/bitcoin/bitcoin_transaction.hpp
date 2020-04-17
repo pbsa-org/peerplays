@@ -70,6 +70,9 @@ public:
 
    void set_locktime(uint32_t lock_time);
 
+   void add_in(const fc::sha256 &txid, uint32_t n_out,
+               const bytes &script_code, bool front = false, uint32_t sequence = 0xffffffff);
+
    void add_in(payment_type type, const fc::sha256 &txid, uint32_t n_out,
                const bytes &script_code, bool front = false, uint32_t sequence = 0xffffffff);
 

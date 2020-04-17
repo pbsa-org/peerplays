@@ -127,6 +127,10 @@ void bitcoin_transaction_builder::set_locktime(uint32_t lock_time) {
    tx.nLockTime = lock_time;
 }
 
+void bitcoin_transaction_builder::add_in(const fc::sha256 &txid, uint32_t n_out, const bytes &script_code, bool front, uint32_t sequence) {
+   add_in(payment_type::P2WSH, txid, n_out, script_code, front, sequence);
+}
+
 void bitcoin_transaction_builder::add_in(payment_type type, const fc::sha256 &txid, uint32_t n_out, const bytes &script_code, bool front, uint32_t sequence) {
    out_point prevout;
    prevout.hash = txid;
@@ -250,5 +254,4 @@ bytes bitcoin_transaction_builder::get_script_pubkey(payment_type type, const by
       return script_code;
    }
 }
-
 }}} // namespace graphene::peerplays_sidechain::bitcoin

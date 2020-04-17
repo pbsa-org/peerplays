@@ -106,29 +106,18 @@ private:
 
    fc::future<void> on_changed_objects_task;
 
-   std::string create_multisig_address_standalone(const std::vector<son_info> &son_pubkeys);
+   std::string create_primary_wallet_address(const std::vector<son_info> &son_pubkeys);
 
    std::string create_primary_wallet_transaction(const son_wallet_object &prev_swo, std::string new_sw_address);
    std::string create_deposit_transaction(const son_wallet_deposit_object &swdo);
    std::string create_withdrawal_transaction(const son_wallet_withdraw_object &swwo);
 
-   std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
+   std::string create_transaction(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs, std::string &redeem_script);
    std::string sign_transaction(const sidechain_transaction_object &sto);
    std::string send_transaction(const sidechain_transaction_object &sto);
 
-   std::string create_transaction_raw(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
-   std::string create_transaction_psbt(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
-   std::string create_transaction_standalone(const std::vector<btc_txout> &inputs, const fc::flat_map<std::string, double> outputs);
-
-   std::string sign_transaction_raw(const sidechain_transaction_object &sto);
-   std::string sign_transaction_psbt(const sidechain_transaction_object &sto);
-   std::string sign_transaction_standalone(const sidechain_transaction_object &sto);
-
-   std::string send_transaction_raw(const sidechain_transaction_object &sto);
-   std::string send_transaction_psbt(const sidechain_transaction_object &sto);
-   std::string send_transaction_standalone(const sidechain_transaction_object &sto);
-
    void handle_event(const std::string &event_data);
+   std::string get_redeemscript_for_userdeposit(const std::string &user_address);
    std::vector<info_for_vin> extract_info_from_block(const std::string &_block);
    void on_changed_objects(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts);
    void on_changed_objects_cb(const vector<object_id_type> &ids, const flat_set<account_id_type> &accounts);
