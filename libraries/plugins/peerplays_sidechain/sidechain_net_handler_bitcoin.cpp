@@ -1391,7 +1391,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
          total_amount += utx.amount_;
       }
 
-      if (fee_rate > total_amount) {
+      if ((swwo.withdraw_amount.value > total_amount) || (fee_rate >= swwo.withdraw_amount.value)) {
          elog("Failed not enough BTC to spend for ${pw}", ("pw", pw_address));
          return "";
       }
@@ -1399,7 +1399,7 @@ std::string sidechain_net_handler_bitcoin::create_withdrawal_transaction(const s
 
    fc::flat_map<std::string, double> outputs;
    outputs[swwo.withdraw_address] = (swwo.withdraw_amount.value - fee_rate) / 100000000.0;
-   if ((total_amount - fee_rate) > 0.0) {
+   if ((total_amount - swwo.withdraw_amount.value) > 0.0) {
       outputs[pw_address] = double(total_amount - swwo.withdraw_amount.value) / 100000000.0;
    }
 
