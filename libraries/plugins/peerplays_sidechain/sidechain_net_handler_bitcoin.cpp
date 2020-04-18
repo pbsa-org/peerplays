@@ -16,6 +16,7 @@
 #include <graphene/chain/sidechain_transaction_object.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/peerplays_sidechain/bitcoin/bitcoin_address.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/bitcoin_transaction.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/serialize.hpp>
 #include <graphene/peerplays_sidechain/bitcoin/sign_bitcoin_transaction.hpp>
@@ -461,8 +462,10 @@ std::string bitcoin_rpc_client::getblock(const std::string &block_hash, int32_t 
 
 std::string bitcoin_rpc_client::gettransaction(const std::string &txid, const bool include_watch_only) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"gettransaction\", \"method\": "
-                                  "\"gettransaction\", \"params\": [\"" +
-                                  txid + "\"] }");
+                                  "\"gettransaction\", \"params\": [");
+
+   std::string params = "\"" + txid + "\", " + (include_watch_only ? "true" : "false");
+   body = body + params + "] }";
 
    const auto reply = send_post_request(body);
 
@@ -485,10 +488,15 @@ std::string bitcoin_rpc_client::gettransaction(const std::string &txid, const bo
    return "";
 }
 
-void bitcoin_rpc_client::importaddress(const std::string &address_or_script) {
-   const auto body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"importaddress\", "
-                                 "\"method\": \"importaddress\", \"params\": [" +
-                                 std::string("\"") + address_or_script + std::string("\"") + std::string("] }"));
+void bitcoin_rpc_client::importaddress(const std::string &address_or_script, const std::string &label, const bool rescan, const bool p2sh) {
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"importaddress\", "
+                                  "\"method\": \"importaddress\", \"params\": [");
+
+   std::string params = "\"" + address_or_script + "\", " +
+                        "\"" + label + "\", " +
+                        (rescan ? "true" : "false") + ", " +
+                        (p2sh ? "true" : "false");
+   body = body + params + "] }";
 
    const auto reply = send_post_request(body);
 
@@ -693,32 +701,32 @@ std::string bitcoin_rpc_client::unloadwallet(const std::string &filename) {
    return "";
 }
 
-std::string bitcoin_rpc_client::walletlock() {
-   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletlock\", \"method\": "
-                                  "\"walletlock\", \"params\": [] }");
-
-   const auto reply = send_post_request(body);
-
-   if (reply.body.empty()) {
-      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
-      return "";
-   }
-
-   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   if (reply.status == 200) {
-      std::stringstream ss;
-      boost::property_tree::json_parser::write_json(ss, json.get_child("result"));
-      return ss.str();
-   }
-
-   if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
-   }
-   return "";
-}
+//std::string bitcoin_rpc_client::walletlock() {
+//   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletlock\", \"method\": "
+//                                  "\"walletlock\", \"params\": [] }");
+//
+//   const auto reply = send_post_request(body);
+//
+//   if (reply.body.empty()) {
+//      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+//      return "";
+//   }
+//
+//   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+//   boost::property_tree::ptree json;
+//   boost::property_tree::read_json(ss, json);
+//
+//   if (reply.status == 200) {
+//      std::stringstream ss;
+//      boost::property_tree::json_parser::write_json(ss, json.get_child("result"));
+//      return ss.str();
+//   }
+//
+//   if (json.count("error") && !json.get_child("error").empty()) {
+//      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+//   }
+//   return "";
+//}
 
 std::string bitcoin_rpc_client::walletprocesspsbt(std::string const &tx_psbt) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletprocesspsbt\", \"method\": "
@@ -746,31 +754,31 @@ std::string bitcoin_rpc_client::walletprocesspsbt(std::string const &tx_psbt) {
    return "";
 }
 
-bool bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, uint32_t timeout) {
-   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletpassphrase\", \"method\": "
-                                  "\"walletpassphrase\", \"params\": [\"" +
-                                  passphrase + "\", " + std::to_string(timeout) + "] }");
-
-   const auto reply = send_post_request(body);
-
-   if (reply.body.empty()) {
-      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
-      return false;
-   }
-
-   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   if (reply.status == 200) {
-      return true;
-   }
-
-   if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
-   }
-   return false;
-}
+//bool bitcoin_rpc_client::walletpassphrase(const std::string &passphrase, uint32_t timeout) {
+//   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"walletpassphrase\", \"method\": "
+//                                  "\"walletpassphrase\", \"params\": [\"" +
+//                                  passphrase + "\", " + std::to_string(timeout) + "] }");
+//
+//   const auto reply = send_post_request(body);
+//
+//   if (reply.body.empty()) {
+//      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+//      return false;
+//   }
+//
+//   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+//   boost::property_tree::ptree json;
+//   boost::property_tree::read_json(ss, json);
+//
+//   if (reply.status == 200) {
+//      return true;
+//   }
+//
+//   if (json.count("error") && !json.get_child("error").empty()) {
+//      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+//   }
+//   return false;
+//}
 
 fc::http::reply bitcoin_rpc_client::send_post_request(std::string body, bool show_log) {
    fc::http::connection conn;
@@ -1017,7 +1025,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
          uint64_t swdo_amount = swdo->sidechain_amount.value;
          uint64_t swdo_vout = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-") + 1));
 
-         std::string tx_str = bitcoin_client->gettransaction(swdo_txid);
+         std::string tx_str = bitcoin_client->gettransaction(swdo_txid, true);
          std::stringstream tx_ss(tx_str);
          boost::property_tree::ptree tx_json;
          boost::property_tree::read_json(tx_ss, tx_json);
@@ -1032,12 +1040,14 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
 
             for (auto &input : tx_json.get_child("result.details")) {
                tx_address = input.second.get<std::string>("address");
-               std::string tx_amount_s = input.second.get<std::string>("amount");
-               tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
-               tx_amount = std::stoll(tx_amount_s);
-               std::string tx_vout_s = input.second.get<std::string>("vout");
-               tx_vout = std::stoll(tx_vout_s);
-               break;
+               if ((tx_address == swdo_address) && (input.second.get<std::string>("category") == "receive")) {
+                  std::string tx_amount_s = input.second.get<std::string>("amount");
+                  tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
+                  tx_amount = std::stoll(tx_amount_s);
+                  std::string tx_vout_s = input.second.get<std::string>("vout");
+                  tx_vout = std::stoll(tx_vout_s);
+                  break;
+               }
             }
 
             should_approve = (swdo_txid == tx_txid) &&
@@ -1111,14 +1121,6 @@ void sidechain_net_handler_bitcoin::process_primary_wallet() {
          const chain::global_property_object &gpo = database.get_global_properties();
 
          auto active_sons = gpo.active_sons;
-         vector<string> son_pubkeys_bitcoin;
-         for (const son_info &si : active_sons) {
-            son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
-         }
-
-         if (!wallet_password.empty()) {
-            bitcoin_client->walletpassphrase(wallet_password, 5);
-         }
          string reply_str = create_primary_wallet_address(active_sons);
 
          std::stringstream active_pw_ss(reply_str);
@@ -1169,6 +1171,50 @@ void sidechain_net_handler_bitcoin::process_primary_wallet() {
          }
       }
    }
+}
+
+void sidechain_net_handler_bitcoin::process_sidechain_addresses() {
+   using namespace bitcoin;
+
+   const chain::global_property_object &gpo = database.get_global_properties();
+   std::vector<std::pair<fc::ecc::public_key, uint16_t>> pubkeys;
+   for (auto &son : gpo.active_sons) {
+      std::string pub_key_str = son.sidechain_public_keys.at(sidechain_type::bitcoin);
+      auto pubkey = fc::ecc::public_key(create_public_key_data(parse_hex(pub_key_str)));
+      pubkeys.push_back(std::make_pair(pubkey, son.weight));
+   }
+
+   const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
+   const auto &sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
+   const auto &sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
+   std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
+                 [&](const sidechain_address_object &sao) {
+                    auto usr_pubkey = fc::ecc::public_key(create_public_key_data(parse_hex(sao.deposit_public_key)));
+
+                    btc_one_or_weighted_multisig_address addr(usr_pubkey, pubkeys);
+
+                    sidechain_address_update_operation op;
+                    op.payer = plugin.get_current_son_object().son_account;
+                    op.sidechain_address_id = sao.id;
+                    op.sidechain_address_account = sao.sidechain_address_account;
+                    op.sidechain = sao.sidechain;
+                    op.deposit_public_key = sao.deposit_public_key;
+                    op.deposit_address = addr.get_address();
+                    op.withdraw_public_key = sao.withdraw_public_key;
+                    op.withdraw_address = sao.withdraw_address;
+
+                    signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), op);
+                    trx.validate();
+                    try {
+                       database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+                       if (plugin.app().p2p_node())
+                          plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+                       return true;
+                    } catch (fc::exception e) {
+                       elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+                       return false;
+                    }
+                 });
 }
 
 bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
@@ -1623,28 +1669,23 @@ void sidechain_net_handler_bitcoin::on_changed_objects_cb(const vector<object_id
             boost::property_tree::ptree pw_pt;
             boost::property_tree::read_json(pw_ss, pw_pt);
 
-            if (!wallet_password.empty()) {
-               bitcoin_client->walletpassphrase(wallet_password, 5);
-            }
-
-            std::string pw_address = "";
             if (pw_pt.count("address")) {
-               pw_address = pw_pt.get<std::string>("address");
+               std::string pw_address = pw_pt.get<std::string>("address");
                bitcoin_client->importaddress(pw_address);
             }
 
-            std::string pw_redeem_script = "";
             if (pw_pt.count("redeemScript")) {
-               pw_redeem_script = pw_pt.get<std::string>("redeemScript");
-               bitcoin_client->importaddress(pw_redeem_script);
+               std::string pw_redeem_script = pw_pt.get<std::string>("redeemScript");
+               bitcoin_client->importaddress(pw_redeem_script, "", true, true);
             }
-
-            vector<string> son_pubkeys_bitcoin;
-            for (const son_info &si : swo->sons) {
-               son_pubkeys_bitcoin.push_back(si.sidechain_public_keys.at(sidechain_type::bitcoin));
-            }
-            uint32_t nrequired = son_pubkeys_bitcoin.size() * 2 / 3 + 1;
-            bitcoin_client->addmultisigaddress(nrequired, son_pubkeys_bitcoin);
+         }
+      }
+      if (id.is<sidechain_address_object>()) {
+         const auto &sai = database.get_index_type<sidechain_address_index>().indices().get<by_id>();
+         auto sao = sai.find(id);
+         if (sao != sai.end()) {
+            bitcoin_client->importaddress(sao->deposit_address);
+            bitcoin_client->importaddress(sao->withdraw_address);
          }
       }
    }

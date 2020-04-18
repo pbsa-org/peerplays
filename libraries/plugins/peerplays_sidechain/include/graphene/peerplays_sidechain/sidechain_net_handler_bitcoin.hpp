@@ -35,16 +35,16 @@ public:
    std::string getaddressinfo(const std::string &address);
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);
    std::string gettransaction(const std::string &txid, const bool include_watch_only = false);
-   void importaddress(const std::string &address_or_script);
+   void importaddress(const std::string &address_or_script, const std::string &label = "", const bool rescan = true, const bool p2sh = false);
    std::vector<btc_txout> listunspent(const uint32_t minconf = 1, const uint32_t maxconf = 9999999);
    std::vector<btc_txout> listunspent_by_address_and_amount(const std::string &address, double transfer_amount, const uint32_t minconf = 1, const uint32_t maxconf = 9999999);
    std::string loadwallet(const std::string &filename);
    std::string sendrawtransaction(const std::string &tx_hex);
    std::string signrawtransactionwithwallet(const std::string &tx_hash);
    std::string unloadwallet(const std::string &filename);
-   std::string walletlock();
+   //std::string walletlock();
    std::string walletprocesspsbt(std::string const &tx_psbt);
-   bool walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
+   //bool walletpassphrase(const std::string &passphrase, uint32_t timeout = 60);
 
 private:
    fc::http::reply send_post_request(std::string body, bool show_log = false);
@@ -87,6 +87,7 @@ public:
 
    bool process_proposal(const proposal_object &po);
    void process_primary_wallet();
+   void process_sidechain_addresses();
    bool process_deposit(const son_wallet_deposit_object &swdo);
    bool process_withdrawal(const son_wallet_withdraw_object &swwo);
    std::string process_sidechain_transaction(const sidechain_transaction_object &sto);

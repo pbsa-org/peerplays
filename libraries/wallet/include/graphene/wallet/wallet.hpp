@@ -1361,7 +1361,7 @@ class wallet_api
       /**
        * Update a SON object owned by the given account.
        *
-       * @param witness The name of the SON's owner account.  Also accepts the ID of the owner account or the ID of the SON.
+       * @param owner_account The name of the SON's owner account.  Also accepts the ID of the owner account or the ID of the SON.
        * @param url Same as for create_son.  The empty string makes it remain the same.
        * @param block_signing_key The new block signing public key.  The empty string makes it remain the same.
        * @param sidechain_public_keys The new set of sidechain public keys.  The empty string makes it remain the same.

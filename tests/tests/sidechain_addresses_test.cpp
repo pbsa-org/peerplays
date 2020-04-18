@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_add_test ) {
       BOOST_TEST_MESSAGE("Send sidechain_address_add_operation");
 
       sidechain_address_add_operation op;
-
+      op.payer = alice_id;
       op.sidechain_address_account = alice_id;
       op.sidechain = sidechain_type::bitcoin;
       op.deposit_public_key = "deposit_public_key";
@@ -77,6 +77,7 @@ BOOST_AUTO_TEST_CASE( sidechain_address_update_test ) {
       BOOST_TEST_MESSAGE("Send sidechain_address_update_operation");
 
       sidechain_address_update_operation op;
+      op.payer = alice_id;
       op.sidechain_address_id = sidechain_address_id_type(0);
       op.sidechain_address_account = obj->sidechain_address_account;
       op.sidechain = obj->sidechain;
@@ -124,8 +125,9 @@ BOOST_AUTO_TEST_CASE( sidechain_address_delete_test ) {
       BOOST_TEST_MESSAGE("Send sidechain_address_delete_operation");
 
       sidechain_address_delete_operation op;
+      op.payer = alice_id;
       op.sidechain_address_id = sidechain_address_id_type(0);
-      op.sidechain_address_account = obj->sidechain_address_account;
+      op.sidechain_address_account = alice_id;
       op.sidechain = obj->sidechain;
 
       trx.operations.push_back(op);

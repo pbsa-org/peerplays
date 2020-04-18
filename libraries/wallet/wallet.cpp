@@ -2106,6 +2106,7 @@ public:
       account_id_type sidechain_address_account_id = get_account_id(account);
 
       sidechain_address_add_operation op;
+      op.payer = sidechain_address_account_id;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
       op.deposit_public_key = deposit_public_key;
@@ -2135,6 +2136,7 @@ public:
          FC_THROW("No sidechain address for account ${account} and sidechain ${sidechain}", ("account", sidechain_address_account_id)("sidechain", sidechain));
 
       sidechain_address_update_operation op;
+      op.payer = sidechain_address_account_id;
       op.sidechain_address_id = sao->id;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
@@ -2161,6 +2163,7 @@ public:
          FC_THROW("No sidechain address for account ${account} and sidechain ${sidechain}", ("account", sidechain_address_account_id)("sidechain", sidechain));
 
       sidechain_address_delete_operation op;
+      op.payer = sidechain_address_account_id;
       op.sidechain_address_id = sao->id;
       op.sidechain_address_account = sidechain_address_account_id;
       op.sidechain = sidechain;
