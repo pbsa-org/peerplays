@@ -153,6 +153,10 @@ void sidechain_net_handler_peerplays::process_primary_wallet() {
    return;
 }
 
+void sidechain_net_handler_peerplays::process_sidechain_addresses() {
+   return;
+}
+
 bool sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_object &swdo) {
 
    const chain::global_property_object &gpo = database.get_global_properties();
