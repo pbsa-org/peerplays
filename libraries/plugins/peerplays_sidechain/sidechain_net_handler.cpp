@@ -455,6 +455,10 @@ void sidechain_net_handler::settle_sidechain_transactions() {
          return;
       }
 
+      if (proposal_exists(chain::operation::tag<chain::sidechain_transaction_settle_operation>::value, sto.id)) {
+         return;
+      }
+
       ilog("Sidechain transaction to settle: ${sto}", ("sto", sto.id));
 
       int64_t settle_amount = settle_sidechain_transaction(sto);
