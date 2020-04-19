@@ -1410,7 +1410,7 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
 
       if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
          auto swwo = database.get<son_wallet_withdraw_object>(sto.object_id);
-         settle_amount = swwo.peerplays_asset.amount.value;
+         settle_amount = swwo.withdraw_amount.value;
       }
    }
    return settle_amount;
