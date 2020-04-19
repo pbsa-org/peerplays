@@ -1434,7 +1434,6 @@ std::string sidechain_net_handler_bitcoin::create_primary_wallet_address(const s
       << "}, \"error\":null}";
 
    std::string res = ss.str();
-   ilog("Weighted Multisig Address = ${a}", ("a", res));
    return res;
 }
 
@@ -1607,14 +1606,10 @@ std::string sidechain_net_handler_bitcoin::sign_transaction(const sidechain_tran
 
    read_transaction_data(sto.transaction, tx_hex, in_amounts, redeem_script);
 
-   ilog("Sign transaction retreived: ${s}", ("s", tx_hex));
-
    bitcoin_transaction tx = unpack(parse_hex(tx_hex));
    std::vector<bitcoin::bytes> redeem_scripts(tx.vin.size(), parse_hex(redeem_script));
    auto sigs = sign_witness_transaction_part(tx, redeem_scripts, in_amounts, privkey_signing, btc_context(), 1);
    std::string tx_signature = write_transaction_signatures(sigs);
-
-   ilog("Signatures: son-id = ${son}, pkey = ${prvkey}, tx_signature = ${s}", ("son", plugin.get_current_son_id())("prvkey", prvkey)("s", tx_signature));
 
    return tx_signature;
 }
@@ -1626,8 +1621,6 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_tran
    std::string redeem_script;
 
    read_transaction_data(sto.transaction, tx_hex, in_amounts, redeem_script);
-
-   ilog("Send transaction retreived: ${s}", ("s", tx_hex));
 
    bitcoin_transaction tx = unpack(parse_hex(tx_hex));
 
@@ -1655,8 +1648,6 @@ std::string sidechain_net_handler_bitcoin::send_transaction(const sidechain_tran
    sign_witness_transaction_finalize(tx, redeem_scripts, false);
    std::string final_tx_hex = fc::to_hex(pack(tx));
    std::string res = bitcoin_client->sendrawtransaction(final_tx_hex);
-
-   ilog("Send transaction: ${tx}, [${res}]", ("tx", final_tx_hex)("res", res));
 
    return res;
 }
