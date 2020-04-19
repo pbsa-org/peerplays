@@ -1373,6 +1373,10 @@ std::string sidechain_net_handler_bitcoin::send_sidechain_transaction(const side
 
 int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidechain_transaction_object &sto) {
 
+   if (sto.object_id.is<son_wallet_id_type>()) {
+      return 0;
+   }
+
    int64_t settle_amount = -1;
 
    if (sto.sidechain_transaction.empty()) {
