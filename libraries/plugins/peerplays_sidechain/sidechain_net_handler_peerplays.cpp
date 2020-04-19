@@ -100,37 +100,7 @@ bool sidechain_net_handler_peerplays::process_proposal(const proposal_object &po
    }
 
    case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
-      son_wallet_withdraw_id_type swwo_id = op_obj_idx_0.get<son_wallet_withdraw_process_operation>().son_wallet_withdraw_id;
-      const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
-      const auto swwo = idx.find(swwo_id);
-      if (swwo != idx.end()) {
-
-         uint32_t swwo_block_num = swwo->block_num;
-         std::string swwo_peerplays_transaction_id = swwo->peerplays_transaction_id;
-         uint32_t swwo_op_idx = std::stoll(swwo->peerplays_uid.substr(swwo->peerplays_uid.find_last_of("-") + 1));
-
-         const auto &block = database.fetch_block_by_number(swwo_block_num);
-
-         for (const auto &tx : block->transactions) {
-            if (tx.id().str() == swwo_peerplays_transaction_id) {
-               operation op = tx.operations[swwo_op_idx];
-               transfer_operation t_op = op.get<transfer_operation>();
-
-               price asset_price = database.get<asset_object>(t_op.amount.asset_id).options.core_exchange_rate;
-               asset peerplays_asset = asset(t_op.amount.amount * asset_price.base.amount / asset_price.quote.amount);
-
-               should_approve = (t_op.to == gpo.parameters.son_account()) &&
-                                (swwo->peerplays_from == t_op.from) &&
-                                (swwo->peerplays_asset == peerplays_asset);
-               break;
-            }
-         }
-      }
-      break;
-   }
-
-   case chain::operation::tag<chain::sidechain_transaction_create_operation>::value: {
-      should_approve = true;
+      should_approve = false;
       break;
    }
 
@@ -195,8 +165,8 @@ bool sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_o
       proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
 
       signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
-      trx.validate();
       try {
+         trx.validate();
          database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
@@ -246,8 +216,8 @@ std::string sidechain_net_handler_peerplays::send_sidechain_transaction(const si
       }
    }
 
-   trx.validate();
    try {
+      trx.validate();
       database.push_transaction(trx, database::validation_steps::skip_block_size_check);
       if (plugin.app().p2p_node())
          plugin.app().p2p_node()->broadcast(net::trx_message(trx));
