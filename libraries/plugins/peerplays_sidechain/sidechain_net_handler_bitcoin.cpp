@@ -1109,14 +1109,6 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
                }
             }
 
-            if (object_id.is<son_wallet_withdraw_id_type>()) {
-               const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
-               const auto swwo = idx.find(object_id);
-               if (swwo != idx.end()) {
-                  tx_str = create_withdrawal_transaction(*swwo);
-               }
-            }
-
             transaction_ok = (op_tx_str == tx_str);
          }
       }
