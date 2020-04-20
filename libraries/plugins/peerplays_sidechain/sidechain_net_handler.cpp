@@ -53,7 +53,7 @@ std::string sidechain_net_handler::get_private_key(std::string public_key) {
    return std::string();
 }
 
-bool sidechain_net_handler::proposal_exists(int32_t operation_tag, const object_id_type &object_id) {
+bool sidechain_net_handler::proposal_exists(int32_t operation_tag, const object_id_type &object_id, boost::optional<chain::operation &> proposal_op) {
 
    bool result = false;
 
@@ -89,6 +89,16 @@ bool sidechain_net_handler::proposal_exists(int32_t operation_tag, const object_
 
          case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
             result = (op_obj_idx_0.get<son_wallet_withdraw_process_operation>().son_wallet_withdraw_id == object_id);
+            break;
+         }
+
+         case chain::operation::tag<chain::sidechain_transaction_sign_operation>::value: {
+            if (proposal_op) {
+               chain::operation proposal_op_obj_0 = proposal_op.get();
+               result = ((proposal_op_obj_0.get<sidechain_transaction_sign_operation>().sidechain_transaction_id == op_obj_idx_0.get<sidechain_transaction_sign_operation>().sidechain_transaction_id) &&
+                         (proposal_op_obj_0.get<sidechain_transaction_sign_operation>().signer == op_obj_idx_0.get<sidechain_transaction_sign_operation>().signer) &&
+                         (proposal_op_obj_0.get<sidechain_transaction_sign_operation>().signature == op_obj_idx_0.get<sidechain_transaction_sign_operation>().signature));
+            }
             break;
          }
 
@@ -296,6 +306,16 @@ void sidechain_net_handler::process_proposals() {
             break;
          }
 
+         case chain::operation::tag<chain::sidechain_transaction_sign_operation>::value: {
+            sidechain_transaction_id_type st_id = op_obj_idx_0.get<sidechain_transaction_sign_operation>().sidechain_transaction_id;
+            const auto &idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_id>();
+            const auto sto = idx.find(st_id);
+            if (sto != idx.end()) {
+               should_process = ((sto->sidechain == sidechain) && (sto->status == sidechain_transaction_status::valid));
+            }
+            break;
+         }
+
          case chain::operation::tag<chain::sidechain_transaction_settle_operation>::value: {
             sidechain_transaction_id_type st_id = op_obj_idx_0.get<sidechain_transaction_settle_operation>().sidechain_transaction_id;
             const auto &idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_id>();
@@ -394,12 +414,24 @@ void sidechain_net_handler::process_sidechain_transactions() {
          return;
       }
 
+      const chain::global_property_object &gpo = database.get_global_properties();
       sidechain_transaction_sign_operation sts_op;
-      sts_op.payer = plugin.get_current_son_object().son_account;
+      sts_op.signer = plugin.get_current_son_object().id;
+      sts_op.payer = gpo.parameters.son_account();
       sts_op.sidechain_transaction_id = sto.id;
       sts_op.signature = processed_sidechain_tx;
 
-      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), sts_op);
+      proposal_create_operation proposal_op;
+      proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
+      uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+      proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
+      proposal_op.proposed_ops.emplace_back(sts_op);
+
+      if (proposal_exists(chain::operation::tag<chain::sidechain_transaction_sign_operation>::value, sto.id, proposal_op.proposed_ops[0].op)) {
+         return;
+      }
+
+      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
       try {
          trx.validate();
          database.push_transaction(trx, database::validation_steps::skip_block_size_check);
