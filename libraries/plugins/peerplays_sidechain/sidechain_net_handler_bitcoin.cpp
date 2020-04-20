@@ -460,6 +460,34 @@ std::string bitcoin_rpc_client::getblock(const std::string &block_hash, int32_t 
    return "";
 }
 
+std::string bitcoin_rpc_client::getrawtransaction(const std::string &txid, const bool verbose) {
+   std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"getrawtransaction\", \"method\": "
+                                  "\"getrawtransaction\", \"params\": [");
+
+   std::string params = "\"" + txid + "\", " + (verbose ? "true" : "false");
+   body = body + params + "] }";
+
+   const auto reply = send_post_request(body);
+
+   if (reply.body.empty()) {
+      wlog("Bitcoin RPC call ${function} failed", ("function", __FUNCTION__));
+      return "";
+   }
+
+   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+
+   if (reply.status == 200) {
+      return ss.str();
+   }
+
+   if (json.count("error") && !json.get_child("error").empty()) {
+      wlog("Bitcoin RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body)("msg", ss.str()));
+   }
+   return "";
+}
+
 std::string bitcoin_rpc_client::gettransaction(const std::string &txid, const bool include_watch_only) {
    std::string body = std::string("{\"jsonrpc\": \"1.0\", \"id\":\"gettransaction\", \"method\": "
                                   "\"gettransaction\", \"params\": [");
@@ -1027,7 +1055,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
          uint64_t swdo_amount = swdo->sidechain_amount.value;
          uint64_t swdo_vout = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-") + 1));
 
-         std::string tx_str = bitcoin_client->gettransaction(swdo_txid, true);
+         std::string tx_str = bitcoin_client->getrawtransaction(swdo_txid, true);
          std::stringstream tx_ss(tx_str);
          boost::property_tree::ptree tx_json;
          boost::property_tree::read_json(tx_ss, tx_json);
@@ -1040,14 +1068,19 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
             int64_t tx_amount = -1;
             int64_t tx_vout = -1;
 
-            for (auto &input : tx_json.get_child("result.details")) {
-               tx_address = input.second.get<std::string>("address");
-               if ((tx_address == swdo_address) && (input.second.get<std::string>("category") == "receive")) {
-                  std::string tx_amount_s = input.second.get<std::string>("amount");
+            for (auto &input : tx_json.get_child("result.vout")) {
+               std::string tx_vout_s = input.second.get<std::string>("n");
+               tx_vout = std::stoll(tx_vout_s);
+               if (tx_vout == swdo_vout) {
+                  for (auto &address : input.second.get_child("scriptPubKey.addresses")) {
+                     if (address.second.data() == swdo_address) {
+                        tx_address = address.second.data();
+                        break;
+                     }
+                  }
+                  std::string tx_amount_s = input.second.get<std::string>("value");
                   tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
                   tx_amount = std::stoll(tx_amount_s);
-                  std::string tx_vout_s = input.second.get<std::string>("vout");
-                  tx_vout = std::stoll(tx_vout_s);
                   break;
                }
             }
@@ -1279,7 +1312,7 @@ void sidechain_net_handler_bitcoin::process_sidechain_addresses() {
 
 bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_object &swdo) {
 
-   if (proposal_exists(chain::operation::tag<chain::sidechain_transaction_create_operation>::value, swdo.id)) {
+   if (proposal_exists(chain::operation::tag<chain::son_wallet_deposit_process_operation>::value, swdo.id)) {
       return false;
    }
 
@@ -1323,7 +1356,7 @@ bool sidechain_net_handler_bitcoin::process_deposit(const son_wallet_deposit_obj
 
 bool sidechain_net_handler_bitcoin::process_withdrawal(const son_wallet_withdraw_object &swwo) {
 
-   if (proposal_exists(chain::operation::tag<chain::sidechain_transaction_create_operation>::value, swwo.id)) {
+   if (proposal_exists(chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value, swwo.id)) {
       return false;
    }
 
@@ -1385,7 +1418,7 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
       return settle_amount;
    }
 
-   std::string tx_str = bitcoin_client->gettransaction(sto.sidechain_transaction, true);
+   std::string tx_str = bitcoin_client->getrawtransaction(sto.sidechain_transaction, true);
    std::stringstream tx_ss(tx_str);
    boost::property_tree::ptree tx_json;
    boost::property_tree::read_json(tx_ss, tx_json);
@@ -1394,21 +1427,32 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
       return settle_amount;
    }
 
+   const chain::global_property_object &gpo = database.get_global_properties();
+
+   using namespace bitcoin;
+   std::vector<std::pair<fc::ecc::public_key, uint16_t>> pubkey_weights;
+   for (auto si : sto.signers) {
+      std::string pub_key_str = si.sidechain_public_keys.at(sidechain_type::bitcoin);
+      auto pub_key = fc::ecc::public_key(create_public_key_data(parse_hex(pub_key_str)));
+      pubkey_weights.push_back(std::make_pair(pub_key, si.weight));
+   }
+   btc_weighted_multisig_address addr(pubkey_weights);
+
    std::string tx_txid = tx_json.get<std::string>("result.txid");
    uint32_t tx_confirmations = tx_json.get<uint32_t>("result.confirmations");
-   std::string tx_address = "";
+   std::string tx_address = addr.get_address();
    int64_t tx_amount = -1;
-
-   const chain::global_property_object &gpo = database.get_global_properties();
 
    if (tx_confirmations >= gpo.parameters.son_bitcoin_min_tx_confirmations()) {
       if (sto.object_id.is<son_wallet_deposit_id_type>()) {
-         for (auto &input : tx_json.get_child("result.details")) {
-            if (input.second.get<std::string>("category") == "receive") {
-               std::string tx_amount_s = input.second.get<std::string>("amount");
-               tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
-               tx_amount = std::stoll(tx_amount_s);
-               break;
+         for (auto &input : tx_json.get_child("result.vout")) {
+            for (auto &address : input.second.get_child("scriptPubKey.addresses")) {
+               if (address.second.data() == tx_address) {
+                  std::string tx_amount_s = input.second.get<std::string>("value");
+                  tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
+                  tx_amount = std::stoll(tx_amount_s);
+                  break;
+               }
             }
          }
          settle_amount = tx_amount;

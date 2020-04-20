@@ -34,6 +34,7 @@ public:
    std::string finalizepsbt(std::string const &tx_psbt);
    std::string getaddressinfo(const std::string &address);
    std::string getblock(const std::string &block_hash, int32_t verbosity = 2);
+   std::string getrawtransaction(const std::string &txid, const bool verbose = false);
    std::string gettransaction(const std::string &txid, const bool include_watch_only = false);
    void importaddress(const std::string &address_or_script, const std::string &label = "", const bool rescan = true, const bool p2sh = false);
    std::vector<btc_txout> listunspent(const uint32_t minconf = 1, const uint32_t maxconf = 9999999);
