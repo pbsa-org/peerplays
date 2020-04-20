@@ -1406,7 +1406,7 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
       if (sto.object_id.is<son_wallet_deposit_id_type>()) {
          std::string tx_hex = tx_json.get<std::string>("result.hex");
          std::string tx_hex_json = bitcoin_client->decoderawtransaction(tx_hex);
-         std::vector<bitcoin::prev_out> pouts = bitcoin::get_outputs_from_transaction_by_address(tx_hex_json, get_current_primary_wallet_address());
+         std::vector<bitcoin::prev_out> pouts = bitcoin::get_outputs_from_transaction_by_address(tx_hex_json);
          if (pouts.size() > 0) {
             settle_amount = pouts[0].amount;
          }

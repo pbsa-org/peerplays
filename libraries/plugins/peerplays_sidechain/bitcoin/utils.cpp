@@ -119,7 +119,8 @@ std::vector<prev_out> get_outputs_from_transaction_by_address(const std::string 
          to_addresses.push_back(address.second.data());
       }
 
-      if (std::find(to_addresses.begin(), to_addresses.end(), to_address) != to_addresses.end()) {
+      if ((to_address == "") ||
+          (std::find(to_addresses.begin(), to_addresses.end(), to_address) != to_addresses.end())) {
          std::string tx_amount_s = vout.second.get<std::string>("value");
          tx_amount_s.erase(std::remove(tx_amount_s.begin(), tx_amount_s.end(), '.'), tx_amount_s.end());
          uint64_t tx_amount = std::stoll(tx_amount_s);
@@ -132,6 +133,9 @@ std::vector<prev_out> get_outputs_from_transaction_by_address(const std::string 
          pout.n_vout = tx_vout;
          pout.amount = tx_amount;
          result.push_back(pout);
+         if (to_address == "") {
+            return result;
+         }
       }
    }
    return result;
