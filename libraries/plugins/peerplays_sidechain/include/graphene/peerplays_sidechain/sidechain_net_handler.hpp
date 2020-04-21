@@ -26,6 +26,7 @@ public:
    std::string get_private_key(std::string public_key);
 
    bool proposal_exists(int32_t operation_tag, const object_id_type &object_id, boost::optional<chain::operation &> proposal_op = boost::none);
+   bool signer_expected(const sidechain_transaction_object &sto, son_id_type signer);
    bool approve_proposal(const proposal_id_type &proposal_id, const son_id_type &son_id);
    void sidechain_event_data_received(const sidechain_event_data &sed);
 
