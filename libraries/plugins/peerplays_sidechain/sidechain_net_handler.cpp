@@ -114,6 +114,16 @@ bool sidechain_net_handler::proposal_exists(int32_t operation_tag, const object_
    return result;
 }
 
+bool sidechain_net_handler::signer_expected(const sidechain_transaction_object &sto, son_id_type signer) {
+   bool expected = false;
+   for (auto signature : sto.signatures) {
+      if (signature.first == signer) {
+         expected = signature.second.empty();
+      }
+   }
+   return expected;
+}
+
 bool sidechain_net_handler::approve_proposal(const proposal_id_type &proposal_id, const son_id_type &son_id) {
 
    proposal_update_operation op;
@@ -308,10 +318,11 @@ void sidechain_net_handler::process_proposals() {
 
          case chain::operation::tag<chain::sidechain_transaction_sign_operation>::value: {
             sidechain_transaction_id_type st_id = op_obj_idx_0.get<sidechain_transaction_sign_operation>().sidechain_transaction_id;
+            son_id_type signer = op_obj_idx_0.get<sidechain_transaction_sign_operation>().signer;
             const auto &idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_id>();
             const auto sto = idx.find(st_id);
             if (sto != idx.end()) {
-               should_process = ((sto->sidechain == sidechain) && (sto->status == sidechain_transaction_status::valid));
+               should_process = ((sto->sidechain == sidechain) && (sto->status == sidechain_transaction_status::valid) && signer_expected(*sto, signer));
             }
             break;
          }
@@ -401,7 +412,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, sidechain_transaction_status::valid));
 
    std::for_each(idx_range.first, idx_range.second, [&](const sidechain_transaction_object &sto) {
-      if (sto.id == object_id_type(0, 0, 0)) {
+      if ((sto.id == object_id_type(0, 0, 0)) || !signer_expected(sto, plugin.get_current_son_id())) {
          return;
       }
 
@@ -416,7 +427,7 @@ void sidechain_net_handler::process_sidechain_transactions() {
 
       const chain::global_property_object &gpo = database.get_global_properties();
       sidechain_transaction_sign_operation sts_op;
-      sts_op.signer = plugin.get_current_son_object().id;
+      sts_op.signer = plugin.get_current_son_id();
       sts_op.payer = gpo.parameters.son_account();
       sts_op.sidechain_transaction_id = sto.id;
       sts_op.signature = processed_sidechain_tx;
