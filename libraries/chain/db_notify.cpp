@@ -300,7 +300,7 @@ struct get_impacted_account_visitor
        _impacted.insert( op.owner_account );
    }
    void operator()( const son_deregister_operation& op ) {
-      _impacted.insert( op.owner_account );
+      _impacted.insert( op.payer);
    }
    void operator()( const son_heartbeat_operation& op ) {
       _impacted.insert( op.owner_account );

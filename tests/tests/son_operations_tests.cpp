@@ -214,7 +214,7 @@ try {
 
    BOOST_REQUIRE( idx.size() == 1 );
    BOOST_REQUIRE( obj->status == son_status::deregistered );
-   BOOST_REQUIRE( son_stats_obj->deregistered_timestamp == db.head_block_time() );
+   BOOST_REQUIRE( son_stats_obj->deregistered_timestamp == now );
 
    deposit_vesting = db.get<vesting_balance_object>(vesting_balance_id_type(0));
    BOOST_CHECK_EQUAL(deposit_vesting.policy.get<linear_vesting_policy>().vesting_cliff_seconds,
@@ -267,7 +267,6 @@ try {
    // bob tries to deregister a son object he dont own
    {
       son_deregister_operation op;
-      op.owner_account = bob_id;
       op.son_id = son_id_type(0);
       op.payer = bob_id;
 
