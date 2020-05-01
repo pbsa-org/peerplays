@@ -299,7 +299,7 @@ struct get_impacted_account_visitor
    void operator()( const son_update_operation& op ) {
        _impacted.insert( op.owner_account );
    }
-   void operator()( const son_delete_operation& op ) {
+   void operator()( const son_deregister_operation& op ) {
       _impacted.insert( op.owner_account );
    }
    void operator()( const son_heartbeat_operation& op ) {
