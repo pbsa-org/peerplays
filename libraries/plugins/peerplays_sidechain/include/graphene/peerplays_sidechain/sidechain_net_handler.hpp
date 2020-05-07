@@ -32,6 +32,7 @@ public:
 
    void process_proposals();
    void process_active_sons_change();
+   void create_deposit_addresses();
    void process_deposits();
    void process_withdrawals();
    void process_sidechain_transactions();
@@ -41,6 +42,7 @@ public:
    virtual bool process_proposal(const proposal_object &po) = 0;
    virtual void process_primary_wallet() = 0;
    virtual void process_sidechain_addresses() = 0;
+   virtual bool create_deposit_address(const sidechain_address_object &sao) = 0;
    virtual bool process_deposit(const son_wallet_deposit_object &swdo) = 0;
    virtual bool process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
    virtual std::string process_sidechain_transaction(const sidechain_transaction_object &sto) = 0;

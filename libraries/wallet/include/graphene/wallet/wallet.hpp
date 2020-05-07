@@ -1440,7 +1440,6 @@ class wallet_api
        * @param account the name or id of the account who owns the address
        * @param sidechain a sidechain to whom address belongs
        * @param deposit_public_key sidechain public key used for deposit address
-       * @param deposit_address sidechain address for deposits
        * @param withdraw_public_key sidechain public key used for withdraw address
        * @param withdraw_address sidechain address for withdrawals
        * @param broadcast true to broadcast the transaction on the network
@@ -1449,7 +1448,6 @@ class wallet_api
       signed_transaction add_sidechain_address(string account,
                                           sidechain_type sidechain,
                                           string deposit_public_key,
-                                          string deposit_address,
                                           string withdraw_public_key,
                                           string withdraw_address,
                                           bool broadcast = false);
@@ -1461,7 +1459,6 @@ class wallet_api
        * @param account the name or id of the account who owns the address
        * @param sidechain a sidechain to whom address belongs
        * @param deposit_public_key sidechain public key used for deposit address
-       * @param deposit_address sidechain address for deposits
        * @param withdraw_public_key sidechain public key used for withdraw address
        * @param withdraw_address sidechain address for withdrawals
        * @param broadcast true to broadcast the transaction on the network
@@ -1470,7 +1467,6 @@ class wallet_api
       signed_transaction update_sidechain_address(string account,
                                           sidechain_type sidechain,
                                           string deposit_public_key,
-                                          string deposit_address,
                                           string withdraw_public_key,
                                           string withdraw_address,
                                           bool broadcast = false);
