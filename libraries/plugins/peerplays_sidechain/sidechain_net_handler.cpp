@@ -356,31 +356,13 @@ void sidechain_net_handler::process_proposals() {
 
 void sidechain_net_handler::process_active_sons_change() {
    process_primary_wallet();
-   process_sidechain_addresses();
 }
 
 void sidechain_net_handler::create_deposit_addresses() {
    if (database.get_global_properties().active_sons.size() < database.get_chain_properties().immutable_parameters.min_son_count) {
       return;
    }
-
-   const auto &idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
-   const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, "", time_point_sec::maximum()));
-
-   std::for_each(idx_range.first, idx_range.second, [&](const sidechain_address_object &sao) {
-      if (sao.id == object_id_type(0, 0, 0)) {
-         return;
-      }
-
-      ilog("sidechain deposit address to create: ${sao}", ("sao", sao));
-
-      bool create_address_result = create_deposit_address(sao);
-
-      if (!create_address_result) {
-         wlog("Deposit address not created: ${sao}", ("sao", sao));
-         return;
-      }
-   });
+   process_sidechain_addresses();
 }
 
 void sidechain_net_handler::process_deposits() {

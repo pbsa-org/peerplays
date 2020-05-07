@@ -1452,25 +1452,6 @@ class wallet_api
                                           string withdraw_address,
                                           bool broadcast = false);
 
-      /** Updates existing sidechain address owned by the given account for a given sidechain.
-       *
-       * Only address, private key and public key might be updated.
-       *
-       * @param account the name or id of the account who owns the address
-       * @param sidechain a sidechain to whom address belongs
-       * @param deposit_public_key sidechain public key used for deposit address
-       * @param withdraw_public_key sidechain public key used for withdraw address
-       * @param withdraw_address sidechain address for withdrawals
-       * @param broadcast true to broadcast the transaction on the network
-       * @returns the signed transaction updating sidechain address
-       */
-      signed_transaction update_sidechain_address(string account,
-                                          sidechain_type sidechain,
-                                          string deposit_public_key,
-                                          string withdraw_public_key,
-                                          string withdraw_address,
-                                          bool broadcast = false);
-
       /** Deletes existing sidechain address owned by the given account for a given sidechain.
        *
        * @param account the name or id of the account who owns the address
@@ -2319,7 +2300,6 @@ FC_API( graphene::wallet::wallet_api,
         (get_son_wallet_by_time_point)
         (get_son_wallets)
         (add_sidechain_address)
-        (update_sidechain_address)
         (delete_sidechain_address)
         (get_sidechain_addresses_by_account)
         (get_sidechain_addresses_by_sidechain)
