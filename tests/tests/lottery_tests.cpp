@@ -25,7 +25,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <graphene/chain/database.hpp>
-
+#include <graphene/chain/hardfork.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -36,13 +36,18 @@
 #include <cstring>
 
 using namespace graphene::chain;
+using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( lottery_tests, database_fixture )
 
 BOOST_AUTO_TEST_CASE( create_lottery_asset_test )
 {
    try {
+      generate_blocks(HARDFORK_5050_1_TIME);
       generate_block();
+      generate_block();
+      generate_block();
+      set_expiration(db, trx);
       asset_id_type test_asset_id = db.get_index<asset_object>().get_next_id();
       lottery_asset_create_operation creator;
       creator.issuer = account_id_type();
@@ -60,7 +65,7 @@ BOOST_AUTO_TEST_CASE( create_lottery_asset_test )
       
       lottery_asset_options lottery_options;
       lottery_options.benefactors.push_back( benefactor( account_id_type(), 25 * GRAPHENE_1_PERCENT ) );
-      lottery_options.end_date = db.head_block_time() + fc::minutes(5);
+      lottery_options.end_date = db.head_block_time() + fc::hours(4);
       lottery_options.ticket_price = asset(100);
       lottery_options.winning_tickets = { 5 * GRAPHENE_1_PERCENT, 5 * GRAPHENE_1_PERCENT, 5 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT };
       //lottery_options.winning_tickets = { 75 * GRAPHENE_1_PERCENT };
@@ -490,9 +495,9 @@ BOOST_AUTO_TEST_CASE( lottery_winner_ticket_id_test )
       INVOKE( create_lottery_asset_test );
       auto test_asset = test_asset_id(db);
       for( int i = 1; i < 4; ++i ) {
-         transfer(account_id_type(), account_id_type(i), asset(2000000));
+         transfer(account_id_type(), account_id_type(i), asset(20000000));
       }
-      for( int i = 1; i < 4; ++i ) {
+      for( int i = 1; i <= 1; ++i ) {
          if( i == 4 ) continue;
          ticket_purchase_operation tpo;
          tpo.buyer = account_id_type(i);
@@ -505,7 +510,7 @@ BOOST_AUTO_TEST_CASE( lottery_winner_ticket_id_test )
          trx.operations.clear();
       }
 
-      for( int i = 1; i < 4; ++i ) {
+      for( int i = 1; i < 0; ++i ) {
          if( i == 4 ) continue;
          ticket_purchase_operation tpo;
          tpo.buyer = account_id_type(i);
@@ -517,6 +522,10 @@ BOOST_AUTO_TEST_CASE( lottery_winner_ticket_id_test )
          PUSH_TX( db, trx, ~0 );
          trx.operations.clear();
       }
+      for( int i = 1; i <= 101; ++i ) {
+         transfer(account_id_type(1), account_id_type(2), asset(1));
+         generate_block();
+      }
       generate_block();
       test_asset = test_asset_id(db);
       uint64_t creator_balance_before_end = db.get_balance( account_id_type(), asset_id_type() ).amount.value;
@@ -525,7 +534,7 @@ BOOST_AUTO_TEST_CASE( lottery_winner_ticket_id_test )
       for( uint8_t win: test_asset.lottery_options->winning_tickets )
          winners_part += win;
        
-      while( db.head_block_time() < ( test_asset.lottery_options->end_date ) )
+      while( db.head_block_time() < ( test_asset.lottery_options->end_date + fc::hours(1)) )
          generate_block();
 
       auto op_history = get_operation_history( account_id_type(1) ); //Can observe operation 79 to verify winner ticket number
@@ -544,3 +553,4 @@ BOOST_AUTO_TEST_CASE( lottery_winner_ticket_id_test )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
