@@ -28,8 +28,12 @@
 
 #include <graphene/utilities/tempdir.hpp>
 
+#include <graphene/witness/witness.hpp>
 #include <graphene/account_history/account_history_plugin.hpp>
-
+#include <graphene/bookie/bookie_plugin.hpp>
+#include <graphene/accounts_list/accounts_list_plugin.hpp>
+#include <graphene/affiliate_stats/affiliate_stats_plugin.hpp>
+#include <graphene/market_history/market_history_plugin.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/smart_ref_impl.hpp>
 
@@ -56,30 +60,48 @@ BOOST_AUTO_TEST_CASE( two_node_network )
       BOOST_TEST_MESSAGE( "Creating and initializing app1" );
 
       graphene::app::application app1;
+      app1.register_plugin<graphene::witness_plugin::witness_plugin>();
       app1.register_plugin<graphene::account_history::account_history_plugin>();
+      app1.register_plugin<graphene::bookie::bookie_plugin>();
+      app1.register_plugin<graphene::accounts_list::accounts_list_plugin>();
+      app1.register_plugin<graphene::affiliate_stats::affiliate_stats_plugin>();
+      app1.register_plugin<graphene::market_history::market_history_plugin>();
+
       boost::program_options::variables_map cfg;
-      cfg.emplace("p2p-endpoint", boost::program_options::variable_value(string("127.0.0.1:3939"), false));
+      cfg.emplace("p2p-endpoint", boost::program_options::variable_value(string("127.0.0.1:0"), false));
       app1.initialize(app_dir.path(), cfg);
-
-      BOOST_TEST_MESSAGE( "Creating and initializing app2" );
-
-      graphene::app::application app2;
-      app2.register_plugin<account_history::account_history_plugin>();
-      auto cfg2 = cfg;
-      cfg2.erase("p2p-endpoint");
-      cfg2.emplace("p2p-endpoint", boost::program_options::variable_value(string("127.0.0.1:4040"), false));
-      cfg2.emplace("seed-node", boost::program_options::variable_value(vector<string>{"127.0.0.1:3939"}, false));
-      app2.initialize(app2_dir.path(), cfg2);
-
       cfg.emplace("genesis-json", boost::program_options::variable_value(create_genesis_file(app_dir), false));
-      cfg2.emplace("genesis-json", boost::program_options::variable_value(create_genesis_file(app2_dir), false));
 
       BOOST_TEST_MESSAGE( "Starting app1 and waiting 1500 ms" );
-      app1.startup();                                      
-      fc::usleep(fc::milliseconds(1500));
+      app1.startup();
+      fc::usleep(fc::milliseconds(500));
+      string endpoint1 = app1.p2p_node()->get_actual_listening_endpoint();
+
+      BOOST_TEST_MESSAGE( "Creating and initializing app2" );
+      auto cfg2 = cfg;
+
+      graphene::app::application app2;
+      app2.register_plugin<graphene::witness_plugin::witness_plugin>();
+      app2.register_plugin<graphene::account_history::account_history_plugin>();
+      app2.register_plugin<graphene::bookie::bookie_plugin>();
+      app2.register_plugin<graphene::accounts_list::accounts_list_plugin>();
+      app2.register_plugin<graphene::affiliate_stats::affiliate_stats_plugin>();
+      app2.register_plugin<graphene::market_history::market_history_plugin>();
+      cfg2.erase("p2p-endpoint");
+      cfg2.emplace("p2p-endpoint", boost::program_options::variable_value(string("127.0.0.1:0"), false));
+      cfg2.emplace("seed-node", boost::program_options::variable_value(vector<string>{endpoint1}, false));
+      app2.initialize(app2_dir.path(), cfg2);
+      cfg2.emplace("genesis-json", boost::program_options::variable_value(create_genesis_file(app2_dir), false));
+
       BOOST_TEST_MESSAGE( "Starting app2 and waiting 1500 ms" );
       app2.startup();
-      fc::usleep(fc::milliseconds(1500));
+      int counter = 0;
+      while(!app2.p2p_node()->is_connected())
+      {
+          fc::usleep(fc::milliseconds(500));
+          if(counter++ >= 100)
+              break;
+      }
 
       BOOST_REQUIRE_EQUAL(app1.p2p_node()->get_connection_count(), 1);
       BOOST_CHECK_EQUAL(std::string(app1.p2p_node()->get_connected_peers().front().host.get_address()), "127.0.0.1");

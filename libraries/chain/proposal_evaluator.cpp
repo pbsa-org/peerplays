@@ -45,15 +45,7 @@ struct proposal_operation_hardfork_visitor
    template<typename T>
    void operator()(const T &v) const {}
 
-   void operator()(const committee_member_update_global_parameters_operation &op) const {
-      if( block_time < HARDFORK_1000_TIME ) // TODO: remove after hf
-         FC_ASSERT( !op.new_parameters.extensions.value.min_bet_multiplier.valid()
-                    && !op.new_parameters.extensions.value.max_bet_multiplier.valid()
-                    && !op.new_parameters.extensions.value.betting_rake_fee_percentage.valid()
-                    && !op.new_parameters.extensions.value.permitted_betting_odds_increments.valid()
-                    && !op.new_parameters.extensions.value.live_betting_delay_time.valid(),
-                    "Parameter extensions are not allowed yet!" );
-   }
+   void operator()(const committee_member_update_global_parameters_operation &op) const {}
 
    void operator()(const graphene::chain::tournament_payout_operation &o) const {
       // TODO: move check into tournament_payout_operation::validate after HARDFORK_999_TIME
@@ -133,6 +125,11 @@ struct proposal_operation_hardfork_visitor
 
    void operator()(const event_update_status_operation &v) const {
        FC_ASSERT( block_time >= HARDFORK_1000_TIME, "event_update_status_operation not allowed yet!" );
+   }
+
+   void operator()(const vesting_balance_create_operation &vbco) const {
+      if(block_time < HARDFORK_GPOS_TIME)
+      FC_ASSERT( vbco.balance_type == vesting_balance_type::normal, "balance_type in vesting create not allowed yet!" );
    }
 
    // loop and self visit in proposals
@@ -244,20 +241,6 @@ void_result proposal_update_evaluator::do_evaluate(const proposal_update_operati
                  "", ("id", id)("available", _proposal->available_owner_approvals) );
    }
 
-   /*  All authority checks happen outside of evaluators
-   if( (d.get_node_properties().skip_flags & database::skip_authority_check) == 0 )
-   {
-      for( const auto& id : o.key_approvals_to_add )
-      {
-         FC_ASSERT( trx_state->signed_by(id) );
-      }
-      for( const auto& id : o.key_approvals_to_remove )
-      {
-         FC_ASSERT( trx_state->signed_by(id) );
-      }
-   }
-   */
-
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -293,6 +276,9 @@ void_result proposal_update_evaluator::do_apply(const proposal_update_operation&
       try {
          _processed_transaction = d.push_proposal(*_proposal);
       } catch(fc::exception& e) {
+         d.modify(*_proposal, [&e](proposal_object& p) {
+            p.fail_reason = e.to_string(fc::log_level(fc::log_level::all));
+         });
          wlog("Proposed transaction ${id} failed to apply once approved with exception:\n----\n${reason}\n----\nWill try again when it expires.",
               ("id", o.proposal)("reason", e.to_detail_string()));
          _proposal_failed = true;
