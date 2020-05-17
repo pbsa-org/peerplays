@@ -184,6 +184,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // gpos
       gpos_info get_gpos_info(const account_id_type account) const;
 
+      // rng
+      int64_t get_random_number(uint64_t bound) const;
+
    //private:
       const account_object* get_account_from_string( const std::string& name_or_id,
                                                      bool throw_if_not_found = true ) const;
@@ -2301,6 +2304,22 @@ graphene::app::gpos_info database_api_impl::get_gpos_info(const account_id_type 
    result.allowed_withdraw_amount = allowed_withdraw_amount;
    result.account_vested_balance = account_vested_balance;
    return result;
+}
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Random numbers                                                   //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+int64_t database_api::get_random_number(uint64_t bound) const
+{
+   return my->get_random_number(bound);
+}
+
+int64_t database_api_impl::get_random_number(uint64_t bound) const {
+    int64_t result = _db.get_random_bits(bound);
+    return result;
 }
 
 //////////////////////////////////////////////////////////////////////
