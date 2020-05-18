@@ -185,6 +185,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       gpos_info get_gpos_info(const account_id_type account) const;
 
       // rng
+      vector<uint64_t> get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const;
       int64_t get_random_number(uint64_t bound) const;
 
    //private:
@@ -2312,14 +2313,51 @@ graphene::app::gpos_info database_api_impl::get_gpos_info(const account_id_type 
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
+vector<uint64_t> database_api::get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const
+{
+   return my->get_random_number_ex(minimum, maximum, selections, duplicates);
+}
+
+vector<uint64_t> database_api_impl::get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const
+{
+   FC_ASSERT( selections <= 100000 );
+   if (duplicates == false) {
+      FC_ASSERT( maximum - minimum >= selections );
+   }
+
+   vector<uint64_t> v;
+   v.reserve(selections);
+
+   if (duplicates) {
+      for (uint64_t i = 0; i < selections; i++) {
+         int64_t rnd = _db.get_random_bits(maximum - minimum) + minimum;
+         v.push_back(rnd);
+      }
+   } else {
+      vector<uint64_t> tmpv;
+      tmpv.reserve(selections);
+      for (uint64_t i = minimum; i < maximum; i++) {
+         tmpv.push_back(i);
+      }
+
+      while (tmpv.size() > 0) {
+         uint64_t idx = _db.get_random_bits(tmpv.size());
+         v.push_back(tmpv.at(idx));
+         tmpv.erase(tmpv.begin() + idx);
+      }
+   }
+
+   return v;
+}
+
 int64_t database_api::get_random_number(uint64_t bound) const
 {
    return my->get_random_number(bound);
 }
 
 int64_t database_api_impl::get_random_number(uint64_t bound) const {
-    int64_t result = _db.get_random_bits(bound);
-    return result;
+    vector<uint64_t> v = get_random_number_ex(0, bound, 1, false);
+    return v.at(0);
 }
 
 //////////////////////////////////////////////////////////////////////

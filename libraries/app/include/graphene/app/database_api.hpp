@@ -714,6 +714,16 @@ class database_api
       /////////////////////////////
       /**
        * @brief Returns the random number
+       * @param minimum Lower bound of segment containing random number
+       * @param maximum Upper bound of segment containing random number
+       * @param selections Number of random numbers to return
+       * @param duplicates Allow duplicated numbers
+       * @return Vector containing random numbers from segment [minimum, maximum)
+       */
+      vector<uint64_t> get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const;
+
+      /**
+       * @brief Returns the random number
        * @param bound Upper bound of segment containing random number
        * @return Random number from segment [0, bound)
        */
@@ -858,5 +868,6 @@ FC_API(graphene::app::database_api,
    (get_gpos_info)
 
    // rngs
+   (get_random_number_ex)
    (get_random_number)
 )
