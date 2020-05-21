@@ -49,6 +49,7 @@
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
+#include <graphene/chain/random_number_object.hpp>
 
 
 #include <graphene/chain/sport_object.hpp>
@@ -77,6 +78,7 @@
 #include <graphene/chain/event_evaluator.hpp>
 #include <graphene/chain/betting_market_evaluator.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
+#include <graphene/chain/random_number_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -169,6 +171,8 @@ const uint8_t betting_market_position_object::type_id;
 const uint8_t global_betting_statistics_object::space_id;
 const uint8_t global_betting_statistics_object::type_id;
 
+const uint8_t random_number_object::space_id;
+const uint8_t random_number_object::type_id;
 
 void database::initialize_evaluators()
 {
@@ -243,6 +247,7 @@ void database::initialize_evaluators()
    register_evaluator<lottery_reward_evaluator>();
    register_evaluator<lottery_end_evaluator>();
    register_evaluator<sweeps_vesting_claim_evaluator>();
+   register_evaluator<random_number_store_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -313,6 +318,7 @@ void database::initialize_indexes()
    
    add_index< primary_index<lottery_balance_index                         > >();
    add_index< primary_index<sweeps_vesting_balance_index                  > >();
+   add_index< primary_index<random_number_index                           > >();
 
 }
 
