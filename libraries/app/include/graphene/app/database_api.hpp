@@ -727,7 +727,7 @@ class database_api
        * @param bound Upper bound of segment containing random number
        * @return Random number from segment [0, bound)
        */
-      int64_t get_random_number(uint64_t bound) const;
+      uint64_t get_random_number(uint64_t bound) const;
 
    private:
       std::shared_ptr< database_api_impl > my;

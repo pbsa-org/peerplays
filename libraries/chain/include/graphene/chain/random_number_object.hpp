@@ -11,7 +11,7 @@ namespace graphene { namespace chain {
 
          account_id_type account; /* account who requested random number */
          time_point_sec timestamp; /* date and time when the number is read */
-         uint64_t random_number; /* random number */
+         vector<uint64_t> random_number; /* random number(s) */
          std::string data; /* custom data in json format */
    };
 

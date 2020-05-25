@@ -9,8 +9,7 @@ namespace graphene { namespace chain {
       asset             fee;
 
       account_id_type account;
-      time_point_sec timestamp;
-      uint64_t random_number;
+      vector<uint64_t> random_number;
       std::string data;
 
       account_id_type fee_payer()const { return account; }
@@ -21,7 +20,6 @@ namespace graphene { namespace chain {
 FC_REFLECT( graphene::chain::random_number_store_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::random_number_store_operation, (fee)
              (account)
-             (timestamp)
              (random_number)
              (data) )
 

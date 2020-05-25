@@ -12,10 +12,10 @@ void_result random_number_store_evaluator::do_evaluate( const random_number_stor
 object_id_type random_number_store_evaluator::do_apply( const random_number_store_operation& op )
 { try {
    const auto& new_random_number_object = db().create<random_number_object>( [&]( random_number_object& obj ) {
-         //obj.account        = op.account;
-         //obj.timestamp      = op.timestamp;
-         //obj.random_number  = op.random_number;
-         //obj.data           = op.data;
+         obj.account        = op.account;
+         obj.timestamp      = db().head_block_time();
+         obj.random_number  = op.random_number;
+         obj.data           = op.data;
    });
    return new_random_number_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }

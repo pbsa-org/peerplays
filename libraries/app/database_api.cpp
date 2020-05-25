@@ -186,7 +186,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // rng
       vector<uint64_t> get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const;
-      int64_t get_random_number(uint64_t bound) const;
+      uint64_t get_random_number(uint64_t bound) const;
 
    //private:
       const account_object* get_account_from_string( const std::string& name_or_id,
@@ -2350,12 +2350,12 @@ vector<uint64_t> database_api_impl::get_random_number_ex(uint64_t minimum, uint6
    return v;
 }
 
-int64_t database_api::get_random_number(uint64_t bound) const
+uint64_t database_api::get_random_number(uint64_t bound) const
 {
    return my->get_random_number(bound);
 }
 
-int64_t database_api_impl::get_random_number(uint64_t bound) const {
+uint64_t database_api_impl::get_random_number(uint64_t bound) const {
     vector<uint64_t> v = get_random_number_ex(0, bound, 1, false);
     return v.at(0);
 }
