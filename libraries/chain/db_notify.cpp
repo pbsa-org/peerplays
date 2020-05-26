@@ -293,6 +293,25 @@ struct get_impacted_account_visitor
    void operator()( const sweeps_vesting_claim_operation& op ) {
       _impacted.insert( op.account );
    }
+
+   void operator()( const custom_permission_create_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_permission_update_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_permission_delete_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_account_authority_create_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_account_authority_update_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_account_authority_delete_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )

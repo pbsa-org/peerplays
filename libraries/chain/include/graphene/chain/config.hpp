@@ -234,3 +234,6 @@
 #define GPOS_PERIOD                                         (60*60*24*30*6) // 6 months
 #define GPOS_SUBPERIOD                                      (60*60*24*30) // 1 month
 #define GPOS_VESTING_LOCKIN_PERIOD                          (60*60*24*30) // 1 month
+
+#define RBAC_MIN_PERMISSION_NAME_LENGTH                     3
+#define RBAC_MAX_PERMISSION_NAME_LENGTH                     10
