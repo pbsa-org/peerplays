@@ -39,7 +39,8 @@ object_id_type create_custom_permission_evaluator::do_apply(const custom_permiss
                  obj.account = op.owner_account;
                  obj.permission_name = op.permission_name;
                  obj.auth = op.auth;
-              }).id;
+              })
+          .id;
    }
    FC_CAPTURE_AND_RETHROW((op))
 }
@@ -52,7 +53,7 @@ void_result update_custom_permission_evaluator::do_evaluate(const custom_permiss
       auto now = d.head_block_time();
       FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
       op.owner_account(d);
-      const custom_permission_object& pobj = op.permission_id(d);
+      const custom_permission_object &pobj = op.permission_id(d);
       FC_ASSERT(pobj.account == op.owner_account, "Only owner account can update permission object");
       if (op.new_auth)
       {
@@ -72,7 +73,7 @@ object_id_type update_custom_permission_evaluator::do_apply(const custom_permiss
    try
    {
       database &d = db();
-      const custom_permission_object& pobj = op.permission_id(d);
+      const custom_permission_object &pobj = op.permission_id(d);
       d.modify(pobj, [&op](custom_permission_object &obj) {
          if (op.new_auth)
             obj.auth = *op.new_auth;
@@ -91,7 +92,7 @@ void_result delete_custom_permission_evaluator::do_evaluate(const custom_permiss
       auto now = d.head_block_time();
       FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
       op.owner_account(d);
-      const custom_permission_object& pobj = op.permission_id(d);
+      const custom_permission_object &pobj = op.permission_id(d);
       FC_ASSERT(pobj.account == op.owner_account, "Only owner account can delete permission object");
       return void_result();
    }
@@ -103,7 +104,7 @@ void_result delete_custom_permission_evaluator::do_apply(const custom_permission
    try
    {
       database &d = db();
-      const custom_permission_object& pobj = op.permission_id(d);
+      const custom_permission_object &pobj = op.permission_id(d);
       // TODO: Remove all the custom_account_authority_object linked to this permission object.
       d.remove(pobj);
       return void_result();
