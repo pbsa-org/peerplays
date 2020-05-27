@@ -1303,6 +1303,14 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
          return &(aid(db).owner);
       } ;
 
+      auto get_custom = [&](
+         account_id_type id,
+         const operation& op
+         ) ->  vector<authority>
+      {
+         return db.get_account_custom_authorities(id, op);
+      } ;
+
       auto chk = [&](
          const signed_transaction& tx,
          flat_set<public_key_type> available_keys,
@@ -1322,7 +1330,7 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
          ) -> bool
       {
          //wdump( (tx)(available_keys) );
-         set<public_key_type> result_set = tx.minimize_required_signatures( db.get_chain_id(), available_keys, get_active, get_owner );
+         set<public_key_type> result_set = tx.minimize_required_signatures( db.get_chain_id(), available_keys, get_active, get_owner, get_custom );
          //wdump( (result_set)(ref_set) );
          return result_set == ref_set;
       } ;
@@ -1341,9 +1349,9 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
       BOOST_CHECK( chk( tx, { alice_public_key, bob_public_key }, { alice_public_key, bob_public_key } ) );
       BOOST_CHECK( chk_min( tx, { alice_public_key, bob_public_key }, { alice_public_key } ) );
 
-      GRAPHENE_REQUIRE_THROW( tx.verify_authority( db.get_chain_id(), get_active, get_owner ), fc::exception );
+      GRAPHENE_REQUIRE_THROW( tx.verify_authority( db.get_chain_id(), get_active, get_owner, get_custom ), fc::exception );
       sign( tx, alice_private_key );
-      tx.verify_authority( db.get_chain_id(), get_active, get_owner );
+      tx.verify_authority( db.get_chain_id(), get_active, get_owner, get_custom );
    }
    catch(fc::exception& e)
    {

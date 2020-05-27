@@ -1934,6 +1934,8 @@ bool database_api_impl::verify_authority( const signed_transaction& trx )const
    trx.verify_authority( _db.get_chain_id(),
                          [this]( account_id_type id ){ return &id(_db).active; },
                          [this]( account_id_type id ){ return &id(_db).owner; },
+                         [this]( account_id_type id, const operation& op ) {
+                           return _db.get_account_custom_authorities(id, op); },
                           _db.get_global_properties().parameters.max_authority_depth );
    return true;
 }

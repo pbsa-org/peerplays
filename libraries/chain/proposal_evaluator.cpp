@@ -132,6 +132,30 @@ struct proposal_operation_hardfork_visitor
       FC_ASSERT( vbco.balance_type == vesting_balance_type::normal, "balance_type in vesting create not allowed yet!" );
    }
 
+   void operator()(const custom_permission_create_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_RBAC_TIME, "custom_permission_create_operation not allowed yet!" );
+   }
+
+   void operator()(const custom_permission_update_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_RBAC_TIME, "custom_permission_update_operation not allowed yet!" );
+   }
+
+   void operator()(const custom_permission_delete_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_RBAC_TIME, "custom_permission_delete_operation not allowed yet!" );
+   }
+
+   void operator()(const custom_account_authority_create_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_RBAC_TIME, "custom_account_authority_create_operation not allowed yet!" );
+   }
+
+   void operator()(const custom_account_authority_update_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_RBAC_TIME, "custom_account_authority_update_operation not allowed yet!" );
+   }
+
+   void operator()(const custom_account_authority_delete_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_RBAC_TIME, "custom_account_authority_delete_operation not allowed yet!" );
+   }
+
    // loop and self visit in proposals
    void operator()(const proposal_create_operation &v) const {
       for (const op_wrapper &op : v.proposed_ops)

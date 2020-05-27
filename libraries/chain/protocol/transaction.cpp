@@ -248,6 +248,7 @@ struct sign_state
 void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs, 
                        const std::function<const authority*(account_id_type)>& get_active,
                        const std::function<const authority*(account_id_type)>& get_owner,
+                       const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
                        uint32_t max_recursion_depth,
                        bool  allow_committe,
                        const flat_set<account_id_type>& active_aprovals,
@@ -257,19 +258,43 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
    flat_set<account_id_type> required_owner;
    vector<authority> other;
 
-   for( const auto& op : ops )
-      operation_get_required_authorities( op, required_active, required_owner, other );
-
-   if( !allow_committe )
-      GRAPHENE_ASSERT( required_active.find(GRAPHENE_COMMITTEE_ACCOUNT) == required_active.end(),
-                       invalid_committee_approval, "Committee account may only propose transactions" );
-
    sign_state s(sigs,get_active);
    s.max_recursion = max_recursion_depth;
    for( auto& id : active_aprovals )
       s.approved_by.insert( id );
    for( auto& id : owner_approvals )
       s.approved_by.insert( id );
+
+   auto approved_by_custom_authority = [&s, &get_custom](
+           account_id_type account,
+           operation op ) mutable {
+      auto custom_auths = get_custom( account, op );
+      for( const auto& auth : custom_auths )
+         if( s.check_authority( &auth ) ) return true;
+      return false;
+   };
+
+   for( const auto& op : ops )
+      operation_get_required_authorities( op, required_active, required_owner, other );
+   for( const auto& op : ops ) {
+      flat_set<account_id_type> operation_required_active;
+      operation_get_required_authorities( op, operation_required_active, required_owner, other );
+
+      auto itr = operation_required_active.begin();
+      while ( itr != operation_required_active.end() ) {
+         if ( approved_by_custom_authority( *itr, op ) )
+            itr = operation_required_active.erase( itr );
+         else
+            ++itr;
+      }
+
+      required_active.insert( operation_required_active.begin(), operation_required_active.end() );
+   }
+
+   if( !allow_committe )
+      GRAPHENE_ASSERT( required_active.find(GRAPHENE_COMMITTEE_ACCOUNT) == required_active.end(),
+                       invalid_committee_approval, "Committee account may only propose transactions" );
+
 
    for( const auto& auth : other )
    {
@@ -359,6 +384,7 @@ set<public_key_type> signed_transaction::minimize_required_signatures(
    const flat_set<public_key_type>& available_keys,
    const std::function<const authority*(account_id_type)>& get_active,
    const std::function<const authority*(account_id_type)>& get_owner,
+   const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
    uint32_t max_recursion
    ) const
 {
@@ -370,7 +396,7 @@ set<public_key_type> signed_transaction::minimize_required_signatures(
       result.erase( k );
       try
       {
-         graphene::chain::verify_authority( operations, result, get_active, get_owner, max_recursion );
+         graphene::chain::verify_authority( operations, result, get_active, get_owner, get_custom, max_recursion );
          continue;  // element stays erased if verify_authority is ok
       }
       catch( const tx_missing_owner_auth& e ) {}
@@ -385,9 +411,10 @@ void signed_transaction::verify_authority(
    const chain_id_type& chain_id,
    const std::function<const authority*(account_id_type)>& get_active,
    const std::function<const authority*(account_id_type)>& get_owner,
+   const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
    uint32_t max_recursion )const
 { try {
-   graphene::chain::verify_authority( operations, get_signature_keys( chain_id ), get_active, get_owner, max_recursion );
+   graphene::chain::verify_authority( operations, get_signature_keys( chain_id ), get_active, get_owner, get_custom, max_recursion );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // graphene::chain

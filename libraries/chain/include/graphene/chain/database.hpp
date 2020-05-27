@@ -294,6 +294,7 @@ namespace graphene { namespace chain {
 
 
          uint32_t last_non_undoable_block_num() const;
+         vector<authority> get_account_custom_authorities(account_id_type account, const operation& op)const;
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();
