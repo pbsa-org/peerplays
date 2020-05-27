@@ -274,8 +274,6 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
       return false;
    };
 
-   for( const auto& op : ops )
-      operation_get_required_authorities( op, required_active, required_owner, other );
    for( const auto& op : ops ) {
       flat_set<account_id_type> operation_required_active;
       operation_get_required_authorities( op, operation_required_active, required_owner, other );
