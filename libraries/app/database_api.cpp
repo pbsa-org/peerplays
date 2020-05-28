@@ -2340,7 +2340,7 @@ vector<uint64_t> database_api_impl::get_random_number_ex(uint64_t minimum, uint6
          tmpv.push_back(i);
       }
 
-      while (tmpv.size() > 0) {
+      for (uint64_t i = 0; (i < selections) && (tmpv.size() > 0); i++) {
          uint64_t idx = _db.get_random_bits(tmpv.size());
          v.push_back(tmpv.at(idx));
          tmpv.erase(tmpv.begin() + idx);
