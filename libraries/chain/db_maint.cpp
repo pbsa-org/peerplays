@@ -47,6 +47,7 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/custom_account_authority_object.hpp>
 
 #define USE_VESTING_OBJECT_BY_ASSET_BALANCE_INDEX // vesting_balance_object by_asset_balance index needed
 
@@ -933,6 +934,15 @@ void rolling_period_start(database& db)
    }
 }
 
+void clear_expired_custom_account_authorities(database& db)
+{
+   const auto& cindex = db.get_index_type<custom_account_authority_index>().indices().get<by_expiration>();
+   while(!cindex.empty() && cindex.begin()->valid_to < db.head_block_time())
+   {
+      db.remove(*cindex.begin());
+   }
+}
+
 // Schedules payouts from a dividend distribution account to the current holders of the
 // dividend-paying asset.  This takes any deposits made to the dividend distribution account
 // since the last time it was called, and distributes them to the current owners of the
@@ -1707,7 +1717,10 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
    //for( const asset_bitasset_data_object* d : get_index_type<asset_bitasset_data_index>() )
    for( const auto& d : get_index_type<asset_bitasset_data_index>().indices() )
       modify( d, [](asset_bitasset_data_object& o) { o.force_settled_volume = 0; });
-
+   // Ideally we have to do this after every block but that leads to longer block applicaiton/replay times.
+   // So keep it here as it is not critical. valid_to check ensures
+   // these custom account auths are not usable.
+   clear_expired_custom_account_authorities(*this);
    // process_budget needs to run at the bottom because
    //   it needs to know the next_maintenance_time
    process_budget();

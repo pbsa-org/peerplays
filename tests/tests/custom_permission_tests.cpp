@@ -93,11 +93,17 @@ BOOST_AUTO_TEST_CASE(permission_create_success_test)
       generate_blocks(HARDFORK_RBAC_TIME);
       generate_block();
       set_expiration(db, trx);
-      ACTORS((alice)(bob));
+      ACTORS((alice)(bob)(charlie)(dave)(erin));
       upgrade_to_lifetime_member(alice);
       upgrade_to_lifetime_member(bob);
+      upgrade_to_lifetime_member(charlie);
+      upgrade_to_lifetime_member(dave);
+      upgrade_to_lifetime_member(erin);
       transfer(committee_account, alice_id, asset(1000 * GRAPHENE_BLOCKCHAIN_PRECISION));
       transfer(committee_account, bob_id, asset(1000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+      transfer(committee_account, charlie_id, asset(1000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+      transfer(committee_account, dave_id, asset(1000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+      transfer(committee_account, erin_id, asset(1000 * GRAPHENE_BLOCKCHAIN_PRECISION));
       const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
       // Alice creates a permission abc
       {
@@ -138,7 +144,7 @@ BOOST_AUTO_TEST_CASE(permission_update_test)
       INVOKE(permission_create_success_test);
       GET_ACTOR(alice);
       GET_ACTOR(bob);
-      ACTORS((charlie));
+      GET_ACTOR(charlie);
       const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
       BOOST_REQUIRE(pidx.size() == 1);
       BOOST_REQUIRE(custom_permission_id_type(0)(db).permission_name == "abc");
@@ -210,56 +216,6 @@ BOOST_AUTO_TEST_CASE(permission_update_test)
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE(permission_delete_test)
-{
-   try
-   {
-      INVOKE(permission_create_success_test);
-      GET_ACTOR(alice);
-      GET_ACTOR(bob);
-      const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
-      BOOST_REQUIRE(pidx.size() == 1);
-      BOOST_REQUIRE(custom_permission_id_type(0)(db).permission_name == "abc");
-      BOOST_REQUIRE(custom_permission_id_type(0)(db).auth == authority(1, bob_id, 1));
-      // Alice tries to delete permission abc with wrong owner_account
-      {
-         custom_permission_delete_operation op;
-         op.permission_id = custom_permission_id_type(0);
-         op.owner_account = bob_id;
-         trx.operations.push_back(op);
-         sign(trx, bob_private_key);
-         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
-         trx.clear();
-         BOOST_REQUIRE(pidx.size() == 1);
-      }
-      // Alice tries to delete permission abc with wrong permission_id
-      {
-         custom_permission_delete_operation op;
-         op.permission_id = custom_permission_id_type(1);
-         op.owner_account = alice_id;
-         trx.operations.push_back(op);
-         sign(trx, alice_private_key);
-         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
-         trx.clear();
-         BOOST_REQUIRE(pidx.size() == 1);
-      }
-      // Alice deletes permission abc
-      {
-         BOOST_REQUIRE(custom_permission_id_type(0)(db).permission_name == "abc");
-         BOOST_REQUIRE(custom_permission_id_type(0)(db).auth == authority(1, bob_id, 1));
-         custom_permission_delete_operation op;
-         op.permission_id = custom_permission_id_type(0);
-         op.owner_account = alice_id;
-         trx.operations.push_back(op);
-         sign(trx, alice_private_key);
-         PUSH_TX(db, trx);
-         trx.clear();
-         BOOST_REQUIRE(pidx.size() == 0);
-      }
-   }
-   FC_LOG_AND_RETHROW()
-}
-
 BOOST_AUTO_TEST_CASE(account_authority_create_test)
 {
    try
@@ -279,7 +235,7 @@ BOOST_AUTO_TEST_CASE(account_authority_create_test)
          op.permission_id = custom_permission_id_type(0);
          op.valid_from = db.head_block_time();
          op.valid_to = db.head_block_time() + fc::seconds(10 * db.block_interval());
-         op.operation_type = 0;
+         op.operation_type = operation::tag<transfer_operation>::value;
          op.owner_account = alice_id;
          trx.operations.push_back(op);
          sign(trx, alice_private_key);
@@ -294,7 +250,7 @@ BOOST_AUTO_TEST_CASE(account_authority_create_test)
          op.permission_id = custom_permission_id_type(0);
          op.valid_from = db.head_block_time();
          op.valid_to = db.head_block_time() + fc::seconds(11 * db.block_interval());
-         op.operation_type = 0;
+         op.operation_type = operation::tag<transfer_operation>::value;
          op.owner_account = alice_id;
          trx.operations.push_back(op);
          sign(trx, alice_private_key);
@@ -379,6 +335,57 @@ BOOST_AUTO_TEST_CASE(account_authority_delete_test)
    FC_LOG_AND_RETHROW()
 }
 
+BOOST_AUTO_TEST_CASE(permission_delete_test)
+{
+   try
+   {
+      INVOKE(account_authority_create_test);
+      GET_ACTOR(alice);
+      GET_ACTOR(bob);
+      const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
+      const auto &cidx = db.get_index_type<custom_account_authority_index>().indices().get<by_id>();
+      BOOST_REQUIRE(pidx.size() == 1);
+      BOOST_REQUIRE(custom_permission_id_type(0)(db).permission_name == "abc");
+      BOOST_REQUIRE(custom_permission_id_type(0)(db).auth == authority(1, bob_id, 1));
+      BOOST_REQUIRE(cidx.size() == 2);
+      // Alice tries to delete permission abc with wrong owner_account
+      {
+         custom_permission_delete_operation op;
+         op.permission_id = custom_permission_id_type(0);
+         op.owner_account = bob_id;
+         trx.operations.push_back(op);
+         sign(trx, bob_private_key);
+         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+         trx.clear();
+         BOOST_REQUIRE(pidx.size() == 1);
+      }
+      // Alice tries to delete permission abc with wrong permission_id
+      {
+         custom_permission_delete_operation op;
+         op.permission_id = custom_permission_id_type(1);
+         op.owner_account = alice_id;
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+         trx.clear();
+         BOOST_REQUIRE(pidx.size() == 1);
+      }
+      // Alice deletes permission abc
+      {
+         custom_permission_delete_operation op;
+         op.permission_id = custom_permission_id_type(0);
+         op.owner_account = alice_id;
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         BOOST_REQUIRE(pidx.size() == 0);
+         BOOST_REQUIRE(cidx.size() == 0);
+      }
+   }
+   FC_LOG_AND_RETHROW()
+}
+
 BOOST_AUTO_TEST_CASE(transfer_op_custom_permission_test)
 {
    try
@@ -390,6 +397,7 @@ BOOST_AUTO_TEST_CASE(transfer_op_custom_permission_test)
       const auto &cidx = db.get_index_type<custom_account_authority_index>().indices().get<by_id>();
       BOOST_REQUIRE(pidx.size() == 1);
       BOOST_REQUIRE(cidx.size() == 2);
+      // alice->bob transfer_operation op with active auth, success
       generate_block();
       {
          transfer_operation op;
@@ -404,7 +412,7 @@ BOOST_AUTO_TEST_CASE(transfer_op_custom_permission_test)
          trx.clear();
          generate_block();
       }
-
+      // alice->bob transfer_operation op with the created custom account auth, success
       {
          transfer_operation op;
          op.amount.asset_id = asset_id_type(0);
@@ -418,7 +426,7 @@ BOOST_AUTO_TEST_CASE(transfer_op_custom_permission_test)
          trx.clear();
          generate_block();
       }
-
+      // alice->bob transfer_operation op with extra unnecessary sigs (both active and the custom auth), fails
       {
          transfer_operation op;
          op.amount.asset_id = asset_id_type(0);
@@ -433,7 +441,7 @@ BOOST_AUTO_TEST_CASE(transfer_op_custom_permission_test)
          trx.clear();
          generate_block();
       }
-
+      // bob->alice transfer_operation op with alice active auth sig, fails
       {
          transfer_operation op;
          op.amount.asset_id = asset_id_type(0);
@@ -444,6 +452,20 @@ BOOST_AUTO_TEST_CASE(transfer_op_custom_permission_test)
          trx.operations.push_back(op);
          sign(trx, alice_private_key);
          BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+         trx.clear();
+         generate_block();
+      }
+      // bob->alice transfer_operation op with bob active auth sig, success
+      {
+         transfer_operation op;
+         op.amount.asset_id = asset_id_type(0);
+         op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         op.from = bob_id;
+         op.to = alice_id;
+         op.fee.asset_id = asset_id_type(0);
+         trx.operations.push_back(op);
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
          trx.clear();
          generate_block();
       }

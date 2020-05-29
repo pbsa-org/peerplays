@@ -2,6 +2,7 @@
 
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/custom_permission_object.hpp>
+#include <graphene/chain/custom_account_authority_object.hpp>
 #include <graphene/chain/hardfork.hpp>
 
 namespace graphene
@@ -105,7 +106,21 @@ void_result delete_custom_permission_evaluator::do_apply(const custom_permission
    {
       database &d = db();
       const custom_permission_object &pobj = op.permission_id(d);
-      // TODO: Remove all the custom_account_authority_object linked to this permission object.
+      // Remove the account authority objects linked to this permission
+      const auto& cindex = d.get_index_type<custom_account_authority_index>().indices().get<by_permission_and_op>();
+      vector<std::reference_wrapper<const custom_account_authority_object>> custom_auths;
+      auto crange = cindex.equal_range(boost::make_tuple(pobj.id));
+      // Store the references to the account authorities
+      for(const custom_account_authority_object& cobj : boost::make_iterator_range(crange.first, crange.second))
+      {
+         custom_auths.push_back(cobj);
+      }
+      // Now remove the account authorities
+      for(const auto& cauth : custom_auths)
+      {
+         d.remove(cauth);
+      }
+      // Now finally remove the permission
       d.remove(pobj);
       return void_result();
    }
