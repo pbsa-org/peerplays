@@ -1011,23 +1011,24 @@ BOOST_AUTO_TEST_CASE(proposal_op_test)
       GET_ACTOR(charlie);
       GET_ACTOR(dave);
       generate_block();
+      const auto &prop_idx = db.get_index_type<proposal_index>().indices().get<by_id>();
+      // alice->bob xfer op
+      transfer_operation alice_to_bob_xfer_op;
+      alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
+      alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      alice_to_bob_xfer_op.from = alice_id;
+      alice_to_bob_xfer_op.to = bob_id;
+      alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+
+      // bob->alice xfer op
+      transfer_operation bob_to_alice_xfer_op;
+      bob_to_alice_xfer_op.amount.asset_id = asset_id_type(0);
+      bob_to_alice_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      bob_to_alice_xfer_op.from = bob_id;
+      bob_to_alice_xfer_op.to = alice_id;
+      bob_to_alice_xfer_op.fee.asset_id = asset_id_type(0);
       {
-         // alice->bob xfer op
-         transfer_operation alice_to_bob_xfer_op;
-         alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
-         alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         alice_to_bob_xfer_op.from = alice_id;
-         alice_to_bob_xfer_op.to = bob_id;
-         alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
-
-         // bob->alice xfer op
-         transfer_operation bob_to_alice_xfer_op;
-         bob_to_alice_xfer_op.amount.asset_id = asset_id_type(0);
-         bob_to_alice_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         bob_to_alice_xfer_op.from = bob_id;
-         bob_to_alice_xfer_op.to = alice_id;
-         bob_to_alice_xfer_op.fee.asset_id = asset_id_type(0);
-
+         set_expiration(db, trx);
          proposal_create_operation prop;
          prop.fee_paying_account = alice_id;
          prop.proposed_ops = {op_wrapper(alice_to_bob_xfer_op), op_wrapper(bob_to_alice_xfer_op)};
@@ -1047,25 +1048,55 @@ BOOST_AUTO_TEST_CASE(proposal_op_test)
          PUSH_TX(db, trx);
          trx.clear();
          generate_block();
+         BOOST_REQUIRE(prop_idx.find(proposal_id_type(0)) == prop_idx.end());
       }
-
       {
-         // alice->bob xfer op
-         transfer_operation alice_to_bob_xfer_op;
-         alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
-         alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         alice_to_bob_xfer_op.from = alice_id;
-         alice_to_bob_xfer_op.to = bob_id;
-         alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+         set_expiration(db, trx);
+         custom_account_authority_create_operation authorize_xfer_op;
+         authorize_xfer_op.permission_id = custom_permission_id_type(0);
+         authorize_xfer_op.valid_from = db.head_block_time();
+         authorize_xfer_op.valid_to = db.head_block_time() + fc::seconds(10 * db.block_interval());
+         authorize_xfer_op.operation_type = operation::tag<proposal_update_operation>::value;
+         authorize_xfer_op.owner_account = alice_id;
+         trx.operations = {authorize_xfer_op};
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
 
-         // bob->alice xfer op
-         transfer_operation bob_to_alice_xfer_op;
-         bob_to_alice_xfer_op.amount.asset_id = asset_id_type(0);
-         bob_to_alice_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         bob_to_alice_xfer_op.from = bob_id;
-         bob_to_alice_xfer_op.to = alice_id;
-         bob_to_alice_xfer_op.fee.asset_id = asset_id_type(0);
 
+         proposal_create_operation prop;
+         prop.fee_paying_account = alice_id;
+         prop.proposed_ops = {op_wrapper(alice_to_bob_xfer_op), op_wrapper(bob_to_alice_xfer_op)};
+         prop.expiration_time = db.head_block_time() + 21600;
+         trx.operations = {prop};
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+
+         proposal_update_operation approve_prop;
+         approve_prop.proposal = proposal_id_type(1);
+         approve_prop.fee_paying_account = bob_id;
+         approve_prop.active_approvals_to_add = {bob_id};
+         trx.operations = {approve_prop};
+         sign(trx, alice_private_key);
+         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+         trx.clear();
+         generate_block();
+
+         approve_prop.proposal = proposal_id_type(1);
+         approve_prop.fee_paying_account = bob_id;
+         approve_prop.active_approvals_to_add = {alice_id, bob_id};
+         trx.operations = {approve_prop};
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+         BOOST_REQUIRE(prop_idx.find(proposal_id_type(1)) == prop_idx.end());
+      }
+      {
+         set_expiration(db, trx);
          custom_account_authority_create_operation authorize_xfer_op;
          authorize_xfer_op.permission_id = custom_permission_id_type(1);
          authorize_xfer_op.valid_from = db.head_block_time();
@@ -1084,7 +1115,7 @@ BOOST_AUTO_TEST_CASE(proposal_op_test)
          generate_block();
 
          proposal_update_operation approve_prop;
-         approve_prop.proposal = proposal_id_type(1);
+         approve_prop.proposal = proposal_id_type(2);
          approve_prop.fee_paying_account = alice_id;
          approve_prop.active_approvals_to_add = {alice_id};
          trx.operations = {approve_prop};
@@ -1092,6 +1123,7 @@ BOOST_AUTO_TEST_CASE(proposal_op_test)
          PUSH_TX(db, trx);
          trx.clear();
          generate_block();
+         BOOST_REQUIRE(prop_idx.find(proposal_id_type(2)) == prop_idx.end());
 
          trx.operations = {alice_to_bob_xfer_op};
          sign(trx, bob_private_key);
@@ -1180,6 +1212,179 @@ BOOST_AUTO_TEST_CASE(account_authority_delete_after_expiry_test)
       generate_blocks(db.get_dynamic_global_properties().next_maintenance_time);
       generate_block();
       BOOST_REQUIRE(cidx.size() == 0);
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE(account_owner_authority_fail_test)
+{
+   try
+   {
+      INVOKE(permission_create_success_test);
+      GET_ACTOR(alice);
+      GET_ACTOR(bob);
+      const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
+      const auto &cidx = db.get_index_type<custom_account_authority_index>().indices().get<by_id>();
+      time_point_sec valid_from = db.head_block_time();
+      time_point_sec valid_to = db.head_block_time() + fc::seconds(30 * db.block_interval());
+      BOOST_REQUIRE(pidx.size() == 2);
+      generate_block();
+      // Alice creates a new account auth linking with permission abc
+      {
+         custom_account_authority_create_operation op;
+         op.permission_id = custom_permission_id_type(0);
+         op.valid_from = valid_from;
+         op.valid_to = valid_to;
+         op.operation_type = operation::tag<account_update_operation>::value;
+         op.owner_account = alice_id;
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         BOOST_REQUIRE(cidx.size() == 1);
+         generate_block();
+      }
+      // Alice creates a new account auth linking with permission abc
+      {
+         custom_account_authority_create_operation op;
+         op.permission_id = custom_permission_id_type(0);
+         op.valid_from = valid_from;
+         op.valid_to = valid_to;
+         op.operation_type = operation::tag<transfer_operation>::value;
+         op.owner_account = alice_id;
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         BOOST_REQUIRE(cidx.size() == 2);
+         generate_block();
+      }
+      {
+         // alice->bob xfer op
+         transfer_operation alice_to_bob_xfer_op;
+         alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
+         alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         alice_to_bob_xfer_op.from = alice_id;
+         alice_to_bob_xfer_op.to = bob_id;
+         alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+         trx.operations.push_back(alice_to_bob_xfer_op);
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      {
+         account_update_operation op;
+         op.account = alice_id;
+         op.owner = authority(1, bob_id, 1);
+         trx.operations.push_back(op);
+         sign(trx, bob_private_key);
+         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+         trx.clear();
+         generate_block();
+      }
+      {
+         account_update_operation op;
+         op.account = alice_id;
+         op.active = authority(1, bob_id, 1);
+         trx.operations.push_back(op);
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE(multisig_combined_op_test)
+{
+   try
+   {
+      INVOKE(permission_create_success_test);
+      GET_ACTOR(alice);
+      GET_ACTOR(bob);
+      GET_ACTOR(charlie);
+      GET_ACTOR(dave);
+      GET_ACTOR(erin);
+      const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
+      const auto &cidx = db.get_index_type<custom_account_authority_index>().indices().get<by_id>();
+      time_point_sec valid_from = db.head_block_time();
+      time_point_sec valid_to = db.head_block_time() + fc::seconds(30 * db.block_interval());
+      BOOST_REQUIRE(pidx.size() == 2);
+      generate_block();
+      // Alice creates a new account auth linking with permission abc
+      {
+         custom_account_authority_create_operation op;
+         op.permission_id = custom_permission_id_type(0);
+         op.valid_from = valid_from;
+         op.valid_to = valid_to;
+         op.operation_type = operation::tag<transfer_operation>::value;
+         op.owner_account = alice_id;
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         BOOST_REQUIRE(cidx.size() == 1);
+         generate_block();
+      }
+      {
+         account_update_operation op;
+         op.account = alice_id;
+         op.active = authority(2, bob_id, 1, charlie_id, 1, dave_id, 1);
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      {
+         // alice->bob xfer op
+         transfer_operation alice_to_bob_xfer_op;
+         alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
+         alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         alice_to_bob_xfer_op.from = alice_id;
+         alice_to_bob_xfer_op.to = bob_id;
+         alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+         // alice account update
+         account_update_operation auop;
+         auop.account = alice_id;
+         auop.active = authority(1, erin_id, 1);
+         trx.operations = {alice_to_bob_xfer_op, auop};
+         sign(trx, bob_private_key);
+         sign(trx, charlie_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      {
+         // alice->bob xfer op
+         transfer_operation alice_to_bob_xfer_op;
+         alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
+         alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         alice_to_bob_xfer_op.from = alice_id;
+         alice_to_bob_xfer_op.to = bob_id;
+         alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+         trx.operations = {alice_to_bob_xfer_op};
+         sign(trx, erin_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      {
+         // alice->bob xfer op
+         transfer_operation alice_to_bob_xfer_op;
+         alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
+         alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         alice_to_bob_xfer_op.from = alice_id;
+         alice_to_bob_xfer_op.to = bob_id;
+         alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+         trx.operations = {alice_to_bob_xfer_op};
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
    }
    FC_LOG_AND_RETHROW()
 }
