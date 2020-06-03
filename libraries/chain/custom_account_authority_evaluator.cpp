@@ -84,15 +84,11 @@ void_result update_custom_account_authority_evaluator::do_evaluate(const custom_
       auto valid_to = aobj.valid_to;
       if (op.new_valid_from)
       {
-         FC_ASSERT(*op.new_valid_from != aobj.valid_from,
-                   "New valid_from provided is not different from old valid_from");
          valid_from = *op.new_valid_from;
       }
 
       if (op.new_valid_to)
       {
-         FC_ASSERT(*op.new_valid_to != aobj.valid_to,
-                   "New valid_to provided is not different from old valid_to");
          FC_ASSERT(*op.new_valid_to > now, "New valid_to expiry should be in the future");
          valid_to = *op.new_valid_to;
       }
