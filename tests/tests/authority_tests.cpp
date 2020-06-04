@@ -1189,6 +1189,14 @@ BOOST_FIXTURE_TEST_CASE( get_required_signatures_test, database_fixture )
          return &(aid(db).owner);
       } ;
 
+      auto get_custom = [&](
+         account_id_type id,
+         const operation& op
+         ) ->  vector<authority>
+      {
+         return db.get_account_custom_authorities(id, op);
+      } ;
+
       auto chk = [&](
          const signed_transaction& tx,
          flat_set<public_key_type> available_keys,
@@ -1196,7 +1204,7 @@ BOOST_FIXTURE_TEST_CASE( get_required_signatures_test, database_fixture )
          ) -> bool
       {
          //wdump( (tx)(available_keys) );
-         set<public_key_type> result_set = tx.get_required_signatures( db.get_chain_id(), available_keys, get_active, get_owner );
+         set<public_key_type> result_set = tx.get_required_signatures( db.get_chain_id(), available_keys, get_active, get_owner, get_custom );
          //wdump( (result_set)(ref_set) );
          return result_set == ref_set;
       } ;
@@ -1318,7 +1326,7 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
          ) -> bool
       {
          //wdump( (tx)(available_keys) );
-         set<public_key_type> result_set = tx.get_required_signatures( db.get_chain_id(), available_keys, get_active, get_owner );
+         set<public_key_type> result_set = tx.get_required_signatures( db.get_chain_id(), available_keys, get_active, get_owner, get_custom );
          //wdump( (result_set)(ref_set) );
          return result_set == ref_set;
       } ;

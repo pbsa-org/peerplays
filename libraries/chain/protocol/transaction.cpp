@@ -348,16 +348,40 @@ set<public_key_type> signed_transaction::get_required_signatures(
    const flat_set<public_key_type>& available_keys,
    const std::function<const authority*(account_id_type)>& get_active,
    const std::function<const authority*(account_id_type)>& get_owner,
+   const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
    uint32_t max_recursion_depth )const
 {
    flat_set<account_id_type> required_active;
    flat_set<account_id_type> required_owner;
    vector<authority> other;
-   get_required_authorities( required_active, required_owner, other );
 
    const flat_set<public_key_type>& signature_keys = get_signature_keys( chain_id );
    sign_state s( signature_keys, get_active, available_keys );
    s.max_recursion = max_recursion_depth;
+
+   auto approved_by_custom_authority = [&s, &get_custom](
+           account_id_type account,
+           operation op ) mutable {
+      auto custom_auths = get_custom( account, op );
+      for( const auto& auth : custom_auths )
+         if( s.check_authority( &auth ) ) return true;
+      return false;
+   };
+
+   for( const auto& op : operations ) {
+      flat_set<account_id_type> operation_required_active;
+      operation_get_required_authorities( op, operation_required_active, required_owner, other );
+
+      auto itr = operation_required_active.begin();
+      while ( itr != operation_required_active.end() ) {
+         if ( approved_by_custom_authority( *itr, op ) )
+            itr = operation_required_active.erase( itr );
+         else
+            ++itr;
+      }
+
+      required_active.insert( operation_required_active.begin(), operation_required_active.end() );
+   }
 
    for( const auto& auth : other )
       s.check_authority(&auth);
@@ -386,7 +410,7 @@ set<public_key_type> signed_transaction::minimize_required_signatures(
    uint32_t max_recursion
    ) const
 {
-   set< public_key_type > s = get_required_signatures( chain_id, available_keys, get_active, get_owner, max_recursion );
+   set< public_key_type > s = get_required_signatures( chain_id, available_keys, get_active, get_owner, get_custom, max_recursion );
    flat_set< public_key_type > result( s.begin(), s.end() );
 
    for( const public_key_type& k : s )

@@ -1865,6 +1865,9 @@ set<public_key_type> database_api_impl::get_required_signatures( const signed_tr
                                        available_keys,
                                        [&]( account_id_type id ){ return &id(_db).active; },
                                        [&]( account_id_type id ){ return &id(_db).owner; },
+                                       [&]( account_id_type id, const operation& op ) {
+                                          return _db.get_account_custom_authorities(id, op);
+                                       },
                                        _db.get_global_properties().parameters.max_authority_depth );
    wdump((result));
    return result;
@@ -1900,6 +1903,9 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
             result.insert(k);
          return &auth;
       },
+      [&]( account_id_type id, const operation& op ) {
+         return _db.get_account_custom_authorities(id, op);
+      },
       _db.get_global_properties().parameters.max_authority_depth
    );
 
@@ -1926,6 +1932,9 @@ set<address> database_api_impl::get_potential_address_signatures( const signed_t
          for( const auto& k : auth.get_addresses() )
             result.insert(k);
          return &auth;
+      },
+      [&]( account_id_type id, const operation& op ) {
+         return _db.get_account_custom_authorities(id, op);
       },
       _db.get_global_properties().parameters.max_authority_depth
    );

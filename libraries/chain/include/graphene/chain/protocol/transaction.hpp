@@ -141,6 +141,7 @@ namespace graphene { namespace chain {
          const flat_set<public_key_type>& available_keys,
          const std::function<const authority*(account_id_type)>& get_active,
          const std::function<const authority*(account_id_type)>& get_owner,
+         const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
          uint32_t max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH
          )const;
 
