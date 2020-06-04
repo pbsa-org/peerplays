@@ -1064,7 +1064,6 @@ BOOST_AUTO_TEST_CASE(proposal_op_test)
          trx.clear();
          generate_block();
 
-
          proposal_create_operation prop;
          prop.fee_paying_account = alice_id;
          prop.proposed_ops = {op_wrapper(alice_to_bob_xfer_op), op_wrapper(bob_to_alice_xfer_op)};
@@ -1154,7 +1153,6 @@ BOOST_AUTO_TEST_CASE(proposal_op_test)
          PUSH_TX(db, trx);
          trx.clear();
          generate_block();
-
       }
    }
    FC_LOG_AND_RETHROW()
@@ -1379,6 +1377,264 @@ BOOST_AUTO_TEST_CASE(multisig_combined_op_test)
          alice_to_bob_xfer_op.from = alice_id;
          alice_to_bob_xfer_op.to = bob_id;
          alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+         trx.operations = {alice_to_bob_xfer_op};
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE(db_api_test)
+{
+   try
+   {
+      INVOKE(permission_create_success_test);
+      GET_ACTOR(alice);
+      GET_ACTOR(bob);
+      GET_ACTOR(charlie);
+      GET_ACTOR(dave);
+      GET_ACTOR(erin);
+      auto alice_public_key = alice_private_key.get_public_key();
+      auto bob_public_key = bob_private_key.get_public_key();
+      auto charlie_public_key = charlie_private_key.get_public_key();
+      auto dave_public_key = dave_private_key.get_public_key();
+      auto erin_public_key = erin_private_key.get_public_key();
+      const auto &pidx = db.get_index_type<custom_permission_index>().indices().get<by_id>();
+      const auto &cidx = db.get_index_type<custom_account_authority_index>().indices().get<by_id>();
+      time_point_sec valid_from = db.head_block_time();
+      time_point_sec valid_to = db.head_block_time() + fc::seconds(30 * db.block_interval());
+      BOOST_REQUIRE(pidx.size() == 2);
+      generate_block();
+      // alice->bob xfer op
+      transfer_operation alice_to_bob_xfer_op;
+      alice_to_bob_xfer_op.amount.asset_id = asset_id_type(0);
+      alice_to_bob_xfer_op.amount.amount = 100 * GRAPHENE_BLOCKCHAIN_PRECISION;
+      alice_to_bob_xfer_op.from = alice_id;
+      alice_to_bob_xfer_op.to = bob_id;
+      alice_to_bob_xfer_op.fee.asset_id = asset_id_type(0);
+      // alice account update
+      account_update_operation auop1;
+      auop1.account = alice_id;
+      auop1.active = authority(2, bob_id, 1, charlie_id, 1, dave_id, 1);
+      // alice account update
+      account_update_operation auop2;
+      auop2.account = alice_id;
+      auop2.active = authority(1, erin_id, 1);
+      // alice owner update
+      account_update_operation auop3;
+      auop3.account = alice_id;
+      auop3.owner = authority(1, bob_id, 1);
+      // get_required_signatures Auth Lambdas
+      set<public_key_type> result;
+      auto get_active_rs = [&](account_id_type aid) -> const authority * {
+         return &(aid(db).active);
+      };
+
+      auto get_owner_rs = [&](account_id_type aid) -> const authority * {
+         return &(aid(db).owner);
+      };
+
+      auto get_custom = [&](account_id_type id, const operation &op) -> vector<authority> {
+         return db.get_account_custom_authorities(id, op);
+      };
+
+      // get_potential_signatures Auth lambdas
+      auto get_active_ps = [&](account_id_type id) -> const authority * {
+         const auto &auth = id(db).active;
+         for (const auto &k : auth.get_keys())
+            result.insert(k);
+         return &auth;
+      };
+
+      auto get_owner_ps = [&](account_id_type id) -> const authority * {
+         const auto &auth = id(db).owner;
+         for (const auto &k : auth.get_keys())
+            result.insert(k);
+         return &auth;
+      };
+      // Transfer before custom account auth creation
+      {
+         result.clear();
+         trx.operations = {alice_to_bob_xfer_op};
+         trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(),
+             get_active_ps,
+             get_owner_ps,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         set<public_key_type> exp_result_ps{alice_public_key};
+         BOOST_REQUIRE(result == exp_result_ps);
+         set<public_key_type> exp_result_rs{alice_public_key};
+         set<public_key_type> result_rs = trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(exp_result_ps.begin(), exp_result_ps.end()),
+             get_active_rs,
+             get_owner_rs,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         BOOST_REQUIRE(result_rs == exp_result_rs);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      // Alice creates a new account auth linking with permission abc
+      {
+         custom_account_authority_create_operation op;
+         op.permission_id = custom_permission_id_type(0);
+         op.valid_from = valid_from;
+         op.valid_to = valid_to;
+         op.operation_type = operation::tag<transfer_operation>::value;
+         op.owner_account = alice_id;
+         trx.operations.push_back(op);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         BOOST_REQUIRE(cidx.size() == 1);
+         generate_block();
+      }
+      // Transfer after custom account auth creation
+      {
+         result.clear();
+         trx.operations = {alice_to_bob_xfer_op};
+         trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(),
+             get_active_ps,
+             get_owner_ps,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         set<public_key_type> exp_result_ps{alice_public_key, bob_public_key};
+         BOOST_REQUIRE(result == exp_result_ps);
+         set<public_key_type> exp_result_rs{bob_public_key};
+         set<public_key_type> result_rs = trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(exp_result_ps.begin(), exp_result_ps.end()),
+             get_active_rs,
+             get_owner_rs,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         BOOST_REQUIRE(result_rs == exp_result_rs);
+         sign(trx, bob_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      // Alice account update after custom account auth creation
+      {
+         result.clear();
+         trx.operations = {auop1};
+         trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(),
+             get_active_ps,
+             get_owner_ps,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         set<public_key_type> exp_result_ps{alice_public_key};
+         BOOST_REQUIRE(result == exp_result_ps);
+         set<public_key_type> exp_result_rs{alice_public_key};
+         set<public_key_type> result_rs = trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(exp_result_ps.begin(), exp_result_ps.end()),
+             get_active_rs,
+             get_owner_rs,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         BOOST_REQUIRE(result_rs == exp_result_rs);
+         sign(trx, alice_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      // Alice account update and transfer after custom account auth creation
+      {
+         result.clear();
+         trx.operations = {alice_to_bob_xfer_op, auop2};
+         trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(),
+             get_active_ps,
+             get_owner_ps,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         set<public_key_type> exp_result_ps{bob_public_key, charlie_public_key, dave_public_key};
+         BOOST_REQUIRE(result == exp_result_ps);
+         set<public_key_type> exp_result_rs{bob_public_key, charlie_public_key};
+         set<public_key_type> result_rs = trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(exp_result_ps.begin(), exp_result_ps.end()),
+             get_active_rs,
+             get_owner_rs,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         BOOST_REQUIRE(result_rs == exp_result_rs);
+         sign(trx, bob_private_key);
+         sign(trx, charlie_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      // Transfer after alice account update again
+      {
+         result.clear();
+         trx.operations = {alice_to_bob_xfer_op};
+         trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(),
+             get_active_ps,
+             get_owner_ps,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         set<public_key_type> exp_result_ps{erin_public_key, bob_public_key};
+         BOOST_REQUIRE(result == exp_result_ps);
+         set<public_key_type> exp_result_rs{bob_public_key};
+         set<public_key_type> result_rs = trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(exp_result_ps.begin(), exp_result_ps.end()),
+             get_active_rs,
+             get_owner_rs,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         BOOST_REQUIRE(result_rs == exp_result_rs);
+         sign(trx, erin_private_key);
+         PUSH_TX(db, trx);
+         trx.clear();
+         generate_block();
+      }
+      // Alice owner auth update
+      {
+         result.clear();
+         trx.operations = {auop3};
+         trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(),
+             get_active_ps,
+             get_owner_ps,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         set<public_key_type> exp_result_ps{alice_public_key, erin_public_key};
+         BOOST_REQUIRE(result == exp_result_ps);
+         set<public_key_type> exp_result_rs{alice_public_key, erin_public_key};
+         set<public_key_type> result_rs = trx.get_required_signatures(
+             db.get_chain_id(),
+             flat_set<public_key_type>(exp_result_ps.begin(), exp_result_ps.end()),
+             get_active_rs,
+             get_owner_rs,
+             get_custom,
+             db.get_global_properties().parameters.max_authority_depth);
+         BOOST_REQUIRE(result_rs == exp_result_rs);
+         sign(trx, bob_private_key);
+         BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+         trx.clear();
+         generate_block();
+      }
+      // Transfer with custom account auth
+      {
          trx.operations = {alice_to_bob_xfer_op};
          sign(trx, bob_private_key);
          PUSH_TX(db, trx);
