@@ -43,3 +43,5 @@ deploy-rng:
     - sh /usr/local/bin/update-info.sh
     - sh /usr/local/bin/cleanup.sh
   when: manual
+  tags:
+     - rng-cc
