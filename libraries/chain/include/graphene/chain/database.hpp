@@ -519,6 +519,7 @@ namespace graphene { namespace chain {
          void update_betting_markets(fc::time_point_sec current_block_time);
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan = true,
                                    const asset_bitasset_data_object* bitasset_ptr = nullptr );
+         void finalize_expired_offers();
 
          ///Steps performed only at maintenance intervals
          ///@{

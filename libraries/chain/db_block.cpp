@@ -721,6 +721,7 @@ void database::_apply_block( const signed_block& next_block )
    update_withdraw_permissions();
    update_tournaments();
    update_betting_markets(next_block.timestamp);
+   finalize_expired_offers();
 
    // n.b., update_maintenance_flag() happens this late
    // because get_slot_time() / get_slot_at_time() is needed above

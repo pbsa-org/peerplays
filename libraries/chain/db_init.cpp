@@ -49,6 +49,7 @@
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
+#include <graphene/chain/offer_object.hpp>
 
 
 #include <graphene/chain/sport_object.hpp>
@@ -77,6 +78,7 @@
 #include <graphene/chain/event_evaluator.hpp>
 #include <graphene/chain/betting_market_evaluator.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
+#include <graphene/chain/offer_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -169,6 +171,11 @@ const uint8_t betting_market_position_object::type_id;
 const uint8_t global_betting_statistics_object::space_id;
 const uint8_t global_betting_statistics_object::type_id;
 
+const uint8_t offer_object::space_id;
+const uint8_t offer_object::type_id;
+
+const uint8_t offer_history_object::space_id;
+const uint8_t offer_history_object::type_id;
 
 void database::initialize_evaluators()
 {
@@ -243,6 +250,9 @@ void database::initialize_evaluators()
    register_evaluator<lottery_reward_evaluator>();
    register_evaluator<lottery_end_evaluator>();
    register_evaluator<sweeps_vesting_claim_evaluator>();
+   register_evaluator<offer_evaluator>();
+   register_evaluator<bid_evaluator>();
+   register_evaluator<finalize_offer_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -284,6 +294,7 @@ void database::initialize_indexes()
    tournament_details_idx->add_secondary_index<tournament_players_index>();
    add_index< primary_index<match_index> >();
    add_index< primary_index<game_index> >();
+   add_index< primary_index<offer_index> >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();
@@ -313,6 +324,7 @@ void database::initialize_indexes()
    
    add_index< primary_index<lottery_balance_index                         > >();
    add_index< primary_index<sweeps_vesting_balance_index                  > >();
+   add_index< primary_index<offer_history_index                           > >();
 
 }
 

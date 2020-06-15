@@ -61,6 +61,7 @@ add_library( graphene_chain
              protocol/vote.cpp
              protocol/tournament.cpp
              protocol/small_ops.cpp
+             protocol/offer.cpp
 
              genesis_state.cpp
              get_config.cpp
@@ -114,6 +115,8 @@ add_library( graphene_chain
              betting_market_group_object.cpp
 
              affiliate_payout.cpp
+
+             offer_evaluator.cpp
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}

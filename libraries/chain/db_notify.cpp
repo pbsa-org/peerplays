@@ -293,6 +293,19 @@ struct get_impacted_account_visitor
    void operator()( const sweeps_vesting_claim_operation& op ) {
       _impacted.insert( op.account );
    }
+
+   void operator()( const offer_operation& op )
+   { 
+      _impacted.insert( op.issuer );   
+   }
+   void operator()( const bid_operation& op )
+   {
+	  _impacted.insert( op.bidder );
+   }
+   void operator()( const finalize_offer_operation& op )
+   {
+       _impacted.insert( op.fee_paying_account );
+   }
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )

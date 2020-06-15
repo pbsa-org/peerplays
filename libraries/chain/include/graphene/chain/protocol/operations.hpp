@@ -45,6 +45,7 @@
 #include <graphene/chain/protocol/event.hpp>
 #include <graphene/chain/protocol/betting_market.hpp>
 #include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/chain/protocol/offer.hpp>
 
 namespace graphene { namespace chain {
 
@@ -135,7 +136,10 @@ namespace graphene { namespace chain {
             ticket_purchase_operation,
             lottery_reward_operation,
             lottery_end_operation,
-            sweeps_vesting_claim_operation
+            sweeps_vesting_claim_operation,
+            offer_operation,
+            bid_operation,
+            finalize_offer_operation
          > operation;
 
    /// @} // operations group
