@@ -293,6 +293,18 @@ struct get_impacted_account_visitor
    void operator()( const sweeps_vesting_claim_operation& op ) {
       _impacted.insert( op.account );
    }
+   void operator()( const nft_create_operation& op ) {
+      _impacted.insert( op.payer );
+   }
+   void operator()( const nft_safe_transfer_from_operation& op ) {
+      _impacted.insert( op.payer );
+   }
+   void operator()( const nft_approve_operation& op ) {
+      _impacted.insert( op.payer );
+   }
+   void operator()( const nft_set_approval_for_all_operation& op ) {
+      _impacted.insert( op.payer );
+   }
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )

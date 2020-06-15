@@ -49,7 +49,7 @@
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
-
+#include <graphene/chain/nft_object.hpp>
 
 #include <graphene/chain/sport_object.hpp>
 #include <graphene/chain/event_group_object.hpp>
@@ -77,6 +77,7 @@
 #include <graphene/chain/event_evaluator.hpp>
 #include <graphene/chain/betting_market_evaluator.hpp>
 #include <graphene/chain/tournament_evaluator.hpp>
+#include <graphene/chain/nft_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -163,6 +164,9 @@ const uint8_t betting_market_object::type_id;
 const uint8_t bet_object::space_id;
 const uint8_t bet_object::type_id;
 
+const uint8_t nft_object::space_id;
+const uint8_t nft_object::type_id;
+
 const uint8_t betting_market_position_object::space_id;
 const uint8_t betting_market_position_object::type_id;
 
@@ -243,6 +247,10 @@ void database::initialize_evaluators()
    register_evaluator<lottery_reward_evaluator>();
    register_evaluator<lottery_end_evaluator>();
    register_evaluator<sweeps_vesting_claim_evaluator>();
+   register_evaluator<nft_create_evaluator>();
+   register_evaluator<nft_safe_transfer_from_evaluator>();
+   register_evaluator<nft_approve_evaluator>();
+   register_evaluator<nft_set_approval_for_all_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -284,6 +292,8 @@ void database::initialize_indexes()
    tournament_details_idx->add_secondary_index<tournament_players_index>();
    add_index< primary_index<match_index> >();
    add_index< primary_index<game_index> >();
+
+   add_index< primary_index<nft_index > >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();

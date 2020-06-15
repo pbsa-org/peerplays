@@ -45,6 +45,7 @@
 #include <graphene/chain/protocol/event.hpp>
 #include <graphene/chain/protocol/betting_market.hpp>
 #include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/chain/protocol/nft_ops.hpp>
 
 namespace graphene { namespace chain {
 
@@ -135,7 +136,11 @@ namespace graphene { namespace chain {
             ticket_purchase_operation,
             lottery_reward_operation,
             lottery_end_operation,
-            sweeps_vesting_claim_operation
+            sweeps_vesting_claim_operation,
+            nft_create_operation,
+            nft_safe_transfer_from_operation,
+            nft_approve_operation,
+            nft_set_approval_for_all_operation
          > operation;
 
    /// @} // operations group
