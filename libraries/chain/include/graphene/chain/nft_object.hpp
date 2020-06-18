@@ -14,7 +14,7 @@ namespace graphene { namespace chain {
 
          account_id_type         owner;
          vector<account_id_type> approved_operators;
-         std::string                  metadata;
+         std::string             metadata;
    };
 
    struct by_owner;

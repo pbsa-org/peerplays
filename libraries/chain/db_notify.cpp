@@ -294,16 +294,19 @@ struct get_impacted_account_visitor
       _impacted.insert( op.account );
    }
    void operator()( const nft_create_operation& op ) {
-      _impacted.insert( op.payer );
+      _impacted.insert( op.owner );
    }
    void operator()( const nft_safe_transfer_from_operation& op ) {
-      _impacted.insert( op.payer );
+      _impacted.insert( op.from );
+      _impacted.insert( op.to );
    }
    void operator()( const nft_approve_operation& op ) {
-      _impacted.insert( op.payer );
+      _impacted.insert( op.owner );
+      _impacted.insert( op.approved );
    }
    void operator()( const nft_set_approval_for_all_operation& op ) {
-      _impacted.insert( op.payer );
+      _impacted.insert( op.owner );
+      _impacted.insert( op.operator_ );
    }
 };
 

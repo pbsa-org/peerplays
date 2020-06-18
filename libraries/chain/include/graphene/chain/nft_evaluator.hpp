@@ -12,7 +12,7 @@ namespace graphene { namespace chain {
       public:
          typedef nft_create_operation operation_type;
          void_result do_evaluate( const nft_create_operation& o );
-         void_result do_apply( const nft_create_operation& o );
+         object_id_type do_apply( const nft_create_operation& o );
    };
 
    class nft_safe_transfer_from_evaluator : public evaluator<nft_safe_transfer_from_evaluator>
@@ -20,7 +20,7 @@ namespace graphene { namespace chain {
       public:
          typedef nft_safe_transfer_from_operation operation_type;
          void_result do_evaluate( const nft_safe_transfer_from_operation& o );
-         void_result do_apply( const nft_safe_transfer_from_operation& o );
+         object_id_type do_apply( const nft_safe_transfer_from_operation& o );
    };
 
    class nft_approve_evaluator : public evaluator<nft_approve_evaluator>
@@ -28,7 +28,7 @@ namespace graphene { namespace chain {
       public:
          typedef nft_approve_operation operation_type;
          void_result do_evaluate( const nft_approve_operation& o );
-         void_result do_apply( const nft_approve_operation& o );
+         object_id_type do_apply( const nft_approve_operation& o );
    };
 
    class nft_set_approval_for_all_evaluator : public evaluator<nft_set_approval_for_all_evaluator>
