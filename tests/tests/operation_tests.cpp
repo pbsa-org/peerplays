@@ -1845,12 +1845,12 @@ BOOST_AUTO_TEST_CASE(create_offer_test)
       std::for_each(params, params + 1, [&](bool is_buying_offer) {
          offer_operation offer_op;
 
-         offer_op.item_id = 13;
+         offer_op.item_ids.emplace(13);
+         offer_op.item_ids.emplace(14);
          offer_op.issuer = issuer.id;
          offer_op.buying_item = is_buying_offer;
          offer_op.maximum_price = asset(100);
          offer_op.minimum_price = asset(10);
-         offer_op.transfer_agent_id = agent.id;
          //      +1 second
          offer_op.offer_expiration_date = db.head_block_time() + fc::microseconds(3000000);
 
@@ -1888,7 +1888,6 @@ BOOST_AUTO_TEST_CASE(create_offer_test)
          BOOST_CHECK(d.issuer == issuer.id);
          BOOST_CHECK(d.maximum_price == asset(100));
          BOOST_CHECK(d.minimum_price == asset(10));
-         BOOST_CHECK(d.transfer_agent_id == agent.id);
          BOOST_CHECK(d.buying_item == is_buying_offer);
 
          if (is_buying_offer)
@@ -1930,9 +1929,6 @@ BOOST_AUTO_TEST_CASE(bid_test)
       bid_op.bidder = bidder.id;
       trx.operations.push_back(bid_op);
 
-      // exception due to empty whitelist
-      GRAPHENE_REQUIRE_THROW(PUSH_TX(db, trx, ~0), fc::exception);
-
       trx.operations.clear();
 
       //adding whitelist
@@ -1952,7 +1948,6 @@ BOOST_AUTO_TEST_CASE(bid_test)
          asset exp_delta_agent;
          asset exp_delta_bidder;
 
-         int64_t agent_balance = get_balance(agent_id(db), asset_id_type()(db));
          int64_t issuer_balance = get_balance(issuer_id(db), asset_id_type()(db));
          int64_t bidder_balance = get_balance(bidder_id(db), asset_id_type()(db));
 
@@ -1985,8 +1980,6 @@ BOOST_AUTO_TEST_CASE(bid_test)
 
          PUSH_TX(db, trx, ~0);
 
-         BOOST_CHECK_EQUAL(get_balance(agent_id(db), asset_id_type()(db)),
-                           (agent_balance + exp_delta_agent.amount).value);
          BOOST_CHECK_EQUAL(get_balance(bidder_id(db), asset_id_type()(db)),
                            (bidder_balance + exp_delta_bidder.amount).value);
 
@@ -1997,7 +1990,6 @@ BOOST_AUTO_TEST_CASE(bid_test)
          // data integrity
          BOOST_CHECK(offer_obj.bidder == bidder.id);
          BOOST_CHECK(offer_obj.issuer == issuer.id);
-         BOOST_CHECK(offer_obj.transfer_agent_id == agent.id);
          BOOST_CHECK(offer_obj.maximum_price == asset(100));
          BOOST_CHECK(offer_obj.minimum_price == asset(10));
          BOOST_CHECK(offer_obj.bid_price == bid);
@@ -2072,8 +2064,6 @@ BOOST_AUTO_TEST_CASE(second_bid_test)
 
          PUSH_TX(db, trx, ~0);
 
-         BOOST_CHECK_EQUAL(get_balance(agent_id(db), asset_id_type()(db)),
-                           (agent_balance + exp_delta_agent.amount).value);
          BOOST_CHECK_EQUAL(get_balance(bidder_id(db), asset_id_type()(db)),
                            (bidder_balance + exp_delta_bidder.amount).value);
          BOOST_CHECK_EQUAL(get_balance(bidder2_id(db), asset_id_type()(db)),
@@ -2085,7 +2075,6 @@ BOOST_AUTO_TEST_CASE(second_bid_test)
 
          // data integrity
          BOOST_CHECK(offer_obj.bidder == bidder2.id);
-         BOOST_CHECK(offer_obj.transfer_agent_id == agent.id);
          BOOST_CHECK(offer_obj.maximum_price == asset(100));
          BOOST_CHECK(offer_obj.minimum_price == asset(10));
          BOOST_CHECK(offer_obj.bid_price == bid);
@@ -2168,8 +2157,6 @@ BOOST_AUTO_TEST_CASE(buyout_offer_test)
 
          generate_block();
 
-         BOOST_CHECK_EQUAL(get_balance(agent_id(db), asset_id_type()(db)),
-                           (agent_balance + exp_delta_agent.amount).value);
          BOOST_CHECK_EQUAL(get_balance(bidder_id(db), asset_id_type()(db)),
                            (bidder_balance + exp_delta_bidder.amount).value);
          BOOST_CHECK_EQUAL(get_balance(issuer_id(db), asset_id_type()(db)),
@@ -2189,8 +2176,7 @@ BOOST_AUTO_TEST_CASE(buyout_offer_test)
          BOOST_CHECK(cached_offer_obj.maximum_price == history_obj.maximum_price);
          BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
          BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
-         BOOST_CHECK(cached_offer_obj.transfer_agent_id == history_obj.transfer_agent_id);
-         BOOST_CHECK(cached_offer_obj.item_id == history_obj.item_id);
+         BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
       });
    }
    catch (fc::exception &e)
@@ -2243,8 +2229,6 @@ BOOST_AUTO_TEST_CASE(expire_with_bid_offer_test)
 
       generate_blocks(5);
 
-      BOOST_CHECK_EQUAL(get_balance(agent_id(db), asset_id_type()(db)),
-                        (agent_balance + exp_delta_agent.amount).value);
       BOOST_CHECK_EQUAL(get_balance(issuer_id(db), asset_id_type()(db)),
                         (issuer_balance + exp_delta_issuer.amount).value);
       BOOST_CHECK_EQUAL(get_balance(bidder_id(db), asset_id_type()(db)),
@@ -2264,8 +2248,7 @@ BOOST_AUTO_TEST_CASE(expire_with_bid_offer_test)
       BOOST_CHECK(cached_offer_obj.maximum_price == history_obj.maximum_price);
       BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
       BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
-      BOOST_CHECK(cached_offer_obj.transfer_agent_id == history_obj.transfer_agent_id);
-      BOOST_CHECK(cached_offer_obj.item_id == history_obj.item_id);
+      BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
    });
 }
 
@@ -2306,8 +2289,6 @@ BOOST_AUTO_TEST_CASE(expire_no_bid_offer_test)
 
       generate_blocks(5);
 
-      BOOST_CHECK_EQUAL(get_balance(agent_id(db), asset_id_type()(db)),
-                        (agent_balance + exp_delta_agent.amount).value);
       BOOST_CHECK_EQUAL(get_balance(issuer_id(db), asset_id_type()(db)),
                         (issuer_balance + exp_delta_issuer.amount).value);
 
@@ -2325,8 +2306,7 @@ BOOST_AUTO_TEST_CASE(expire_no_bid_offer_test)
       BOOST_CHECK(cached_offer_obj.maximum_price == history_obj.maximum_price);
       BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
       BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
-      BOOST_CHECK(cached_offer_obj.transfer_agent_id == history_obj.transfer_agent_id);
-      BOOST_CHECK(cached_offer_obj.item_id == history_obj.item_id);
+      BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
    });
 }
 // TODO:  Write linear VBO tests

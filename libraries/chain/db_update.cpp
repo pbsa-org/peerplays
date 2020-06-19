@@ -720,7 +720,7 @@ void database::finalize_expired_offers(){
                  ++itr;
 
                  finalize_offer_operation finalize;
-                 finalize.fee_paying_account = offer.transfer_agent_id;
+                 finalize.fee_paying_account = offer.issuer;
                  finalize.offer_id = offer.id;
                  finalize.fee = current_fee_schedule().calculate_fee( finalize );
                  finalize.result = offer.bidder ? result_type::Expired : result_type::ExpiredNoBid;
