@@ -233,6 +233,20 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    generate_block();
 
    {
+      BOOST_TEST_MESSAGE("Send nft_approve_operation");
+
+      nft_set_approval_for_all_operation op;
+      op.owner = alice_id;
+      op.operator_ = bob_id;
+      op.approved = true;
+
+      trx.operations.push_back(op);
+      sign(trx, alice_private_key);
+      PUSH_TX(db, trx, ~0);
+   }
+   generate_block();
+
+   {
       BOOST_TEST_MESSAGE("Check nft_approve_operation results");
 
       const auto& idx = db.get_index_type<nft_index>().indices().get<by_owner>();
@@ -243,29 +257,29 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
       });
    }
 
-   //{
-   //   BOOST_TEST_MESSAGE("Send nft_approve_operation");
-   //
-   //   nft_set_approval_for_all_operation op;
-   //   op.owner = alice_id;
-   //   op.operator_ = bob_id;
-   //   op.approved = false;
-   //
-   //   trx.operations.push_back(op);
-   //   sign(trx, alice_private_key);
-   //   PUSH_TX(db, trx, ~0);
-   //}
-   //generate_block();
-   //
-   //{
-   //   BOOST_TEST_MESSAGE("Check nft_approve_operation results");
-   //
-   //   const auto& idx = db.get_index_type<nft_index>().indices().get<by_owner>();
-   //   const auto &idx_range = idx.equal_range(alice_id);
-   //   std::for_each(idx_range.first, idx_range.second, [&](const nft_object &obj) {
-   //      BOOST_CHECK( obj.approved_operators.size() == 1 );
-   //   });
-   //}
+   {
+      BOOST_TEST_MESSAGE("Send nft_approve_operation");
+
+      nft_set_approval_for_all_operation op;
+      op.owner = alice_id;
+      op.operator_ = bob_id;
+      op.approved = false;
+
+      trx.operations.push_back(op);
+      sign(trx, alice_private_key);
+      PUSH_TX(db, trx, ~0);
+   }
+   generate_block();
+
+   {
+      BOOST_TEST_MESSAGE("Check nft_approve_operation results");
+
+      const auto& idx = db.get_index_type<nft_index>().indices().get<by_owner>();
+      const auto &idx_range = idx.equal_range(alice_id);
+      std::for_each(idx_range.first, idx_range.second, [&](const nft_object &obj) {
+         BOOST_CHECK( obj.approved_operators.size() == 0 );
+      });
+   }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

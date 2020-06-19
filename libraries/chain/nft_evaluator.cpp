@@ -22,8 +22,25 @@ object_id_type nft_create_evaluator::do_apply( const nft_create_operation& op )
 
 void_result nft_safe_transfer_from_evaluator::do_evaluate( const nft_safe_transfer_from_operation& op )
 { try {
+   const auto& idx_nft = db().get_index_type<nft_index>().indices().get<by_id>();
+   const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
 
-    return void_result();
+   auto itr_nft = idx_nft.find(op.token_id);
+   FC_ASSERT( itr_nft != idx_nft.end(), "NFT does not exists" );
+
+   auto itr_owner = idx_acc.find(itr_nft->owner);
+   FC_ASSERT( itr_owner != idx_acc.end(), "Owner account does not exists" );
+
+   auto itr_from = idx_acc.find(op.from);
+   FC_ASSERT( itr_from != idx_acc.end(), "Sender account does not exists" );
+
+   auto itr_to = idx_acc.find(op.to);
+   FC_ASSERT( itr_to != idx_acc.end(), "Receiver account does not exists" );
+
+   auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.from);
+   FC_ASSERT( (itr_nft->owner == itr_from->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Sender is not NFT owner or approved operator" );
+
+   return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
 object_id_type nft_safe_transfer_from_evaluator::do_apply( const nft_safe_transfer_from_operation& op )
@@ -43,6 +60,20 @@ object_id_type nft_safe_transfer_from_evaluator::do_apply( const nft_safe_transf
 
 void_result nft_approve_evaluator::do_evaluate( const nft_approve_operation& op )
 { try {
+   const auto& idx_nft = db().get_index_type<nft_index>().indices().get<by_id>();
+   const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
+
+   auto itr_nft = idx_nft.find(op.token_id);
+   FC_ASSERT( itr_nft != idx_nft.end(), "NFT does not exists" );
+
+   auto itr_owner = idx_acc.find(op.owner);
+   FC_ASSERT( itr_owner != idx_acc.end(), "Owner account does not exists" );
+
+   auto itr_approved = idx_acc.find(op.approved);
+   FC_ASSERT( itr_approved != idx_acc.end(), "Approved account does not exists" );
+
+   auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.owner);
+   FC_ASSERT( (itr_nft->owner == itr_owner->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Sender is not NFT owner or approved operator" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -54,7 +85,10 @@ object_id_type nft_approve_evaluator::do_apply( const nft_approve_operation& op 
    if (itr != idx.end())
    {
       db().modify(*itr, [&op](nft_object &obj) {
-         obj.approved_operators.push_back(op.approved);
+         auto itr = std::find(obj.approved_operators.begin(), obj.approved_operators.end(), op.approved);
+         if (itr == obj.approved_operators.end()) {
+            obj.approved_operators.push_back(op.approved);
+         }
       });
    }
    return op.token_id;
@@ -63,6 +97,10 @@ object_id_type nft_approve_evaluator::do_apply( const nft_approve_operation& op 
 
 void_result nft_set_approval_for_all_evaluator::do_evaluate( const nft_set_approval_for_all_operation& op )
 { try {
+   const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
+
+   auto itr_operator = idx_acc.find(op.operator_);
+   FC_ASSERT( itr_operator != idx_acc.end(), "Operator account does not exists" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -73,10 +111,12 @@ void_result nft_set_approval_for_all_evaluator::do_apply( const nft_set_approval
    const auto &idx_range = idx.equal_range(op.owner);
    std::for_each(idx_range.first, idx_range.second, [&](const nft_object &obj) {
       db().modify(obj, [&op](nft_object &obj) {
-         if (op.approved) {
+         auto itr = std::find(obj.approved_operators.begin(), obj.approved_operators.end(), op.operator_);
+         if ((op.approved) && (itr == obj.approved_operators.end())) {
             obj.approved_operators.push_back(op.operator_);
-         } else {
-            //
+         }
+         if ((!op.approved) && (itr != obj.approved_operators.end())) {
+            obj.approved_operators.erase(itr);
          }
       });
    });
