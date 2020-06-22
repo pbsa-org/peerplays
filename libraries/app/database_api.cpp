@@ -184,6 +184,12 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // gpos
       gpos_info get_gpos_info(const account_id_type account) const;
 
+      // NFT
+      uint64_t nft_get_balance(const account_id_type owner) const;
+      optional<account_id_type> nft_owner_of(const nft_id_type token_id) const;
+      optional<account_id_type> nft_get_approved(const nft_id_type token_id) const;
+      bool nft_is_approved_for_all(const account_id_type owner, const account_id_type operator_) const;
+
    //private:
       const account_object* get_account_from_string( const std::string& name_or_id,
                                                      bool throw_if_not_found = true ) const;
@@ -2240,6 +2246,7 @@ graphene::app::gpos_info database_api::get_gpos_info(const account_id_type accou
    return my->get_gpos_info(account);
 
 }
+
 graphene::app::gpos_info database_api_impl::get_gpos_info(const account_id_type account) const
 {
    FC_ASSERT( _db.head_block_time() > HARDFORK_GPOS_TIME);  //Can be deleted after GPOS hardfork time
@@ -2300,6 +2307,73 @@ graphene::app::gpos_info database_api_impl::get_gpos_info(const account_id_type 
    result.total_amount = total_amount;
    result.allowed_withdraw_amount = allowed_withdraw_amount;
    result.account_vested_balance = account_vested_balance;
+   return result;
+}
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// NFT methods                                                      //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+uint64_t database_api::nft_get_balance(const account_id_type owner) const
+{
+   return my->nft_get_balance(owner);
+}
+
+uint64_t database_api_impl::nft_get_balance(const account_id_type owner) const
+{
+   const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_owner>();
+   const auto &idx_nft_range = idx_nft.equal_range(owner);
+   return std::distance(idx_nft_range.first, idx_nft_range.second);
+}
+
+optional<account_id_type> database_api::nft_owner_of(const nft_id_type token_id) const
+{
+   return my->nft_owner_of(token_id);
+}
+
+optional<account_id_type> database_api_impl::nft_owner_of(const nft_id_type token_id) const
+{
+   const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_id>();
+   auto itr_nft = idx_nft.find(token_id);
+   if (itr_nft != idx_nft.end()) {
+       return itr_nft->owner;
+   }
+   return {};
+}
+
+optional<account_id_type> database_api::nft_get_approved(const nft_id_type token_id) const
+{
+   return my->nft_get_approved(token_id);
+}
+
+optional<account_id_type> database_api_impl::nft_get_approved(const nft_id_type token_id) const
+{
+   const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_id>();
+   auto itr_nft = idx_nft.find(token_id);
+   if (itr_nft != idx_nft.end()) {
+       return itr_nft->approved;
+   }
+   return {};
+}
+
+bool database_api::nft_is_approved_for_all(const account_id_type owner, const account_id_type operator_) const
+{
+   return my->nft_is_approved_for_all(owner, operator_);
+}
+
+bool database_api_impl::nft_is_approved_for_all(const account_id_type owner, const account_id_type operator_) const
+{
+   const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_owner>();
+   const auto &idx_nft_range = idx_nft.equal_range(owner);
+   if (std::distance(idx_nft_range.first, idx_nft_range.second) == 0) {
+       return false;
+   }
+   bool result = true;
+   std::for_each(idx_nft_range.first, idx_nft_range.second, [&](const nft_object &obj) {
+      result = result && (obj.approved == operator_);
+   });
    return result;
 }
 

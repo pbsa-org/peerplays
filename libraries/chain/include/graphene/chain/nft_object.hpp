@@ -13,6 +13,7 @@ namespace graphene { namespace chain {
          static const uint8_t type_id  = nft_object_type;
 
          account_id_type         owner;
+         account_id_type         approved;
          vector<account_id_type> approved_operators;
          std::string             metadata;
    };
@@ -42,6 +43,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::nft_object, (graphene::db::object),
                     (owner)
+                    (approved)
                     (approved_operators)
                     (metadata) )
 

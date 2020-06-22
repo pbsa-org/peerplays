@@ -48,6 +48,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
 
+#include <graphene/chain/nft_object.hpp>
+
 #include <graphene/market_history/market_history_plugin.hpp>
 
 #include <fc/api.hpp>
@@ -709,6 +711,37 @@ class database_api
        */
       gpos_info get_gpos_info(const account_id_type account) const;
 
+      /////////
+      // NFT //
+      /////////
+      /**
+       * @brief Returns the number of NFT owned by account
+       * @param owner Owner account ID
+       * @return Number of NFTs owned by account
+       */
+      uint64_t nft_get_balance(const account_id_type owner) const;
+
+      /**
+       * @brief Returns the NFT owner
+       * @param token_id NFT ID
+       * @return NFT owner account ID
+       */
+      optional<account_id_type> nft_owner_of(const nft_id_type token_id) const;
+
+      /**
+       * @brief Returns the NFT approved account ID
+       * @param token_id NFT ID
+       * @return NFT approved account ID
+       */
+      optional<account_id_type> nft_get_approved(const nft_id_type token_id) const;
+
+      /**
+       * @brief Returns operator approved state for all NFT owned by owner
+       * @param owner NFT owner account ID
+       * @param token_id NFT ID
+       * @return True if operator is approved for all NFT owned by owner, else False
+       */
+      bool nft_is_approved_for_all(const account_id_type owner, const account_id_type operator_) const;
 
 
 private:
@@ -848,4 +881,11 @@ FC_API(graphene::app::database_api,
 
    // gpos
    (get_gpos_info)
+
+   // NFT
+   (nft_get_balance)
+   (nft_owner_of)
+   (nft_get_approved)
+   (nft_is_approved_for_all)
+
 )

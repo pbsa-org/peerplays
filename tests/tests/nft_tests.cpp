@@ -30,6 +30,7 @@ BOOST_AUTO_TEST_CASE( nft_create_test ) {
 
       nft_create_operation op;
       op.owner = alice_id;
+      op.approved = alice_id;
       op.approved_operators.push_back(operator1_id);
       op.approved_operators.push_back(operator2_id);
       op.metadata = "metadata";
@@ -130,10 +131,10 @@ BOOST_AUTO_TEST_CASE( nft_approve_operation_test ) {
       BOOST_REQUIRE( idx.size() == 1 );
       auto obj = idx.begin();
       BOOST_REQUIRE( obj != idx.end() );
-      BOOST_CHECK( obj->approved_operators.size() == 3 );
+      BOOST_CHECK( obj->approved == operator3_id );
+      BOOST_CHECK( obj->approved_operators.size() == 2 );
       BOOST_CHECK( obj->approved_operators.at(0) == operator1_id );
       BOOST_CHECK( obj->approved_operators.at(1) == operator2_id );
-      BOOST_CHECK( obj->approved_operators.at(2) == operator3_id );
    }
 }
 

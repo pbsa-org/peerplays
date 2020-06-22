@@ -13,6 +13,7 @@ object_id_type nft_create_evaluator::do_apply( const nft_create_operation& op )
 { try {
    const auto& new_nft_object = db().create<nft_object>( [&]( nft_object& obj ){
       obj.owner = op.owner;
+      obj.approved = op.approved;
       obj.approved_operators = op.approved_operators;
       obj.metadata = op.metadata;
    });
@@ -28,17 +29,21 @@ void_result nft_safe_transfer_from_evaluator::do_evaluate( const nft_safe_transf
    auto itr_nft = idx_nft.find(op.token_id);
    FC_ASSERT( itr_nft != idx_nft.end(), "NFT does not exists" );
 
+   auto itr_operator = idx_acc.find(op.operator_);
+   FC_ASSERT( itr_operator != idx_acc.end(), "Operator account does not exists" );
+
    auto itr_owner = idx_acc.find(itr_nft->owner);
    FC_ASSERT( itr_owner != idx_acc.end(), "Owner account does not exists" );
 
    auto itr_from = idx_acc.find(op.from);
    FC_ASSERT( itr_from != idx_acc.end(), "Sender account does not exists" );
+   FC_ASSERT( itr_from->id == itr_owner->id, "Sender account is not owner of this NFT" );
 
    auto itr_to = idx_acc.find(op.to);
    FC_ASSERT( itr_to != idx_acc.end(), "Receiver account does not exists" );
 
-   auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.from);
-   FC_ASSERT( (itr_nft->owner == itr_from->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Sender is not NFT owner or approved operator" );
+   auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.operator_);
+   FC_ASSERT( (itr_nft->owner == itr_owner->id) || (itr_nft->approved == itr_operator->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Operator is not NFT owner or approved operator" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -51,6 +56,7 @@ object_id_type nft_safe_transfer_from_evaluator::do_apply( const nft_safe_transf
    {
       db().modify(*itr, [&op](nft_object &obj) {
          obj.owner = op.to;
+         obj.approved = {};
          obj.approved_operators.clear();
       });
    }
@@ -85,10 +91,11 @@ object_id_type nft_approve_evaluator::do_apply( const nft_approve_operation& op 
    if (itr != idx.end())
    {
       db().modify(*itr, [&op](nft_object &obj) {
-         auto itr = std::find(obj.approved_operators.begin(), obj.approved_operators.end(), op.approved);
-         if (itr == obj.approved_operators.end()) {
-            obj.approved_operators.push_back(op.approved);
-         }
+         obj.approved = op.approved;
+         //auto itr = std::find(obj.approved_operators.begin(), obj.approved_operators.end(), op.approved);
+         //if (itr == obj.approved_operators.end()) {
+         //   obj.approved_operators.push_back(op.approved);
+         //}
       });
    }
    return op.token_id;
