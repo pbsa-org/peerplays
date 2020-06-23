@@ -1904,7 +1904,15 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
          return &auth;
       },
       [&]( account_id_type id, const operation& op ) {
-         return _db.get_account_custom_authorities(id, op);
+         vector<authority> custom_auths = _db.get_account_custom_authorities(id, op);
+         for (const auto& cauth: custom_auths)
+         {
+            for (const auto& k : cauth.get_keys())
+            {
+               result.insert(k);
+            }
+         }
+         return custom_auths;
       },
       _db.get_global_properties().parameters.max_authority_depth
    );
