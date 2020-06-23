@@ -1895,6 +1895,110 @@ class wallet_api
                                                 bool is_gpos,
                                                 bool broadcast);
 
+      /////////
+      // NFT //
+      /////////
+      /**
+       * @brief Creates NFT
+       * @param owner_account_id_or_name Owner account ID or name
+       * @param approved_account_id_or_name Approved account ID or name
+       * @param approved_operators_id_or_name Approved operator IDs or names
+       * @param metadata NFT metadata
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction transfering the funds
+       */
+      signed_transaction nft_create(string owner_account_id_or_name,
+                                    string approved_account_id_or_name,
+                                    string metadata,
+                                    bool broadcast);
+
+      /**
+       * @brief Returns the number of NFT owned by account
+       * @param owner_account_id_or_name Owner account ID or name
+       * @return Number of NFTs owned by account
+       */
+      uint64_t nft_get_balance(string owner_account_id_or_name) const;
+
+      /**
+       * @brief Returns the NFT owner
+       * @param token_id NFT ID
+       * @return NFT owner account ID
+       */
+      optional<account_id_type> nft_owner_of(const nft_id_type token_id) const;
+
+      /**
+       * @brief Transfers NFT safely
+       * @param operator_account_id_or_name Operators account ID or name
+       * @param from_account_id_or_name Senders account ID or name
+       * @param to_account_id_or_name Receivers account ID or name
+       * @param token_id NFT ID
+       * @param data Non mandatory data
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction transfering NFT
+       */
+      signed_transaction nft_safe_transfer_from(string operator_account_id_or_name,
+                                                string from_account_id_or_name,
+                                                string to_account_id_or_name,
+                                                nft_id_type token_id,
+                                                string data,
+                                                bool broadcast);
+
+      /**
+       * @brief Transfers NFT
+       * @param operator_account_id_or_name Operators account ID or name
+       * @param from_account_id_or_name Senders account ID or name
+       * @param to_account_id_or_name Receivers account ID or name
+       * @param token_id NFT ID
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction transfering NFT
+       */
+      signed_transaction nft_transfer_from(string operator_account_id_or_name,
+                                           string from_account_id_or_name,
+                                           string to_account_id_or_name,
+                                           nft_id_type token_id,
+                                           bool broadcast);
+
+      /**
+       * @brief Sets approved account for NFT
+       * @param operator_account_id_or_name Operators account ID or name
+       * @param approved_account_id_or_name Senders account ID or name
+       * @param token_id NFT ID
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction setting approving account for NFT
+       */
+      signed_transaction nft_approve(string operator_account_id_or_name,
+                                     string approved_account_id_or_name,
+                                     nft_id_type token_id,
+                                     bool broadcast);
+
+      /**
+       * @brief Sets approval for all NFT owned by owner
+       * @param owner_account_id_or_name Owner account ID or name
+       * @param operator_account_id_or_name Operator account ID or name
+       * @param approved true if approved
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction setting approvals for all NFT owned by owner
+       */
+      signed_transaction nft_set_approval_for_all(string owner_account_id_or_name,
+                                                  string operator_account_id_or_name,
+                                                  bool approved,
+                                                  bool broadcast);
+
+      /**
+       * @brief Returns the NFT approved account ID
+       * @param token_id NFT ID
+       * @return NFT approved account ID
+       */
+      optional<account_id_type> nft_get_approved(const nft_id_type token_id) const;
+
+      /**
+       * @brief Returns operator approved state for all NFT owned by owner
+       * @param owner NFT owner account ID
+       * @param token_id NFT ID
+       * @return True if operator is approved for all NFT owned by owner, else False
+       */
+      bool nft_is_approved_for_all(string owner_account_id_or_name, string operator_account_id_or_name) const;
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_make_mia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2145,6 +2249,14 @@ FC_API( graphene::wallet::wallet_api,
         (tournament_leave)
         (rps_throw)
         (create_vesting_balance)
+        (nft_get_balance)
+        (nft_owner_of)
+        (nft_safe_transfer_from)
+        (nft_transfer_from)
+        (nft_approve)
+        (nft_set_approval_for_all)
+        (nft_get_approved)
+        (nft_is_approved_for_all)
         (get_upcoming_tournaments)
         (get_tournaments)
         (get_tournaments_by_state)

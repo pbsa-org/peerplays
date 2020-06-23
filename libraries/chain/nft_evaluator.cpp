@@ -72,13 +72,13 @@ void_result nft_approve_evaluator::do_evaluate( const nft_approve_operation& op 
    auto itr_nft = idx_nft.find(op.token_id);
    FC_ASSERT( itr_nft != idx_nft.end(), "NFT does not exists" );
 
-   auto itr_owner = idx_acc.find(op.owner);
+   auto itr_owner = idx_acc.find(op.operator_);
    FC_ASSERT( itr_owner != idx_acc.end(), "Owner account does not exists" );
 
    auto itr_approved = idx_acc.find(op.approved);
    FC_ASSERT( itr_approved != idx_acc.end(), "Approved account does not exists" );
 
-   auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.owner);
+   auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.operator_);
    FC_ASSERT( (itr_nft->owner == itr_owner->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Sender is not NFT owner or approved operator" );
 
    return void_result();

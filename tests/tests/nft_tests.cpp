@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( nft_approve_operation_test ) {
       BOOST_TEST_MESSAGE("Send nft_approve_operation");
 
       nft_approve_operation op;
-      op.owner = alice_id;
+      op.operator_ = alice_id;
       op.approved = operator3_id;
       op.token_id = nft_id_type(0);
 

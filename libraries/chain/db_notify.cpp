@@ -301,7 +301,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.to );
    }
    void operator()( const nft_approve_operation& op ) {
-      _impacted.insert( op.owner );
+      _impacted.insert( op.operator_ );
       _impacted.insert( op.approved );
    }
    void operator()( const nft_set_approval_for_all_operation& op ) {
