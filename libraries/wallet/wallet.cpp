@@ -6157,18 +6157,64 @@ signed_transaction wallet_api::create_vesting_balance(string owner,
    return my->sign_transaction( trx, broadcast );
 }
 
-signed_transaction wallet_api::nft_create(string owner_account_id_or_name,
-                              string approved_account_id_or_name,
-                              string metadata,
-                              bool broadcast)
+signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_name,
+                                                   string name,
+                                                   string symbol,
+                                                   string base_uri,
+                                                   bool broadcast)
+{
+   account_object owner_account = my->get_account(owner_account_id_or_name);
+
+   nft_metadata_create_operation op;
+   op.owner = owner_account.id;
+   op.name = name;
+   op.symbol = symbol;
+   op.base_uri = base_uri;
+
+   signed_transaction trx;
+   trx.operations.push_back(op);
+   my->set_operation_fees( trx, my->_remote_db->get_global_properties().parameters.current_fees );
+   trx.validate();
+
+   return my->sign_transaction( trx, broadcast );
+}
+
+signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_name,
+                                                   string name,
+                                                   string symbol,
+                                                   string base_uri,
+                                                   bool broadcast)
+{
+   account_object owner_account = my->get_account(owner_account_id_or_name);
+
+   nft_metadata_update_operation op;
+   op.owner = owner_account.id;
+   op.name = name;
+   op.symbol = symbol;
+   op.base_uri = base_uri;
+
+   signed_transaction trx;
+   trx.operations.push_back(op);
+   my->set_operation_fees( trx, my->_remote_db->get_global_properties().parameters.current_fees );
+   trx.validate();
+
+   return my->sign_transaction( trx, broadcast );
+}
+
+signed_transaction wallet_api::nft_create(nft_metadata_id_type metadata_id,
+                                          string owner_account_id_or_name,
+                                          string approved_account_id_or_name,
+                                          string token_uri,
+                                          bool broadcast)
 {
    account_object owner_account = my->get_account(owner_account_id_or_name);
    account_object approved_account = my->get_account(approved_account_id_or_name);
 
-   nft_create_operation op;
+   nft_mint_operation op;
+   op.nft_metadata_id = op.nft_metadata_id;
    op.owner = owner_account.id;
    op.approved = approved_account.id;
-   op.metadata = metadata;
+   op.token_uri = token_uri;
 
    signed_transaction trx;
    trx.operations.push_back(op);

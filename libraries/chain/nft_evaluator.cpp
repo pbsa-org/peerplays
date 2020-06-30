@@ -3,19 +3,67 @@
 
 namespace graphene { namespace chain {
 
-void_result nft_create_evaluator::do_evaluate( const nft_create_operation& op )
+void_result nft_metadata_create_evaluator::do_evaluate( const nft_metadata_create_operation& op )
 { try {
+   const auto& idx_nft_md_by_name = db().get_index_type<nft_metadata_index>().indices().get<by_name>();
+   FC_ASSERT( idx_nft_md_by_name.find(op.name) == idx_nft_md_by_name.end(), "NFT name already in use" );
+   const auto& idx_nft_md_by_symbol = db().get_index_type<nft_metadata_index>().indices().get<by_symbol>();
+   FC_ASSERT( idx_nft_md_by_symbol.find(op.symbol) == idx_nft_md_by_symbol.end(), "NFT symbol already in use" );
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type nft_metadata_create_evaluator::do_apply( const nft_metadata_create_operation& op )
+{ try {
+   const auto& new_nft_metadata_object = db().create<nft_metadata_object>( [&]( nft_metadata_object& obj ){
+      obj.owner = op.owner;
+      obj.name = op.name;
+      obj.symbol = op.symbol;
+      obj.base_uri = op.base_uri;
+   });
+   return new_nft_metadata_object.id;
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+
+void_result nft_metadata_update_evaluator::do_evaluate( const nft_metadata_update_operation& op )
+{ try {
+   const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
+   auto itr_nft_md = idx_nft_md.find(op.nft_metadata_id);
+   FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
+   FC_ASSERT( itr_nft_md->owner == op.owner, "Only owner can modify NFT metadata" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-object_id_type nft_create_evaluator::do_apply( const nft_create_operation& op )
+void_result nft_metadata_update_evaluator::do_apply( const nft_metadata_update_operation& op )
+{ try {
+   db().modify(db().get(op.nft_metadata_id), [&] ( nft_metadata_object& obj ) {
+      if( op.name.valid() )
+         obj.name = *op.name;
+      if( op.symbol.valid() )
+         obj.symbol = *op.symbol;
+      if( op.base_uri.valid() )
+         obj.base_uri = *op.base_uri;
+   });
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+
+void_result nft_mint_evaluator::do_evaluate( const nft_mint_operation& op )
+{ try {
+   const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
+   auto itr_nft_md = idx_nft_md.find(*op.nft_metadata_id);
+   FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
+
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+object_id_type nft_mint_evaluator::do_apply( const nft_mint_operation& op )
 { try {
    const auto& new_nft_object = db().create<nft_object>( [&]( nft_object& obj ){
+      obj.nft_metadata_id = *op.nft_metadata_id;
       obj.owner = op.owner;
       obj.approved = op.approved;
       obj.approved_operators = op.approved_operators;
-      obj.metadata = op.metadata;
    });
    return new_nft_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }

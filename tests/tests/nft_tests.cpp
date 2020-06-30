@@ -26,14 +26,13 @@ BOOST_AUTO_TEST_CASE( nft_create_test ) {
    set_expiration(db, trx);
 
    {
-      BOOST_TEST_MESSAGE("Send nft_create_operation");
+      BOOST_TEST_MESSAGE("Send nft_mint_operation");
 
-      nft_create_operation op;
+      nft_mint_operation op;
       op.owner = alice_id;
       op.approved = alice_id;
       op.approved_operators.push_back(operator1_id);
       op.approved_operators.push_back(operator2_id);
-      op.metadata = "metadata";
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);
@@ -41,7 +40,7 @@ BOOST_AUTO_TEST_CASE( nft_create_test ) {
    }
    generate_block();
 
-   BOOST_TEST_MESSAGE("Check nft_create_operation results");
+   BOOST_TEST_MESSAGE("Check nft_mint_operation results");
 
    const auto& idx = db.get_index_type<nft_index>().indices().get<by_id>();
    BOOST_REQUIRE( idx.size() == 1 );
@@ -51,7 +50,6 @@ BOOST_AUTO_TEST_CASE( nft_create_test ) {
    BOOST_CHECK( obj->approved_operators.size() == 2 );
    BOOST_CHECK( obj->approved_operators.at(0) == operator1_id );
    BOOST_CHECK( obj->approved_operators.at(1) == operator2_id );
-   BOOST_CHECK( obj->metadata == "metadata" );
 }
 
 
@@ -154,11 +152,10 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    BOOST_TEST_MESSAGE("Create NFT assets");
 
    {
-      BOOST_TEST_MESSAGE("Send nft_create_operation 1");
+      BOOST_TEST_MESSAGE("Send nft_mint_operation 1");
 
-      nft_create_operation op;
+      nft_mint_operation op;
       op.owner = alice_id;
-      op.metadata = "metadata 1";
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);
@@ -167,11 +164,10 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    generate_block();
 
    {
-      BOOST_TEST_MESSAGE("Send nft_create_operation 2");
+      BOOST_TEST_MESSAGE("Send nft_mint_operation 2");
 
-      nft_create_operation op;
+      nft_mint_operation op;
       op.owner = bob_id;
-      op.metadata = "metadata 2";
 
       trx.operations.push_back(op);
       sign(trx, bob_private_key);
@@ -180,11 +176,10 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    generate_block();
 
    {
-      BOOST_TEST_MESSAGE("Send nft_create_operation 3");
+      BOOST_TEST_MESSAGE("Send nft_mint_operation 3");
 
-      nft_create_operation op;
+      nft_mint_operation op;
       op.owner = alice_id;
-      op.metadata = "metadata 3";
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);
@@ -193,11 +188,10 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    generate_block();
 
    {
-      BOOST_TEST_MESSAGE("Send nft_create_operation 4");
+      BOOST_TEST_MESSAGE("Send nft_mint_operation 4");
 
-      nft_create_operation op;
+      nft_mint_operation op;
       op.owner = bob_id;
-      op.metadata = "metadata 4";
 
       trx.operations.push_back(op);
       sign(trx, bob_private_key);
@@ -206,11 +200,10 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    generate_block();
 
    {
-      BOOST_TEST_MESSAGE("Send nft_create_operation 5");
+      BOOST_TEST_MESSAGE("Send nft_mint_operation 5");
 
-      nft_create_operation op;
+      nft_mint_operation op;
       op.owner = alice_id;
-      op.metadata = "metadata 5";
 
       trx.operations.push_back(op);
       sign(trx, alice_private_key);

@@ -247,7 +247,9 @@ void database::initialize_evaluators()
    register_evaluator<lottery_reward_evaluator>();
    register_evaluator<lottery_end_evaluator>();
    register_evaluator<sweeps_vesting_claim_evaluator>();
-   register_evaluator<nft_create_evaluator>();
+   register_evaluator<nft_metadata_create_evaluator>();
+   register_evaluator<nft_metadata_update_evaluator>();
+   register_evaluator<nft_mint_evaluator>();
    register_evaluator<nft_safe_transfer_from_evaluator>();
    register_evaluator<nft_approve_evaluator>();
    register_evaluator<nft_set_approval_for_all_evaluator>();
@@ -293,6 +295,7 @@ void database::initialize_indexes()
    add_index< primary_index<match_index> >();
    add_index< primary_index<game_index> >();
 
+   add_index< primary_index<nft_metadata_index > >();
    add_index< primary_index<nft_index > >();
 
    //Implementation object indexes

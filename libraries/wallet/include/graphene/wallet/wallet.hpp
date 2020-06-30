@@ -1899,17 +1899,48 @@ class wallet_api
       // NFT //
       /////////
       /**
-       * @brief Creates NFT
+       * @brief Creates NFT metadata
        * @param owner_account_id_or_name Owner account ID or name
-       * @param approved_account_id_or_name Approved account ID or name
-       * @param approved_operators_id_or_name Approved operator IDs or names
-       * @param metadata NFT metadata
+       * @param name Name of the token group
+       * @param symbol Symbol of the token group
+       * @param base_uri Base URI for token URI
        * @param broadcast  true to broadcast transaction to the network
        * @return Signed transaction transfering the funds
        */
-      signed_transaction nft_create(string owner_account_id_or_name,
+      signed_transaction nft_metadata_create(string owner_account_id_or_name,
+                                    string name,
+                                    string symbol,
+                                    string base_uri,
+                                    bool broadcast);
+
+      /**
+       * @brief Updates NFT metadata
+       * @param owner_account_id_or_name Owner account ID or name
+       * @param name Name of the token group
+       * @param symbol Symbol of the token group
+       * @param base_uri Base URI for token URI
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction transfering the funds
+       */
+      signed_transaction nft_metadata_update(string owner_account_id_or_name,
+                                    string name,
+                                    string symbol,
+                                    string base_uri,
+                                    bool broadcast);
+
+      /**
+       * @brief Creates NFT
+       * @param metadata_id NFT metadata ID to which token will belong
+       * @param owner_account_id_or_name Owner account ID or name
+       * @param approved_account_id_or_name Approved account ID or name
+       * @param token_uri Token URI (Will be combined with metadata base_uri if its not empty)
+       * @param broadcast  true to broadcast transaction to the network
+       * @return Signed transaction transfering the funds
+       */
+      signed_transaction nft_create(nft_metadata_id_type metadata_id,
+                                    string owner_account_id_or_name,
                                     string approved_account_id_or_name,
-                                    string metadata,
+                                    string token_uri,
                                     bool broadcast);
 
       /**
