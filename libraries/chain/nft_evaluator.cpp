@@ -53,6 +53,7 @@ void_result nft_mint_evaluator::do_evaluate( const nft_mint_operation& op )
    const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
    auto itr_nft_md = idx_nft_md.find(*op.nft_metadata_id);
    FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
+   FC_ASSERT( itr_nft_md->owner == op.payer, "Only metadata owner can mint NFT" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

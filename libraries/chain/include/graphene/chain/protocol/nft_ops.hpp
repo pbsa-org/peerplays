@@ -36,13 +36,15 @@ namespace graphene { namespace chain {
       struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
       asset fee;
 
+      account_id_type payer;
+
       optional<nft_metadata_id_type> nft_metadata_id;
       account_id_type owner;
       account_id_type approved;
       vector<account_id_type> approved_operators;
       std::string token_uri;
 
-      account_id_type fee_payer()const { return owner; }
+      account_id_type fee_payer()const { return payer; }
    };
 
    struct nft_safe_transfer_from_operation : public base_operation

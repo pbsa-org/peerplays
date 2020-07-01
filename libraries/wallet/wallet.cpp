@@ -6201,16 +6201,19 @@ signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_na
    return my->sign_transaction( trx, broadcast );
 }
 
-signed_transaction wallet_api::nft_create(nft_metadata_id_type metadata_id,
+signed_transaction wallet_api::nft_create(string metadata_owner_account_id_or_name,
+                                          nft_metadata_id_type metadata_id,
                                           string owner_account_id_or_name,
                                           string approved_account_id_or_name,
                                           string token_uri,
                                           bool broadcast)
 {
+   account_object metadata_owner_account = my->get_account(metadata_owner_account_id_or_name);
    account_object owner_account = my->get_account(owner_account_id_or_name);
    account_object approved_account = my->get_account(approved_account_id_or_name);
 
    nft_mint_operation op;
+   op.payer = metadata_owner_account.id;
    op.nft_metadata_id = op.nft_metadata_id;
    op.owner = owner_account.id;
    op.approved = approved_account.id;

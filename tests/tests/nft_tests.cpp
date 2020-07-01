@@ -10,17 +10,97 @@ using namespace graphene::chain::test;
 
 BOOST_FIXTURE_TEST_SUITE( nft_tests, database_fixture )
 
-BOOST_AUTO_TEST_CASE( nft_create_test ) {
+BOOST_AUTO_TEST_CASE( nft_metadata_create_test ) {
 
-   BOOST_TEST_MESSAGE("nft_create_test");
+   BOOST_TEST_MESSAGE("nft_metadata_create_test");
 
    generate_block();
    set_expiration(db, trx);
+
+   ACTORS((mdowner));
+
+   generate_block();
+   set_expiration(db, trx);
+
+   {
+      BOOST_TEST_MESSAGE("Send nft_metadata_create_operation");
+
+      nft_metadata_create_operation op;
+      op.owner = mdowner_id;
+      op.name = "NFT Test";
+      op.symbol = "NFT";
+      op.base_uri = "http://nft.example.com";
+
+      trx.operations.push_back(op);
+      sign(trx, mdowner_private_key);
+      PUSH_TX(db, trx, ~0);
+   }
+   generate_block();
+
+   BOOST_TEST_MESSAGE("Check nft_metadata_create_operation results");
+
+   const auto& idx = db.get_index_type<nft_metadata_index>().indices().get<by_id>();
+   BOOST_REQUIRE( idx.size() == 1 );
+   auto obj = idx.begin();
+   BOOST_REQUIRE( obj != idx.end() );
+   BOOST_CHECK( obj->owner == mdowner_id );
+   BOOST_CHECK( obj->name == "NFT Test" );
+   BOOST_CHECK( obj->symbol == "NFT" );
+   BOOST_CHECK( obj->base_uri == "http://nft.example.com" );
+}
+
+
+BOOST_AUTO_TEST_CASE( nft_metadata_update_test ) {
+
+   BOOST_TEST_MESSAGE("nft_metadata_update_test");
+
+   INVOKE(nft_metadata_create_test);
+
+   GET_ACTOR(mdowner);
+
+   {
+      BOOST_TEST_MESSAGE("Send nft_metadata_update_operation");
+
+      nft_metadata_update_operation op;
+      op.owner = mdowner_id;
+      op.name = "New NFT Test";
+      op.symbol = "New NFT";
+      op.base_uri = "new http://nft.example.com";
+
+      trx.operations.push_back(op);
+      sign(trx, mdowner_private_key);
+      PUSH_TX(db, trx, ~0);
+   }
+   generate_block();
+
+   BOOST_TEST_MESSAGE("Check nft_metadata_update_operation results");
+
+   const auto& idx = db.get_index_type<nft_metadata_index>().indices().get<by_id>();
+   BOOST_REQUIRE( idx.size() == 1 );
+   auto obj = idx.begin();
+   BOOST_REQUIRE( obj != idx.end() );
+   BOOST_CHECK( obj->owner == mdowner_id );
+   BOOST_CHECK( obj->name == "New NFT Test" );
+   BOOST_CHECK( obj->symbol == "New NFT" );
+   BOOST_CHECK( obj->base_uri == "new http://nft.example.com" );
+}
+
+
+BOOST_AUTO_TEST_CASE( nft_mint_test ) {
+
+   BOOST_TEST_MESSAGE("nft_mint_test");
+
+   generate_block();
+   set_expiration(db, trx);
+
+   INVOKE(nft_metadata_create_test);
 
    ACTORS((alice));
    ACTORS((bob));
    ACTORS((operator1));
    ACTORS((operator2));
+
+   GET_ACTOR(mdowner);
 
    generate_block();
    set_expiration(db, trx);
@@ -28,7 +108,13 @@ BOOST_AUTO_TEST_CASE( nft_create_test ) {
    {
       BOOST_TEST_MESSAGE("Send nft_mint_operation");
 
+      const auto& idx = db.get_index_type<nft_metadata_index>().indices().get<by_id>();
+      BOOST_REQUIRE( idx.size() == 1 );
+      auto nft_md_obj = idx.begin();
+
       nft_mint_operation op;
+      op.payer = mdowner_id;
+      op.nft_metadata_id = nft_md_obj->id;
       op.owner = alice_id;
       op.approved = alice_id;
       op.approved_operators.push_back(operator1_id);
@@ -57,7 +143,7 @@ BOOST_AUTO_TEST_CASE( nft_safe_transfer_from_test ) {
 
    BOOST_TEST_MESSAGE("nft_safe_transfer_from_test");
 
-   INVOKE(nft_create_test);
+   INVOKE(nft_mint_test);
 
    GET_ACTOR(alice);
    GET_ACTOR(bob);
@@ -100,7 +186,7 @@ BOOST_AUTO_TEST_CASE( nft_approve_operation_test ) {
 
    BOOST_TEST_MESSAGE("nft_approve_operation_test");
 
-   INVOKE(nft_create_test);
+   INVOKE(nft_mint_test);
 
    GET_ACTOR(alice);
    GET_ACTOR(operator1);
@@ -146,19 +232,29 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
    ACTORS((alice));
    ACTORS((bob));
 
+   INVOKE(nft_metadata_create_test);
+
+   GET_ACTOR(mdowner);
+
    generate_block();
    set_expiration(db, trx);
 
    BOOST_TEST_MESSAGE("Create NFT assets");
 
+   const auto& idx = db.get_index_type<nft_metadata_index>().indices().get<by_id>();
+   BOOST_REQUIRE( idx.size() == 1 );
+   auto nft_md_obj = idx.begin();
+
    {
       BOOST_TEST_MESSAGE("Send nft_mint_operation 1");
 
       nft_mint_operation op;
+      op.payer = mdowner_id;
+      op.nft_metadata_id = nft_md_obj->id;
       op.owner = alice_id;
 
       trx.operations.push_back(op);
-      sign(trx, alice_private_key);
+      sign(trx, mdowner_private_key);
       PUSH_TX(db, trx, ~0);
    }
    generate_block();
@@ -167,10 +263,12 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
       BOOST_TEST_MESSAGE("Send nft_mint_operation 2");
 
       nft_mint_operation op;
+      op.payer = mdowner_id;
+      op.nft_metadata_id = nft_md_obj->id;
       op.owner = bob_id;
 
       trx.operations.push_back(op);
-      sign(trx, bob_private_key);
+      sign(trx, mdowner_private_key);
       PUSH_TX(db, trx, ~0);
    }
    generate_block();
@@ -179,10 +277,12 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
       BOOST_TEST_MESSAGE("Send nft_mint_operation 3");
 
       nft_mint_operation op;
+      op.payer = mdowner_id;
+      op.nft_metadata_id = nft_md_obj->id;
       op.owner = alice_id;
 
       trx.operations.push_back(op);
-      sign(trx, alice_private_key);
+      sign(trx, mdowner_private_key);
       PUSH_TX(db, trx, ~0);
    }
    generate_block();
@@ -191,10 +291,12 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
       BOOST_TEST_MESSAGE("Send nft_mint_operation 4");
 
       nft_mint_operation op;
+      op.payer = mdowner_id;
+      op.nft_metadata_id = nft_md_obj->id;
       op.owner = bob_id;
 
       trx.operations.push_back(op);
-      sign(trx, bob_private_key);
+      sign(trx, mdowner_private_key);
       PUSH_TX(db, trx, ~0);
    }
    generate_block();
@@ -203,10 +305,12 @@ BOOST_AUTO_TEST_CASE( nft_set_approval_for_all_test ) {
       BOOST_TEST_MESSAGE("Send nft_mint_operation 5");
 
       nft_mint_operation op;
+      op.payer = mdowner_id;
+      op.nft_metadata_id = nft_md_obj->id;
       op.owner = alice_id;
 
       trx.operations.push_back(op);
-      sign(trx, alice_private_key);
+      sign(trx, mdowner_private_key);
       PUSH_TX(db, trx, ~0);
    }
    generate_block();

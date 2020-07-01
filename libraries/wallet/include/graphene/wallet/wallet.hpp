@@ -1930,6 +1930,7 @@ class wallet_api
 
       /**
        * @brief Creates NFT
+       * @param metadata_owner_account_id_or_name NFT metadata owner account ID or name
        * @param metadata_id NFT metadata ID to which token will belong
        * @param owner_account_id_or_name Owner account ID or name
        * @param approved_account_id_or_name Approved account ID or name
@@ -1937,7 +1938,8 @@ class wallet_api
        * @param broadcast  true to broadcast transaction to the network
        * @return Signed transaction transfering the funds
        */
-      signed_transaction nft_create(nft_metadata_id_type metadata_id,
+      signed_transaction nft_create(string metadata_owner_account_id_or_name,
+                                    nft_metadata_id_type metadata_id,
                                     string owner_account_id_or_name,
                                     string approved_account_id_or_name,
                                     string token_uri,
