@@ -50,6 +50,7 @@ namespace graphene { namespace chain {
    using nft_metadata_index = generic_index<nft_metadata_object, nft_metadata_multi_index_type>;
 
    struct by_metadata;
+   struct by_metadata_and_owner;
    struct by_owner;
    struct by_owner_and_id;
    using nft_multi_index_type = multi_index_container<
@@ -60,6 +61,12 @@ namespace graphene { namespace chain {
          >,
          ordered_non_unique< tag<by_metadata>,
             member<nft_object, nft_metadata_id_type, &nft_object::nft_metadata_id>
+         >,
+         ordered_non_unique< tag<by_metadata_and_owner>,
+            composite_key<nft_object,
+               member<nft_object, nft_metadata_id_type, &nft_object::nft_metadata_id>,
+               member<nft_object, account_id_type, &nft_object::owner>
+            >
          >,
          ordered_non_unique< tag<by_owner>,
             member<nft_object, account_id_type, &nft_object::owner>
