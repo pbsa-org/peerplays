@@ -44,6 +44,7 @@
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
 #include <graphene/chain/offer_object.hpp>
+#include <graphene/chain/nft_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <iostream>

@@ -117,6 +117,7 @@ add_library( graphene_chain
              affiliate_payout.cpp
 
              offer_evaluator.cpp
+             nft_evaluator.cpp
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}

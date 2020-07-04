@@ -48,6 +48,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
 
+#include <graphene/chain/nft_object.hpp>
+
 #include <graphene/market_history/market_history_plugin.hpp>
 
 #include <fc/api.hpp>
@@ -709,7 +711,82 @@ class database_api
        */
       gpos_info get_gpos_info(const account_id_type account) const;
 
+      /////////
+      // NFT //
+      /////////
+      /**
+       * @brief Returns the number of NFT owned by account
+       * @param owner Owner account ID
+       * @return Number of NFTs owned by account
+       */
+      uint64_t nft_get_balance(const account_id_type owner) const;
 
+      /**
+       * @brief Returns the NFT owner
+       * @param token_id NFT ID
+       * @return NFT owner account ID
+       */
+      optional<account_id_type> nft_owner_of(const nft_id_type token_id) const;
+
+      /**
+       * @brief Returns the NFT approved account ID
+       * @param token_id NFT ID
+       * @return NFT approved account ID
+       */
+      optional<account_id_type> nft_get_approved(const nft_id_type token_id) const;
+
+      /**
+       * @brief Returns operator approved state for all NFT owned by owner
+       * @param owner NFT owner account ID
+       * @param token_id NFT ID
+       * @return True if operator is approved for all NFT owned by owner, else False
+       */
+      bool nft_is_approved_for_all(const account_id_type owner, const account_id_type operator_) const;
+
+      /**
+       * @brief Returns NFT name from NFT metadata
+       * @param nft_metadata_id NFT metadata ID
+       * @return NFT name
+       */
+      string nft_get_name(const nft_metadata_id_type nft_metadata_id) const;
+
+      /**
+       * @brief Returns NFT symbol from NFT metadata
+       * @param nft_metadata_id NFT metadata ID
+       * @return NFT symbol
+       */
+      string nft_get_symbol(const nft_metadata_id_type nft_metadata_id) const;
+
+      /**
+       * @brief Returns NFT URI
+       * @param token_id NFT ID
+       * @return NFT URI
+       */
+      string nft_get_token_uri(const nft_id_type token_id) const;
+
+      /**
+       * @brief Returns total number of NFTs assigned to NFT metadata
+       * @param nft_metadata_id NFT metadata ID
+       * @return Total number of NFTs assigned to NFT metadata
+       */
+      uint64_t nft_get_total_supply(const nft_metadata_id_type nft_metadata_id) const;
+
+      /**
+       * @brief Returns NFT by index from NFT metadata
+       * @param nft_metadata_id NFT metadata ID
+       * @param token_idx NFT index in the list of tokens
+       * @return NFT symbol
+       */
+      nft_object nft_token_by_index(const nft_metadata_id_type nft_metadata_id, const uint64_t token_idx) const;
+
+      /**
+       * @brief Returns NFT URI
+       * @param nft_metadata_id NFT metadata ID
+       * @param owner NFT owner
+       * @param token_idx NFT index in the list of tokens
+       * @return NFT URI
+       */
+      nft_object nft_token_of_owner_by_index(const nft_metadata_id_type nft_metadata_id, const account_id_type owner, const uint64_t token_idx) const;
 
 private:
       std::shared_ptr< database_api_impl > my;
@@ -848,4 +925,17 @@ FC_API(graphene::app::database_api,
 
    // gpos
    (get_gpos_info)
+
+   // NFT
+   (nft_get_balance)
+   (nft_owner_of)
+   (nft_get_approved)
+   (nft_is_approved_for_all)
+   (nft_get_name)
+   (nft_get_symbol)
+   (nft_get_token_uri)
+   (nft_get_total_supply)
+   (nft_token_by_index)
+   (nft_token_of_owner_by_index)
+
 )

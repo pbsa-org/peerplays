@@ -293,17 +293,34 @@ struct get_impacted_account_visitor
    void operator()( const sweeps_vesting_claim_operation& op ) {
       _impacted.insert( op.account );
    }
-
-   void operator()( const offer_operation& op )
-   { 
+   void operator()( const nft_metadata_create_operation& op ) {
+      _impacted.insert( op.owner );
+   }
+   void operator()( const nft_metadata_update_operation& op ) {
+      _impacted.insert( op.owner );
+   }
+   void operator()( const nft_mint_operation& op ) {
+      _impacted.insert( op.owner );
+   }
+   void operator()( const nft_safe_transfer_from_operation& op ) {
+      _impacted.insert( op.from );
+      _impacted.insert( op.to );
+   }
+   void operator()( const nft_approve_operation& op ) {
+      _impacted.insert( op.operator_ );
+      _impacted.insert( op.approved );
+   }
+   void operator()( const nft_set_approval_for_all_operation& op ) {
+      _impacted.insert( op.owner );
+      _impacted.insert( op.operator_ );
+   }
+   void operator()( const offer_operation& op ) { 
       _impacted.insert( op.issuer );   
    }
-   void operator()( const bid_operation& op )
-   {
+   void operator()( const bid_operation& op ) {
 	  _impacted.insert( op.bidder );
    }
-   void operator()( const finalize_offer_operation& op )
-   {
+   void operator()( const finalize_offer_operation& op ) {
        _impacted.insert( op.fee_paying_account );
    }
 };
