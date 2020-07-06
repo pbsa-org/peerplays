@@ -282,6 +282,7 @@ namespace graphene { namespace chain {
          std::vector<uint32_t>                  get_seeds( asset_id_type for_asset, uint8_t count_winners )const;
          uint64_t                               get_random_bits( uint64_t bound );
          const witness_schedule_object&         get_witness_schedule_object()const;
+         bool                                   item_locked(const nft_id_type& item)const;
 
          time_point_sec   head_block_time()const;
          uint32_t         head_block_num()const;

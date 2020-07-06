@@ -305,7 +305,8 @@ void database::initialize_indexes()
    tournament_details_idx->add_secondary_index<tournament_players_index>();
    add_index< primary_index<match_index> >();
    add_index< primary_index<game_index> >();
-   add_index< primary_index<offer_index> >();
+   auto offer_idx = add_index< primary_index<offer_index> >();
+   offer_idx->add_secondary_index<offer_item_index>();
 
    add_index< primary_index<nft_metadata_index > >();
    add_index< primary_index<nft_index > >();

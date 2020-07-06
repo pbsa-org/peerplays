@@ -4,113 +4,123 @@
 
 namespace graphene
 {
-namespace chain
-{
-
-/*
-    *  @class offer_operation
-    *  @brief To place an offer to buy or sell an item, a user broadcasts a proposed transaction
-    *  @ingroup operations
-    *  @pre amount.asset_id->issuer == issuer
-    *  @pre issuer != from  because this is pointless, use a normal transfer operation
-    */
-struct offer_operation : public base_operation
-{
-   struct fee_parameters_type
+   namespace chain
    {
-      uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-      uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
-   };
 
-   set<uint32_t> item_ids;
+      /*
+ *  @class offer_operation
+ *  @brief To place an offer to buy or sell an item, a user broadcasts a
+ * proposed transaction
+ *  @ingroup operations
+ * operation
+ */
+      struct offer_operation : public base_operation
+      {
+         struct fee_parameters_type
+         {
+            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+            uint32_t price_per_kbyte =
+                10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+         };
 
-   // /**
-   //  * minimum_price.asset_id == maximum_price.asset_id.
-   //  * to set fixed price without auction minimum_price == maximum_price
-   //  * If buying_item is true, and minimum_price != maximum_price, the user is proposing a “reverse auction”
-   //  * where bidders can offer to sell the item for progressively lower prices.
-   //  * In this case, minimum_price functions as the sell-it-now price for the reverse auction
-   //  */
+         set<nft_id_type> item_ids;
 
-   asset fee;
-   account_id_type issuer;
+         // /**
+         //  * minimum_price.asset_id == maximum_price.asset_id.
+         //  * to set fixed price without auction minimum_price == maximum_price
+         //  * If buying_item is true, and minimum_price != maximum_price, the user is
+         //  proposing a “reverse auction”
+         //  * where bidders can offer to sell the item for progressively lower prices.
+         //  * In this case, minimum_price functions as the sell-it-now price for the
+         //  reverse auction
+         //  */
 
-   /// minimum_price is minimum bid price. 0 if no minimum_price required
-   asset minimum_price;
-   /// buy_it_now price. 0 if no maximum price
-   asset maximum_price;
-   /// true means user wants to buy item, false mean user is selling item
-   bool buying_item;
-   /// not transaction expiration date
-   fc::time_point_sec offer_expiration_date;
+         asset fee;
+         account_id_type issuer;
 
-   /// User provided data encrypted to the memo key of the "to" account
-   optional<memo_data> memo;
-   extensions_type extensions;
+         /// minimum_price is minimum bid price. 0 if no minimum_price required
+         asset minimum_price;
+         /// buy_it_now price. 0 if no maximum price
+         asset maximum_price;
+         /// true means user wants to buy item, false mean user is selling item
+         bool buying_item;
+         /// not transaction expiration date
+         fc::time_point_sec offer_expiration_date;
 
-   account_id_type fee_payer() const { return issuer; }
-   void validate() const;
-   share_type calculate_fee(const fee_parameters_type &k) const;
-};
+         /// User provided data encrypted to the memo key of the "to" account
+         optional<memo_data> memo;
+         extensions_type extensions;
 
-struct bid_operation : public base_operation
-{
-   struct fee_parameters_type
-   {
-      uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-      uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
-   };
+         account_id_type fee_payer() const { return issuer; }
+         void validate() const;
+         share_type calculate_fee(const fee_parameters_type &k) const;
+      };
 
-   asset fee;
-   account_id_type bidder;
+      struct bid_operation : public base_operation
+      {
+         struct fee_parameters_type
+         {
+            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+            uint32_t price_per_kbyte =
+                10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+         };
 
-   asset bid_price;
-   offer_id_type offer_id;
+         asset fee;
+         account_id_type bidder;
 
-   extensions_type extensions;
+         asset bid_price;
+         offer_id_type offer_id;
 
-   account_id_type fee_payer() const { return bidder; }
-   void validate() const;
-   share_type calculate_fee(const fee_parameters_type &k) const;
-};
+         extensions_type extensions;
 
-enum class result_type
-{
-   Expired = 0,
-   ExpiredNoBid = 1
-};
+         account_id_type fee_payer() const { return bidder; }
+         void validate() const;
+         share_type calculate_fee(const fee_parameters_type &k) const;
+      };
 
-struct finalize_offer_operation : public base_operation
-{
-   struct fee_parameters_type
-   {
-      uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-      uint32_t price_per_kbyte = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
-   };
+      enum class result_type
+      {
+         Expired = 0,
+         ExpiredNoBid = 1
+      };
 
-   asset fee;
-   account_id_type fee_paying_account;
+      struct finalize_offer_operation : public base_operation
+      {
+         struct fee_parameters_type
+         {
+            uint64_t fee = 0;
+         };
 
-   offer_id_type offer_id;
+         asset fee;
+         account_id_type fee_paying_account;
 
-   fc::enum_type<uint8_t, result_type> result;
+         offer_id_type offer_id;
 
-   extensions_type extensions;
+         fc::enum_type<uint8_t, result_type> result;
 
-   account_id_type fee_payer() const { return fee_paying_account; }
-   void validate() const;
-   share_type calculate_fee(const fee_parameters_type &k) const;
-};
+         extensions_type extensions;
 
-} // namespace chain
+         account_id_type fee_payer() const { return fee_paying_account; }
+         void validate() const;
+         share_type calculate_fee(const fee_parameters_type &k) const;
+      };
+
+   } // namespace chain
 } // namespace graphene
 
-FC_REFLECT(graphene::chain::offer_operation::fee_parameters_type, (fee)(price_per_kbyte));
-FC_REFLECT(graphene::chain::offer_operation, (fee)(issuer)(memo)(minimum_price)(maximum_price)(buying_item)(item_ids)(offer_expiration_date)(extensions));
+FC_REFLECT(graphene::chain::offer_operation::fee_parameters_type,
+           (fee)(price_per_kbyte));
+FC_REFLECT(graphene::chain::offer_operation,
+           (fee)(issuer)(memo)(minimum_price)(maximum_price)(buying_item)(
+               item_ids)(offer_expiration_date)(extensions));
 
-FC_REFLECT(graphene::chain::bid_operation::fee_parameters_type, (fee)(price_per_kbyte));
-FC_REFLECT(graphene::chain::bid_operation, (fee)(bidder)(bid_price)(offer_id)(extensions));
+FC_REFLECT(graphene::chain::bid_operation::fee_parameters_type,
+           (fee)(price_per_kbyte));
+FC_REFLECT(graphene::chain::bid_operation,
+           (fee)(bidder)(bid_price)(offer_id)(extensions));
 
 FC_REFLECT_ENUM(graphene::chain::result_type, (Expired)(ExpiredNoBid));
-FC_REFLECT(graphene::chain::finalize_offer_operation::fee_parameters_type, (fee)(price_per_kbyte));
-FC_REFLECT(graphene::chain::finalize_offer_operation, (fee)(fee_paying_account)(offer_id)(result)(extensions));
+FC_REFLECT(graphene::chain::finalize_offer_operation::fee_parameters_type,
+           (fee));
+FC_REFLECT(graphene::chain::finalize_offer_operation,
+           (fee)(fee_paying_account)(offer_id)(result)(extensions));

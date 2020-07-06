@@ -161,6 +161,7 @@ BOOST_AUTO_TEST_CASE( nft_safe_transfer_from_test ) {
       BOOST_TEST_MESSAGE("Send nft_safe_transfer_operation");
 
       nft_safe_transfer_from_operation op;
+      op.operator_ = alice_id;
       op.from = alice_id;
       op.to = bob_id;
       op.token_id = nft_id_type(0);

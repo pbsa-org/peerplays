@@ -78,6 +78,8 @@ void_result nft_safe_transfer_from_evaluator::do_evaluate( const nft_safe_transf
    auto itr_nft = idx_nft.find(op.token_id);
    FC_ASSERT( itr_nft != idx_nft.end(), "NFT does not exists" );
 
+   FC_ASSERT(!db().item_locked(op.token_id), "Item(s) is already on sale on market, transfer is not allowed");
+
    auto itr_operator = idx_acc.find(op.operator_);
    FC_ASSERT( itr_operator != idx_acc.end(), "Operator account does not exists" );
 
@@ -92,7 +94,7 @@ void_result nft_safe_transfer_from_evaluator::do_evaluate( const nft_safe_transf
    FC_ASSERT( itr_to != idx_acc.end(), "Receiver account does not exists" );
 
    auto itr_approved_op = std::find(itr_nft->approved_operators.begin(), itr_nft->approved_operators.end(), op.operator_);
-   FC_ASSERT( (itr_nft->owner == itr_owner->id) || (itr_nft->approved == itr_operator->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Operator is not NFT owner or approved operator" );
+   FC_ASSERT( (itr_nft->owner == op.operator_) || (itr_nft->approved == itr_operator->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Operator is not NFT owner or approved operator" );
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

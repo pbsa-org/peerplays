@@ -722,7 +722,7 @@ void database::finalize_expired_offers(){
                  finalize_offer_operation finalize;
                  finalize.fee_paying_account = offer.issuer;
                  finalize.offer_id = offer.id;
-                 finalize.fee = current_fee_schedule().calculate_fee( finalize );
+                 finalize.fee = asset( 0, asset_id_type() );
                  finalize.result = offer.bidder ? result_type::Expired : result_type::ExpiredNoBid;
 
                  cancel_context.skip_fee_schedule_check = true;
