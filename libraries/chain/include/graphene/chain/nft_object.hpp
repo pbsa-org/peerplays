@@ -16,6 +16,8 @@ namespace graphene { namespace chain {
          std::string     name;
          std::string     symbol;
          std::string     base_uri;
+         optional<account_id_type> revenue_partner;
+         optional<double> revenue_split;
    };
 
    class nft_object : public abstract_object<nft_object>
@@ -87,7 +89,9 @@ FC_REFLECT_DERIVED( graphene::chain::nft_metadata_object, (graphene::db::object)
                     (owner)
                     (name)
                     (symbol)
-                    (base_uri) )
+                    (base_uri)
+                    (revenue_partner)
+                    (revenue_split) )
 
 FC_REFLECT_DERIVED( graphene::chain::nft_object, (graphene::db::object),
                     (nft_metadata_id)

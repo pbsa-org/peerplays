@@ -11,7 +11,6 @@ namespace graphene
 {
     namespace chain
     {
-
         void_result offer_evaluator::do_evaluate(const offer_operation &op)
         {
             try
@@ -33,7 +32,7 @@ namespace graphene
                     }
                     else
                     {
-                        FC_ASSERT(is_owner || is_approved || is_approved_operator, "Issuer has no authority to sell the item");
+                        FC_ASSERT(is_owner, "Issuer has no authority to sell the item");
                     }
                 }
                 FC_ASSERT(op.offer_expiration_date > d.head_block_time(), "Expiration should be in future");
@@ -87,7 +86,7 @@ namespace graphene
                     bool is_approved_operator = (std::find(nft_obj.approved_operators.begin(), nft_obj.approved_operators.end(), op.bidder) != nft_obj.approved_operators.end());
                     if (offer.buying_item)
                     {
-                        FC_ASSERT(is_owner || is_approved || is_approved_operator, "Bidder has no authority to sell the item");
+                        FC_ASSERT(is_owner, "Bidder has no authority to sell the item");
                     }
                     else
                     {
@@ -165,7 +164,6 @@ namespace graphene
                     FC_THROW_EXCEPTION(fc::assert_exception, "finalize_offer_operation: unknown result type.");
                     break;
                 }
-
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
@@ -176,25 +174,61 @@ namespace graphene
             try
             {
                 database &d = db();
-
                 offer_object offer = op.offer_id(d);
                 vector<nft_safe_transfer_from_operation> xfer_ops;
+                // Calculate the fees for all revenue partners of the items
+                auto calc_fee = [&](int64_t &tot_fees) {
+                    map<account_id_type, asset> fee_map;
+                    for (const auto &item : offer.item_ids)
+                    {
+                        const auto &nft_obj = item(d);
+                        const auto &nft_meta_obj = nft_obj.nft_metadata_id(d);
+                        if (nft_meta_obj.revenue_partner && *nft_meta_obj.revenue_split > 0.0)
+                        {
+                            const auto &rev_partner = *nft_meta_obj.revenue_partner;
+                            const auto &rev_split = *nft_meta_obj.revenue_split;
+                            int64_t item_fee = static_cast<int64_t>((rev_split * (*offer.bid_price).amount.value) / offer.item_ids.size());
+                            const auto& fee_asset = asset(item_fee, (*offer.bid_price).asset_id);
+                            auto ret_val = fee_map.insert({rev_partner, fee_asset});
+                            if ( ret_val.second == false ) {
+                                fee_map[rev_partner] += fee_asset;
+                            }
+                            tot_fees += item_fee;
+                        }
+                    }
+                    return fee_map;
+                };
 
                 if (op.result != result_type::ExpiredNoBid)
                 {
+                    int64_t tot_fees = 0;
+                    auto &&fee_map = calc_fee(tot_fees);
+                    // Transfer all the fee
+                    for (const auto &fee_itr : fee_map)
+                    {
+                        auto &acc = fee_itr.first;
+                        auto &acc_fee = fee_itr.second;
+                        d.adjust_balance(acc, acc_fee);
+                    }
+                    // Calculate the remaining seller amount after the fee is deducted
+                    auto &&seller_amount = *offer.bid_price - asset(tot_fees, (*offer.bid_price).asset_id);
+                    // Buy Offer
                     if (offer.buying_item)
                     {
-                        d.adjust_balance(*offer.bidder, *offer.bid_price);
+                        // Send the seller his amount
+                        d.adjust_balance(*offer.bidder, seller_amount);
                         if (offer.bid_price < offer.maximum_price)
                         {
+                            // Send the buyer the delta
                             d.adjust_balance(offer.issuer, offer.maximum_price - *offer.bid_price);
                         }
                     }
                     else
                     {
-                        d.adjust_balance(offer.issuer, *offer.bid_price);
+                        // Sell Offer, send the seller his amount
+                        d.adjust_balance(offer.issuer, seller_amount);
                     }
-
+                    // Safely tranfer the NFTs with the ops
                     for (const auto &item : offer.item_ids)
                     {
                         const auto &nft_obj = item(d);
@@ -244,7 +278,6 @@ namespace graphene
                         d.apply_operation(xfer_context, xfer_op);
                     }
                 }
-
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))

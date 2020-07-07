@@ -9,6 +9,11 @@ void_result nft_metadata_create_evaluator::do_evaluate( const nft_metadata_creat
    FC_ASSERT( idx_nft_md_by_name.find(op.name) == idx_nft_md_by_name.end(), "NFT name already in use" );
    const auto& idx_nft_md_by_symbol = db().get_index_type<nft_metadata_index>().indices().get<by_symbol>();
    FC_ASSERT( idx_nft_md_by_symbol.find(op.symbol) == idx_nft_md_by_symbol.end(), "NFT symbol already in use" );
+   FC_ASSERT( (op.revenue_partner && op.revenue_split) || (!op.revenue_partner && !op.revenue_split), "NFT revenue partner info invalid" );
+   if(op.revenue_partner) {
+      (*op.revenue_partner)(db());
+      FC_ASSERT( *op.revenue_split >= 0.0 && *op.revenue_split <= 1.0, "Revenue split percent invalid" );
+   }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -19,6 +24,8 @@ object_id_type nft_metadata_create_evaluator::do_apply( const nft_metadata_creat
       obj.name = op.name;
       obj.symbol = op.symbol;
       obj.base_uri = op.base_uri;
+      obj.revenue_partner = op.revenue_partner;
+      obj.revenue_split = op.revenue_split;
    });
    return new_nft_metadata_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -30,7 +37,11 @@ void_result nft_metadata_update_evaluator::do_evaluate( const nft_metadata_updat
    auto itr_nft_md = idx_nft_md.find(op.nft_metadata_id);
    FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
    FC_ASSERT( itr_nft_md->owner == op.owner, "Only owner can modify NFT metadata" );
-
+   FC_ASSERT( (op.revenue_partner && op.revenue_split) || (!op.revenue_partner && !op.revenue_split), "NFT revenue partner info invalid" );
+   if(op.revenue_partner) {
+      (*op.revenue_partner)(db());
+      FC_ASSERT( *op.revenue_split >= 0.0 && *op.revenue_split <= 1.0, "Revenue split percent invalid" );
+   }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -43,6 +54,10 @@ void_result nft_metadata_update_evaluator::do_apply( const nft_metadata_update_o
          obj.symbol = *op.symbol;
       if( op.base_uri.valid() )
          obj.base_uri = *op.base_uri;
+      if( op.revenue_partner.valid() )
+         obj.revenue_partner = op.revenue_partner;
+      if( op.revenue_split.valid() )
+         obj.revenue_split = op.revenue_split;
    });
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

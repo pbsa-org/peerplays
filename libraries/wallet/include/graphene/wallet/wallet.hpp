@@ -1904,6 +1904,8 @@ class wallet_api
        * @param name Name of the token group
        * @param symbol Symbol of the token group
        * @param base_uri Base URI for token URI
+       * @param revenue_partner revenue partner for this type of Token
+       * @param revenue_split revenue split for the sale
        * @param broadcast  true to broadcast transaction to the network
        * @return Signed transaction transfering the funds
        */
@@ -1911,6 +1913,8 @@ class wallet_api
                                     string name,
                                     string symbol,
                                     string base_uri,
+                                    optional<string> revenue_partner,
+                                    optional<double> revenue_split,
                                     bool broadcast);
 
       /**
@@ -1919,6 +1923,8 @@ class wallet_api
        * @param name Name of the token group
        * @param symbol Symbol of the token group
        * @param base_uri Base URI for token URI
+       * @param revenue_partner revenue partner for this type of Token
+       * @param revenue_split revenue split for the sale
        * @param broadcast  true to broadcast transaction to the network
        * @return Signed transaction transfering the funds
        */
@@ -1926,6 +1932,8 @@ class wallet_api
                                     string name,
                                     string symbol,
                                     string base_uri,
+                                    optional<string> revenue_partner,
+                                    optional<double> revenue_split,
                                     bool broadcast);
 
       /**

@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE(nft_metadata_create_test)
         op.name = "NFT Test";
         op.symbol = "NFT";
         op.base_uri = "http://nft.example.com";
+        op.revenue_partner = mdowner_id;
+        op.revenue_split = 0.1;
 
         trx.operations.push_back(op);
         sign(trx, mdowner_private_key);
@@ -337,10 +339,12 @@ BOOST_AUTO_TEST_CASE(best_buy_bid_for_sell_offer)
         GET_ACTOR(bob);
         GET_ACTOR(charlie);
         GET_ACTOR(operator1);
+        GET_ACTOR(mdowner);
 
         int64_t bob_balance = get_balance(bob_id(db), asset_id_type()(db));
         int64_t alice_balance = get_balance(alice_id(db), asset_id_type()(db));
         int64_t charlie_balance = get_balance(charlie_id(db), asset_id_type()(db));
+        int64_t mdowner_balance = get_balance(mdowner_id(db), asset_id_type()(db));
         const auto &offer_obj = sell_offer(db);
 
         bid_operation bid_op;
@@ -375,8 +379,11 @@ BOOST_AUTO_TEST_CASE(best_buy_bid_for_sell_offer)
         auto cached_offer_obj = offer_obj;
         // Generate a block and offer should be finalized with bid
         generate_block();
+        int64_t partner_fee = 2 * static_cast<int64_t>((0.1 * (*cached_offer_obj.bid_price).amount.value)/2);
         BOOST_CHECK_EQUAL(get_balance(alice_id(db), asset_id_type()(db)),
-                          (alice_balance + cached_offer_obj.maximum_price.amount).value);
+                          (alice_balance + cached_offer_obj.maximum_price.amount).value - partner_fee);
+        BOOST_CHECK_EQUAL(get_balance(mdowner_id(db), asset_id_type()(db)),
+                          mdowner_balance + partner_fee);
         const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
         const auto &ohidx = db.get_index_type<offer_history_index>().indices().get<by_id>();
         BOOST_REQUIRE(oidx.size() == 0);
@@ -408,12 +415,17 @@ BOOST_AUTO_TEST_CASE(expire_with_bid_for_sell_offer_test)
     INVOKE(second_buy_bid_for_sell_offer_test);
     GET_ACTOR(alice);
     GET_ACTOR(charlie);
+    GET_ACTOR(mdowner);
     int64_t alice_balance = get_balance(alice_id(db), asset_id_type()(db));
+    int64_t mdowner_balance = get_balance(mdowner_id(db), asset_id_type()(db));
     const auto &offer_obj = sell_offer(db);
     auto cached_offer_obj = offer_obj;
     generate_blocks(5);
+    int64_t partner_fee = 2 * static_cast<int64_t>((0.1 * (*cached_offer_obj.bid_price).amount.value)/2);
+    BOOST_CHECK_EQUAL(get_balance(mdowner_id(db), asset_id_type()(db)),
+                        mdowner_balance + partner_fee);
     BOOST_CHECK_EQUAL(get_balance(alice_id(db), asset_id_type()(db)),
-                      (alice_balance + (*cached_offer_obj.bid_price).amount).value);
+                      (alice_balance + (*cached_offer_obj.bid_price).amount).value - partner_fee);
     const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
     const auto &ohidx = db.get_index_type<offer_history_index>().indices().get<by_id>();
     BOOST_REQUIRE(oidx.size() == 0);
@@ -624,9 +636,11 @@ BOOST_AUTO_TEST_CASE(best_sell_bid_for_buy_offer)
         INVOKE(second_sell_bid_for_buy_offer_test);
         GET_ACTOR(alice);
         GET_ACTOR(bob);
+        GET_ACTOR(mdowner);
 
         int64_t bob_balance = get_balance(bob_id(db), asset_id_type()(db));
         int64_t alice_balance = get_balance(alice_id(db), asset_id_type()(db));
+        int64_t mdowner_balance = get_balance(mdowner_id(db), asset_id_type()(db));
         const auto &offer_obj = buy_offer(db);
 
         bid_operation bid_op;
@@ -658,8 +672,11 @@ BOOST_AUTO_TEST_CASE(best_sell_bid_for_buy_offer)
         // Generate a block and offer should be finalized with bid
         generate_block();
         // Check balances
+        int64_t partner_fee = 2 * static_cast<int64_t>((0.1 * (*cached_offer_obj.bid_price).amount.value)/2);
+        BOOST_CHECK_EQUAL(get_balance(mdowner_id(db), asset_id_type()(db)),
+                            mdowner_balance + partner_fee);
         BOOST_CHECK_EQUAL(get_balance(bob_id(db), asset_id_type()(db)),
-                          (bob_balance + exp_delta_bidder1.amount).value);
+                          (bob_balance + exp_delta_bidder1.amount).value - partner_fee);
         BOOST_CHECK_EQUAL(get_balance(alice_id(db), asset_id_type()(db)),
                           (alice_balance + exp_delta_bidder2.amount).value);
         const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
@@ -693,15 +710,20 @@ BOOST_AUTO_TEST_CASE(expire_with_bid_for_buy_offer_test)
     INVOKE(second_sell_bid_for_buy_offer_test);
     GET_ACTOR(alice);
     GET_ACTOR(bob);
+    GET_ACTOR(mdowner);
     int64_t alice_balance = get_balance(alice_id(db), asset_id_type()(db));
     int64_t bob_balance = get_balance(bob_id(db), asset_id_type()(db));
+    int64_t mdowner_balance = get_balance(mdowner_id(db), asset_id_type()(db));
     const auto &offer_obj = buy_offer(db);
     auto cached_offer_obj = offer_obj;
     generate_blocks(5);
+    int64_t partner_fee = 2 * static_cast<int64_t>((0.1 * (*cached_offer_obj.bid_price).amount.value)/2);
+    BOOST_CHECK_EQUAL(get_balance(mdowner_id(db), asset_id_type()(db)),
+                            mdowner_balance + partner_fee);
     BOOST_CHECK_EQUAL(get_balance(alice_id(db), asset_id_type()(db)),
                       (alice_balance + cached_offer_obj.maximum_price.amount - (*cached_offer_obj.bid_price).amount).value);
     BOOST_CHECK_EQUAL(get_balance(bob_id(db), asset_id_type()(db)),
-                      (bob_balance + (*cached_offer_obj.bid_price).amount).value);
+                      (bob_balance + (*cached_offer_obj.bid_price).amount).value - partner_fee);
     const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
     const auto &ohidx = db.get_index_type<offer_history_index>().indices().get<by_id>();
     BOOST_REQUIRE(oidx.size() == 0);
