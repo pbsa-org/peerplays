@@ -66,7 +66,7 @@ void_result nft_metadata_update_evaluator::do_apply( const nft_metadata_update_o
 void_result nft_mint_evaluator::do_evaluate( const nft_mint_operation& op )
 { try {
    const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
-   auto itr_nft_md = idx_nft_md.find(*op.nft_metadata_id);
+   auto itr_nft_md = idx_nft_md.find(op.nft_metadata_id);
    FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
    FC_ASSERT( itr_nft_md->owner == op.payer, "Only metadata owner can mint NFT" );
 
@@ -76,7 +76,7 @@ void_result nft_mint_evaluator::do_evaluate( const nft_mint_operation& op )
 object_id_type nft_mint_evaluator::do_apply( const nft_mint_operation& op )
 { try {
    const auto& new_nft_object = db().create<nft_object>( [&]( nft_object& obj ){
-      obj.nft_metadata_id = *op.nft_metadata_id;
+      obj.nft_metadata_id = op.nft_metadata_id;
       obj.owner = op.owner;
       obj.approved = op.approved;
       obj.approved_operators = op.approved_operators;

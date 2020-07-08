@@ -196,6 +196,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       nft_object nft_token_by_index(const nft_metadata_id_type nft_metadata_id, const uint64_t token_idx) const;
       nft_object nft_token_of_owner_by_index(const nft_metadata_id_type nft_metadata_id, const account_id_type owner, const uint64_t token_idx) const;
 
+      // Marketplace
+      vector<offer_object> list_offers(uint32_t limit) const;
+      vector<offer_object> list_sell_offers(uint32_t limit) const;
+      vector<offer_object> list_buy_offers(uint32_t limit) const;
+      vector<offer_object> get_offers_by_issuer(const account_id_type issuer_account_id, uint32_t limit) const;
+      vector<offer_object> get_offers_by_item(nft_id_type item, uint32_t limit)const;
+
    //private:
       const account_object* get_account_from_string( const std::string& name_or_id,
                                                      bool throw_if_not_found = true ) const;
@@ -2479,6 +2486,128 @@ nft_object database_api_impl::nft_token_of_owner_by_index(const nft_metadata_id_
       tmp_idx = tmp_idx - 1;
    }
    return {};
+}
+
+// Marketplace
+vector<offer_object> database_api::list_offers(uint32_t limit) const
+{
+   return my->list_offers(limit);
+}
+
+vector<offer_object> database_api_impl::list_offers(uint32_t limit) const
+{
+   FC_ASSERT( limit <= 100 );
+   const auto& offers_idx = _db.get_index_type<offer_index>().indices().get<by_id>();
+   vector<offer_object> result;
+   result.reserve(limit);
+
+   auto itr = offers_idx.begin();
+
+   while(limit-- && itr != offers_idx.end())
+      result.emplace_back(*itr++);
+
+   return result;
+}
+
+vector<offer_object> database_api::list_sell_offers(uint32_t limit) const
+{
+   return my->list_sell_offers(limit);
+}
+
+vector<offer_object> database_api_impl::list_sell_offers(uint32_t limit) const
+{
+   FC_ASSERT( limit <= 100 );
+   const auto& offers_idx = _db.get_index_type<offer_index>().indices().get<by_id>();
+   vector<offer_object> result;
+   result.reserve(limit);
+
+   auto itr = offers_idx.begin();
+
+   while(limit && itr != offers_idx.end())
+   {
+      if(itr->buying_item == false)
+      {
+         result.emplace_back(*itr);
+         limit--;
+      }
+      itr++;
+   }
+   return result;
+}
+
+vector<offer_object> database_api::list_buy_offers(uint32_t limit) const
+{
+   return my->list_buy_offers(limit);
+}
+
+vector<offer_object> database_api_impl::list_buy_offers(uint32_t limit) const
+{
+   FC_ASSERT( limit <= 100 );
+   const auto& offers_idx = _db.get_index_type<offer_index>().indices().get<by_id>();
+   vector<offer_object> result;
+   result.reserve(limit);
+
+   auto itr = offers_idx.begin();
+
+   while(limit && itr != offers_idx.end())
+   {
+      if(itr->buying_item == true)
+      {
+         result.emplace_back(*itr);
+         limit--;
+      }
+      itr++;
+   }
+
+   return result;
+}
+vector<offer_object> database_api::get_offers_by_issuer(const account_id_type issuer_account_id, uint32_t limit) const
+{
+   return my->get_offers_by_issuer(issuer_account_id, limit);
+}
+
+vector<offer_object> database_api_impl::get_offers_by_issuer(const account_id_type issuer_account_id, uint32_t limit) const
+{
+   FC_ASSERT( limit <= 100 );
+   const auto& offers_idx = _db.get_index_type<offer_index>().indices().get<by_id>();
+   vector<offer_object> result;
+   result.reserve(limit);
+   auto itr = offers_idx.begin();
+   while(limit && itr != offers_idx.end())
+   {
+      if(itr->issuer == issuer_account_id)
+      {
+         result.emplace_back(*itr);
+         limit--;
+      }
+      itr++;
+   }
+   return result;
+}
+
+vector<offer_object> database_api::get_offers_by_item(nft_id_type item, uint32_t limit) const
+{
+   return my->get_offers_by_item(item, limit);
+}
+
+vector<offer_object> database_api_impl::get_offers_by_item(nft_id_type item, uint32_t limit) const
+{
+   FC_ASSERT( limit <= 100 );
+   const auto& offers_idx = _db.get_index_type<offer_index>().indices().get<by_id>();
+   vector<offer_object> result;
+   result.reserve(limit);
+
+   auto itr = offers_idx.begin();
+   while(limit && itr != offers_idx.end())
+   {
+      if(itr->item_ids.find(item) != itr->item_ids.end())
+      {
+         result.emplace_back(*itr);
+         limit--;
+      }
+      itr++;
+   }
+   return result;
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -2040,6 +2040,25 @@ class wallet_api
        */
       bool nft_is_approved_for_all(string owner_account_id_or_name, string operator_account_id_or_name) const;
 
+      signed_transaction create_offer(set<nft_id_type> item_ids,
+                                      string issuer_accound_id_or_name,
+                                      asset minimum_price,
+                                      asset maximum_price,
+                                      bool buying_item,
+                                      time_point_sec offer_expiration_date,
+                                      optional<memo_data> memo,
+                                      bool broadcast);
+      signed_transaction create_bid(string bidder_account_id_or_name,
+                                    asset bid_price,
+                                    offer_id_type offer_id,
+                                    bool broadcast);
+      vector<offer_object> list_offers(uint32_t limit) const;
+      vector<offer_object> list_sell_offers(uint32_t limit) const;
+      vector<offer_object> list_buy_offers(uint32_t limit) const;
+      vector<offer_object> get_offers_by_issuer(string issuer_account_id_or_name,
+                                                uint32_t limit) const;
+      vector<offer_object> get_offers_by_item(nft_id_type item, uint32_t limit) const;
+
       void dbg_make_uia(string creator, string symbol);
       void dbg_make_mia(string creator, string symbol);
       void dbg_push_blocks( std::string src_filename, uint32_t count );
@@ -2290,6 +2309,9 @@ FC_API( graphene::wallet::wallet_api,
         (tournament_leave)
         (rps_throw)
         (create_vesting_balance)
+        (nft_metadata_create)
+        (nft_metadata_update)
+        (nft_create)
         (nft_get_balance)
         (nft_owner_of)
         (nft_safe_transfer_from)
@@ -2298,6 +2320,13 @@ FC_API( graphene::wallet::wallet_api,
         (nft_set_approval_for_all)
         (nft_get_approved)
         (nft_is_approved_for_all)
+        (create_offer)
+        (create_bid)
+        (list_offers)
+        (list_sell_offers)
+        (list_buy_offers)
+        (get_offers_by_issuer)
+        (get_offers_by_item)
         (get_upcoming_tournaments)
         (get_tournaments)
         (get_tournaments_by_state)

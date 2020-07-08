@@ -6353,6 +6353,81 @@ bool wallet_api::nft_is_approved_for_all(string owner_account_id_or_name, string
    return my->_remote_db->nft_is_approved_for_all(owner_account.id, operator_account.id);
 }
 
+signed_transaction wallet_api::create_offer(set<nft_id_type> item_ids,
+                                             string issuer_accound_id_or_name,
+                                             asset minimum_price,
+                                             asset maximum_price,
+                                             bool buying_item,
+                                             time_point_sec offer_expiration_date,
+                                             optional<memo_data> memo,
+                                             bool broadcast)
+{
+   account_object issuer_account = my->get_account(issuer_accound_id_or_name);
+
+   offer_operation op;
+   op.item_ids = item_ids;
+   op.issuer = issuer_account.id;
+   op.minimum_price = minimum_price;
+   op.maximum_price = maximum_price;
+   op.buying_item = buying_item;
+   op.offer_expiration_date = offer_expiration_date;
+   op.memo = memo;
+
+   signed_transaction trx;
+   trx.operations.push_back(op);
+   my->set_operation_fees( trx, my->_remote_db->get_global_properties().parameters.current_fees );
+   trx.validate();
+
+   return my->sign_transaction( trx, broadcast );
+}
+
+signed_transaction wallet_api::create_bid(string bidder_account_id_or_name,
+                                          asset bid_price,
+                                          offer_id_type offer_id,
+                                          bool broadcast)
+{
+   account_object bidder_account = my->get_account(bidder_account_id_or_name);
+
+   bid_operation op;
+   op.bidder = bidder_account.id;
+   op.offer_id = offer_id;
+   op.bid_price = bid_price;
+
+   signed_transaction trx;
+   trx.operations.push_back(op);
+   my->set_operation_fees( trx, my->_remote_db->get_global_properties().parameters.current_fees );
+   trx.validate();
+
+   return my->sign_transaction( trx, broadcast );
+}
+
+vector<offer_object> wallet_api::list_offers(uint32_t limit) const
+{
+   return my->_remote_db->list_offers(limit);
+}
+
+vector<offer_object> wallet_api::list_sell_offers(uint32_t limit) const
+{
+   return my->_remote_db->list_sell_offers(limit);
+}
+
+vector<offer_object> wallet_api::list_buy_offers(uint32_t limit) const
+{
+   return my->_remote_db->list_buy_offers(limit);
+}
+
+vector<offer_object> wallet_api::get_offers_by_issuer(string issuer_account_id_or_name,
+                                                      uint32_t limit) const
+{
+   account_object issuer_account = my->get_account(issuer_account_id_or_name);
+   return my->_remote_db->get_offers_by_issuer(issuer_account.id, limit);
+}
+
+vector<offer_object> wallet_api::get_offers_by_item(nft_id_type item, uint32_t limit) const
+{
+   return my->_remote_db->get_offers_by_item(item, limit);
+}
+
 // default ctor necessary for FC_REFLECT
 signed_block_with_info::signed_block_with_info()
 {

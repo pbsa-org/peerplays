@@ -42,7 +42,7 @@ namespace graphene { namespace chain {
 
       account_id_type payer;
 
-      optional<nft_metadata_id_type> nft_metadata_id;
+      nft_metadata_id_type nft_metadata_id;
       account_id_type owner;
       account_id_type approved;
       vector<account_id_type> approved_operators;
@@ -103,7 +103,7 @@ FC_REFLECT( graphene::chain::nft_set_approval_for_all_operation::fee_parameters_
 
 FC_REFLECT( graphene::chain::nft_metadata_create_operation, (fee) (owner) (name) (symbol) (base_uri) (revenue_partner) (revenue_split) )
 FC_REFLECT( graphene::chain::nft_metadata_update_operation, (fee) (owner) (nft_metadata_id) (name) (symbol) (base_uri) (revenue_partner) (revenue_split) )
-FC_REFLECT( graphene::chain::nft_mint_operation, (fee) (nft_metadata_id) (owner) (approved) (approved_operators) (token_uri) )
+FC_REFLECT( graphene::chain::nft_mint_operation, (fee) (payer) (nft_metadata_id) (owner) (approved) (approved_operators) (token_uri) )
 FC_REFLECT( graphene::chain::nft_safe_transfer_from_operation, (fee) (operator_) (from) (to) (token_id) (data) )
 FC_REFLECT( graphene::chain::nft_approve_operation, (fee) (operator_) (approved) (token_id) )
 FC_REFLECT( graphene::chain::nft_set_approval_for_all_operation, (fee) (owner) (operator_) (approved) )

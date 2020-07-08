@@ -49,6 +49,7 @@
 #include <graphene/chain/tournament_object.hpp>
 
 #include <graphene/chain/nft_object.hpp>
+#include <graphene/chain/offer_object.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 
@@ -788,6 +789,15 @@ class database_api
        */
       nft_object nft_token_of_owner_by_index(const nft_metadata_id_type nft_metadata_id, const account_id_type owner, const uint64_t token_idx) const;
 
+      //////////////////
+      // MARKET PLACE //
+      //////////////////
+      vector<offer_object> list_offers(uint32_t limit) const;
+      vector<offer_object> list_sell_offers(uint32_t limit) const;
+      vector<offer_object> list_buy_offers(uint32_t limit) const;
+      vector<offer_object> get_offers_by_issuer(const account_id_type issuer_account_id, uint32_t limit) const;
+      vector<offer_object> get_offers_by_item(nft_id_type item, uint32_t limit) const;
+
 private:
       std::shared_ptr< database_api_impl > my;
 };
@@ -938,4 +948,10 @@ FC_API(graphene::app::database_api,
    (nft_token_by_index)
    (nft_token_of_owner_by_index)
 
+   // Marketplace
+   (list_offers)
+   (list_sell_offers)
+   (list_buy_offers)
+   (get_offers_by_issuer)
+   (get_offers_by_item)
 )
