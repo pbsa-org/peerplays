@@ -68,7 +68,7 @@ namespace graphene
             bool operator()(const fc::time_point_sec &o1,
                             const fc::time_point_sec &o2) const
             {
-                return o1 > o2;
+                return o1 < o2;
             }
         };
 

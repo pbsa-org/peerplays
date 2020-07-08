@@ -2052,12 +2052,16 @@ class wallet_api
                                     asset bid_price,
                                     offer_id_type offer_id,
                                     bool broadcast);
-      vector<offer_object> list_offers(uint32_t limit) const;
-      vector<offer_object> list_sell_offers(uint32_t limit) const;
-      vector<offer_object> list_buy_offers(uint32_t limit) const;
+      vector<offer_object> list_offers(uint32_t limit, optional<offer_id_type> lower_id) const;
+      vector<offer_object> list_sell_offers(uint32_t limit, optional<offer_id_type> lower_id) const;
+      vector<offer_object> list_buy_offers(uint32_t limit, optional<offer_id_type> lower_id) const;
+      vector<offer_history_object> list_offer_history(uint32_t limit, optional<offer_history_id_type> lower_id) const;
       vector<offer_object> get_offers_by_issuer(string issuer_account_id_or_name,
-                                                uint32_t limit) const;
-      vector<offer_object> get_offers_by_item(nft_id_type item, uint32_t limit) const;
+                                                uint32_t limit, optional<offer_id_type> lower_id) const;
+      vector<offer_object> get_offers_by_item(const nft_id_type item, uint32_t limit, optional<offer_id_type> lower_id) const;
+      vector<offer_history_object> get_offer_history_by_issuer(string issuer_account_id_or_name, uint32_t limit, optional<offer_history_id_type> lower_id) const;
+      vector<offer_history_object> get_offer_history_by_item(const nft_id_type item, uint32_t limit, optional<offer_history_id_type> lower_id) const;
+      vector<offer_history_object> get_offer_history_by_bidder(string bidder_account_id_or_name, uint32_t limit, optional<offer_history_id_type> lower_id) const;
 
       void dbg_make_uia(string creator, string symbol);
       void dbg_make_mia(string creator, string symbol);
@@ -2325,8 +2329,12 @@ FC_API( graphene::wallet::wallet_api,
         (list_offers)
         (list_sell_offers)
         (list_buy_offers)
+        (list_offer_history)
         (get_offers_by_issuer)
         (get_offers_by_item)
+        (get_offer_history_by_issuer)
+        (get_offer_history_by_item)
+        (get_offer_history_by_bidder)
         (get_upcoming_tournaments)
         (get_tournaments)
         (get_tournaments_by_state)

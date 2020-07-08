@@ -6401,33 +6401,81 @@ signed_transaction wallet_api::create_bid(string bidder_account_id_or_name,
    return my->sign_transaction( trx, broadcast );
 }
 
-vector<offer_object> wallet_api::list_offers(uint32_t limit) const
+vector<offer_object> wallet_api::list_offers(uint32_t limit, optional<offer_id_type> lower_id) const
 {
-   return my->_remote_db->list_offers(limit);
+   offer_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   return my->_remote_db->list_offers(lb_id, limit);
 }
 
-vector<offer_object> wallet_api::list_sell_offers(uint32_t limit) const
+vector<offer_object> wallet_api::list_sell_offers(uint32_t limit, optional<offer_id_type> lower_id) const
 {
-   return my->_remote_db->list_sell_offers(limit);
+   offer_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   return my->_remote_db->list_sell_offers(lb_id, limit);
 }
 
-vector<offer_object> wallet_api::list_buy_offers(uint32_t limit) const
+vector<offer_object> wallet_api::list_buy_offers(uint32_t limit, optional<offer_id_type> lower_id) const
 {
-   return my->_remote_db->list_buy_offers(limit);
+   offer_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   return my->_remote_db->list_buy_offers(lb_id, limit);
+}
+
+vector<offer_history_object> wallet_api::list_offer_history(uint32_t limit, optional<offer_history_id_type> lower_id) const
+{
+   offer_history_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   return my->_remote_db->list_offer_history(lb_id, limit);
 }
 
 vector<offer_object> wallet_api::get_offers_by_issuer(string issuer_account_id_or_name,
-                                                      uint32_t limit) const
+                                                      uint32_t limit, optional<offer_id_type> lower_id) const
 {
+   offer_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
    account_object issuer_account = my->get_account(issuer_account_id_or_name);
-   return my->_remote_db->get_offers_by_issuer(issuer_account.id, limit);
+   return my->_remote_db->get_offers_by_issuer(lb_id, issuer_account.id, limit);
 }
 
-vector<offer_object> wallet_api::get_offers_by_item(nft_id_type item, uint32_t limit) const
+vector<offer_object> wallet_api::get_offers_by_item(const nft_id_type item, uint32_t limit, optional<offer_id_type> lower_id) const
 {
-   return my->_remote_db->get_offers_by_item(item, limit);
+   offer_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   return my->_remote_db->get_offers_by_item(lb_id, item, limit);
 }
 
+vector<offer_history_object> wallet_api::get_offer_history_by_issuer(string issuer_account_id_or_name, uint32_t limit, optional<offer_history_id_type> lower_id) const
+{
+   offer_history_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   account_object issuer_account = my->get_account(issuer_account_id_or_name);
+   return my->_remote_db->get_offer_history_by_issuer(lb_id, issuer_account.id, limit);
+}
+
+vector<offer_history_object> wallet_api::get_offer_history_by_item(const nft_id_type item, uint32_t limit, optional<offer_history_id_type> lower_id) const
+{
+   offer_history_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   return my->_remote_db->get_offer_history_by_item(lb_id, item, limit);
+}
+
+vector<offer_history_object> wallet_api::get_offer_history_by_bidder(string bidder_account_id_or_name, uint32_t limit, optional<offer_history_id_type> lower_id) const
+{
+   offer_history_id_type lb_id;
+   if(lower_id)
+      lb_id = *lower_id;
+   account_object bidder_account = my->get_account(bidder_account_id_or_name);
+   return my->_remote_db->get_offer_history_by_bidder(lb_id, bidder_account.id, limit);
+}
 // default ctor necessary for FC_REFLECT
 signed_block_with_info::signed_block_with_info()
 {
