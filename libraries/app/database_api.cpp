@@ -184,6 +184,14 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // gpos
       gpos_info get_gpos_info(const account_id_type account) const;
 
+      // rbac
+      vector<custom_permission_object> get_custom_permissions(const account_id_type account) const;
+      fc::optional<custom_permission_object> get_custom_permission_by_name(const account_id_type account, const string& permission_name) const;
+      vector<custom_account_authority_object> get_custom_account_authorities(const account_id_type account) const;
+      vector<custom_account_authority_object> get_custom_account_authorities_by_permission_id(const custom_permission_id_type permission_id) const;
+      vector<custom_account_authority_object> get_custom_account_authorities_by_permission_name(const account_id_type account, const string& permission_name) const;
+      vector<authority> get_active_custom_account_authorities_by_operation(const account_id_type account, int operation_type) const;
+
       // NFT
       uint64_t nft_get_balance(const account_id_type owner) const;
       optional<account_id_type> nft_owner_of(const nft_id_type token_id) const;
@@ -1880,6 +1888,9 @@ set<public_key_type> database_api_impl::get_required_signatures( const signed_tr
                                        available_keys,
                                        [&]( account_id_type id ){ return &id(_db).active; },
                                        [&]( account_id_type id ){ return &id(_db).owner; },
+                                       [&]( account_id_type id, const operation& op ) {
+                                          return _db.get_account_custom_authorities(id, op);
+                                       },
                                        _db.get_global_properties().parameters.max_authority_depth );
    wdump((result));
    return result;
@@ -1915,6 +1926,17 @@ set<public_key_type> database_api_impl::get_potential_signatures( const signed_t
             result.insert(k);
          return &auth;
       },
+      [&]( account_id_type id, const operation& op ) {
+         vector<authority> custom_auths = _db.get_account_custom_authorities(id, op);
+         for (const auto& cauth: custom_auths)
+         {
+            for (const auto& k : cauth.get_keys())
+            {
+               result.insert(k);
+            }
+         }
+         return custom_auths;
+      },
       _db.get_global_properties().parameters.max_authority_depth
    );
 
@@ -1942,6 +1964,9 @@ set<address> database_api_impl::get_potential_address_signatures( const signed_t
             result.insert(k);
          return &auth;
       },
+      [&]( account_id_type id, const operation& op ) {
+         return _db.get_account_custom_authorities(id, op);
+      },
       _db.get_global_properties().parameters.max_authority_depth
    );
    return result;
@@ -1957,6 +1982,8 @@ bool database_api_impl::verify_authority( const signed_transaction& trx )const
    trx.verify_authority( _db.get_chain_id(),
                          [this]( account_id_type id ){ return &id(_db).active; },
                          [this]( account_id_type id ){ return &id(_db).owner; },
+                         [this]( account_id_type id, const operation& op ) {
+                           return _db.get_account_custom_authorities(id, op); },
                           _db.get_global_properties().parameters.max_authority_depth );
    return true;
 }
@@ -2329,6 +2356,45 @@ graphene::app::gpos_info database_api_impl::get_gpos_info(const account_id_type 
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
+// RBAC methods                                                     //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+vector<custom_permission_object> database_api::get_custom_permissions(const account_id_type account) const
+{
+   return my->get_custom_permissions(account);
+}
+
+vector<custom_permission_object> database_api_impl::get_custom_permissions(const account_id_type account) const
+{
+   const auto& pindex = _db.get_index_type<custom_permission_index>().indices().get<by_account_and_permission>();
+   auto prange = pindex.equal_range(boost::make_tuple(account));
+   vector<custom_permission_object> custom_permissions;
+   for(const custom_permission_object& pobj : boost::make_iterator_range(prange.first, prange.second))
+   {
+      custom_permissions.push_back(pobj);
+   }
+   return custom_permissions;
+}
+
+fc::optional<custom_permission_object> database_api::get_custom_permission_by_name(const account_id_type account, const string& permission_name) const
+{
+   return my->get_custom_permission_by_name(account, permission_name);
+}
+
+fc::optional<custom_permission_object> database_api_impl::get_custom_permission_by_name(const account_id_type account, const string& permission_name) const
+{
+   const auto& pindex = _db.get_index_type<custom_permission_index>().indices().get<by_account_and_permission>();
+   auto prange = pindex.equal_range(boost::make_tuple(account, permission_name));
+   for(const custom_permission_object& pobj : boost::make_iterator_range(prange.first, prange.second))
+   {
+      return pobj;
+   }
+   return {};
+}
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
 // NFT methods                                                      //
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
@@ -2490,6 +2556,79 @@ nft_object database_api_impl::nft_token_of_owner_by_index(const nft_metadata_id_
       tmp_idx = tmp_idx - 1;
    }
    return {};
+}
+
+vector<custom_account_authority_object> database_api::get_custom_account_authorities(const account_id_type account) const
+{
+   return my->get_custom_account_authorities(account);
+}
+
+vector<custom_account_authority_object> database_api_impl::get_custom_account_authorities(const account_id_type account) const
+{
+   const auto& pindex = _db.get_index_type<custom_permission_index>().indices().get<by_account_and_permission>();
+   const auto& cindex = _db.get_index_type<custom_account_authority_index>().indices().get<by_permission_and_op>();
+   vector<custom_account_authority_object> custom_account_auths;
+   auto prange = pindex.equal_range(boost::make_tuple(account));
+   for(const custom_permission_object& pobj : boost::make_iterator_range(prange.first, prange.second))
+   {
+      auto crange = cindex.equal_range(boost::make_tuple(pobj.id));
+      for(const custom_account_authority_object& cobj : boost::make_iterator_range(crange.first, crange.second))
+      {
+         custom_account_auths.push_back(cobj);
+      }
+   }
+   return custom_account_auths;
+}
+
+vector<custom_account_authority_object> database_api::get_custom_account_authorities_by_permission_id(const custom_permission_id_type permission_id) const
+{
+   return my->get_custom_account_authorities_by_permission_id(permission_id);
+}
+
+vector<custom_account_authority_object> database_api_impl::get_custom_account_authorities_by_permission_id(const custom_permission_id_type permission_id) const
+{
+   const auto& cindex = _db.get_index_type<custom_account_authority_index>().indices().get<by_permission_and_op>();
+   vector<custom_account_authority_object> custom_account_auths;
+   auto crange = cindex.equal_range(boost::make_tuple(permission_id));
+   for(const custom_account_authority_object& cobj : boost::make_iterator_range(crange.first, crange.second))
+   {
+      custom_account_auths.push_back(cobj);
+   }
+   return custom_account_auths;
+}
+
+vector<custom_account_authority_object> database_api::get_custom_account_authorities_by_permission_name(const account_id_type account, const string& permission_name) const
+{
+   return my->get_custom_account_authorities_by_permission_name(account, permission_name);
+}
+
+vector<custom_account_authority_object> database_api_impl::get_custom_account_authorities_by_permission_name(const account_id_type account, const string& permission_name) const
+{
+   vector<custom_account_authority_object> custom_account_auths;
+   fc::optional<custom_permission_object> pobj = get_custom_permission_by_name(account, permission_name);
+   if(!pobj)
+   {
+      return custom_account_auths;
+   }
+   const auto& cindex = _db.get_index_type<custom_account_authority_index>().indices().get<by_permission_and_op>();
+   auto crange = cindex.equal_range(boost::make_tuple(pobj->id));
+   for(const custom_account_authority_object& cobj : boost::make_iterator_range(crange.first, crange.second))
+   {
+      custom_account_auths.push_back(cobj);
+   }
+   return custom_account_auths;
+}
+
+vector<authority> database_api::get_active_custom_account_authorities_by_operation(const account_id_type account, int operation_type) const
+{
+   return my->get_active_custom_account_authorities_by_operation(account, operation_type);
+}
+
+vector<authority> database_api_impl::get_active_custom_account_authorities_by_operation(const account_id_type account, int operation_type) const
+{
+   operation op;
+   op.set_which(operation_type);
+   return _db.get_account_custom_authorities(account, op);
 }
 
 // Marketplace
