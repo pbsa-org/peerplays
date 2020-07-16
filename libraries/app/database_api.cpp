@@ -195,6 +195,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       uint64_t nft_get_total_supply(const nft_metadata_id_type nft_metadata_id) const;
       nft_object nft_token_by_index(const nft_metadata_id_type nft_metadata_id, const uint64_t token_idx) const;
       nft_object nft_token_of_owner_by_index(const nft_metadata_id_type nft_metadata_id, const account_id_type owner, const uint64_t token_idx) const;
+      vector<nft_object> nft_get_all_tokens() const;
+      vector<nft_object> nft_get_tokens_by_owner(const account_id_type owner) const;
 
    //private:
       const account_object* get_account_from_string( const std::string& name_or_id,
@@ -2479,6 +2481,37 @@ nft_object database_api_impl::nft_token_of_owner_by_index(const nft_metadata_id_
       tmp_idx = tmp_idx - 1;
    }
    return {};
+}
+
+vector<nft_object> database_api::nft_get_all_tokens() const
+{
+   return my->nft_get_all_tokens();
+}
+
+vector<nft_object> database_api_impl::nft_get_all_tokens() const
+{
+   const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_id>();
+   vector<nft_object> result;
+   for (auto itr = idx_nft.begin(); itr != idx_nft.end(); ++itr) {
+      result.push_back(*itr);
+   }
+   return result;
+}
+
+vector<nft_object> database_api::nft_get_tokens_by_owner(const account_id_type owner) const
+{
+   return my->nft_get_tokens_by_owner(owner);
+}
+
+vector<nft_object> database_api_impl::nft_get_tokens_by_owner(const account_id_type owner) const
+{
+   const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_owner>();
+   auto idx_nft_range = idx_nft.equal_range(owner);
+   vector<nft_object> result;
+   for (auto itr = idx_nft_range.first; itr != idx_nft_range.second; ++itr) {
+      result.push_back(*itr);
+   }
+   return result;
 }
 
 //////////////////////////////////////////////////////////////////////
