@@ -796,13 +796,26 @@ class database_api
       nft_object nft_token_by_index(const nft_metadata_id_type nft_metadata_id, const uint64_t token_idx) const;
 
       /**
-       * @brief Returns NFT URI
+       * @brief Returns NFT by owner and index
        * @param nft_metadata_id NFT metadata ID
        * @param owner NFT owner
        * @param token_idx NFT index in the list of tokens
-       * @return NFT URI
+       * @return NFT object
        */
       nft_object nft_token_of_owner_by_index(const nft_metadata_id_type nft_metadata_id, const account_id_type owner, const uint64_t token_idx) const;
+
+      /**
+       * @brief Returns list of all available NTF's
+       * @return List of all available NFT's
+       */
+      vector<nft_object> nft_get_all_tokens() const;
+
+      /**
+       * @brief Returns NFT's owned by owner
+       * @param owner NFT owner
+       * @return List of NFT owned by owner
+       */
+      vector<nft_object> nft_get_tokens_by_owner(const account_id_type owner) const;
 
       //////////////////
       // MARKET PLACE //
@@ -973,6 +986,8 @@ FC_API(graphene::app::database_api,
    (nft_get_total_supply)
    (nft_token_by_index)
    (nft_token_of_owner_by_index)
+   (nft_get_all_tokens)
+   (nft_get_tokens_by_owner)
 
    // Marketplace
    (list_offers)
