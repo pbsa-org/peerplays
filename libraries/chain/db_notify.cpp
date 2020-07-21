@@ -293,6 +293,24 @@ struct get_impacted_account_visitor
    void operator()( const sweeps_vesting_claim_operation& op ) {
       _impacted.insert( op.account );
    }
+   void operator()( const custom_permission_create_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_permission_update_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_permission_delete_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_account_authority_create_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_account_authority_update_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
+   void operator()( const custom_account_authority_delete_operation& op ){
+      _impacted.insert( op.owner_account );
+   }
    void operator()( const nft_metadata_create_operation& op ) {
       _impacted.insert( op.owner );
    }

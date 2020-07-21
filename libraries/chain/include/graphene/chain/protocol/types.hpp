@@ -171,6 +171,8 @@ namespace graphene { namespace chain {
       betting_market_group_object_type,
       betting_market_object_type,
       bet_object_type,
+      custom_permission_object_type,
+      custom_account_authority_object_type,
       offer_object_type,
       nft_metadata_type,
       nft_object_type,
@@ -234,6 +236,8 @@ namespace graphene { namespace chain {
    class betting_market_group_object;
    class betting_market_object;
    class bet_object;
+   class custom_permission_object;
+   class custom_account_authority_object;
    class offer_object;
    class nft_metadata_object;
    class nft_object;
@@ -263,6 +267,8 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, betting_market_group_object_type, betting_market_group_object> betting_market_group_id_type;
    typedef object_id< protocol_ids, betting_market_object_type,     betting_market_object>        betting_market_id_type;
    typedef object_id< protocol_ids, bet_object_type,                bet_object>                   bet_id_type;
+   typedef object_id< protocol_ids, custom_permission_object_type,  custom_permission_object>     custom_permission_id_type;
+   typedef object_id< protocol_ids, custom_account_authority_object_type,  custom_account_authority_object>     custom_account_authority_id_type;
    typedef object_id< protocol_ids, offer_object_type,              offer_object>                 offer_id_type;
    typedef object_id< protocol_ids, nft_metadata_type,              nft_metadata_object>          nft_metadata_id_type;
    typedef object_id< protocol_ids, nft_object_type,                nft_object>                   nft_id_type;
@@ -448,6 +454,8 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (betting_market_group_object_type)
                  (betting_market_object_type)
                  (bet_object_type)
+                 (custom_permission_object_type)
+                 (custom_account_authority_object_type)
                  (offer_object_type)
                  (nft_metadata_type)
                  (nft_object_type)
@@ -522,6 +530,8 @@ FC_REFLECT_TYPENAME( graphene::chain::fba_accumulator_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::betting_market_position_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::global_betting_statistics_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::tournament_details_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::custom_permission_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::custom_account_authority_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::offer_history_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::nft_metadata_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::nft_id_type )

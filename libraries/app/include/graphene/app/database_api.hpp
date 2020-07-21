@@ -48,6 +48,8 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/tournament_object.hpp>
 
+#include <graphene/chain/custom_permission_object.hpp>
+#include <graphene/chain/custom_account_authority_object.hpp>
 #include <graphene/chain/nft_object.hpp>
 #include <graphene/chain/offer_object.hpp>
 
@@ -712,6 +714,19 @@ class database_api
        */
       gpos_info get_gpos_info(const account_id_type account) const;
 
+      //////////
+      // RBAC //
+      //////////
+      /**
+       * @return account and custom permissions/account-authorities info
+       */
+      vector<custom_permission_object> get_custom_permissions(const account_id_type account) const;
+      fc::optional<custom_permission_object> get_custom_permission_by_name(const account_id_type account, const string& permission_name) const;
+      vector<custom_account_authority_object> get_custom_account_authorities(const account_id_type account) const;
+      vector<custom_account_authority_object> get_custom_account_authorities_by_permission_id(const custom_permission_id_type permission_id) const;
+      vector<custom_account_authority_object> get_custom_account_authorities_by_permission_name(const account_id_type account, const string& permission_name) const;
+      vector<authority> get_active_custom_account_authorities_by_operation(const account_id_type account, int operation_type) const;
+
       /////////
       // NFT //
       /////////
@@ -951,6 +966,14 @@ FC_API(graphene::app::database_api,
 
    // gpos
    (get_gpos_info)
+
+   //rbac
+   (get_custom_permissions)
+   (get_custom_permission_by_name)
+   (get_custom_account_authorities)
+   (get_custom_account_authorities_by_permission_id)
+   (get_custom_account_authorities_by_permission_name)
+   (get_active_custom_account_authorities_by_operation)
 
    // NFT
    (nft_get_balance)

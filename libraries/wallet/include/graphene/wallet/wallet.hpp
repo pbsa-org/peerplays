@@ -1895,6 +1895,37 @@ class wallet_api
                                                 bool is_gpos,
                                                 bool broadcast);
 
+      signed_transaction create_custom_permission(string owner,
+                                                  string permission_name,
+                                                  authority auth,
+                                                  bool broadcast = true);
+      signed_transaction update_custom_permission(string owner,
+                                                  custom_permission_id_type permission_id,
+                                                  fc::optional<authority> new_auth,
+                                                  bool broadcast = true);
+      signed_transaction delete_custom_permission(string owner,
+                                                  custom_permission_id_type permission_id,
+                                                  bool broadcast = true);
+      signed_transaction create_custom_account_authority(string owner,
+                                                         custom_permission_id_type permission_id,
+                                                         int operation_type,
+                                                         fc::time_point_sec valid_from,
+                                                         fc::time_point_sec valid_to,
+                                                         bool broadcast = true);
+      signed_transaction update_custom_account_authority(string owner,
+                                                         custom_account_authority_id_type auth_id,
+                                                         fc::optional<fc::time_point_sec> new_valid_from,
+                                                         fc::optional<fc::time_point_sec> new_valid_to,
+                                                         bool broadcast = true);
+      signed_transaction delete_custom_account_authority(string owner,
+                                                         custom_account_authority_id_type auth_id,
+                                                         bool broadcast = true);
+      vector<custom_permission_object> get_custom_permissions(string owner) const;
+      fc::optional<custom_permission_object> get_custom_permission_by_name(string owner, string permission_name) const;
+      vector<custom_account_authority_object> get_custom_account_authorities(string owner) const;
+      vector<custom_account_authority_object> get_custom_account_authorities_by_permission_id(custom_permission_id_type permission_id) const;
+      vector<custom_account_authority_object> get_custom_account_authorities_by_permission_name(string owner, string permission_name) const;
+      vector<authority> get_active_custom_account_authorities_by_operation(string owner, int operation_type) const;
       /////////
       // NFT //
       /////////
@@ -2347,4 +2378,16 @@ FC_API( graphene::wallet::wallet_api,
         (get_all_matched_bets_for_bettor)
         (buy_ticket)
         (quit)
+        (create_custom_permission)
+        (update_custom_permission)
+        (delete_custom_permission)
+        (create_custom_account_authority)
+        (update_custom_account_authority)
+        (delete_custom_account_authority)
+        (get_custom_permissions)
+        (get_custom_permission_by_name)
+        (get_custom_account_authorities)
+        (get_custom_account_authorities_by_permission_id)
+        (get_custom_account_authorities_by_permission_name)
+        (get_active_custom_account_authorities_by_operation)
       )
