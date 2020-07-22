@@ -2499,16 +2499,18 @@ string database_api::nft_get_token_uri(const nft_id_type token_id) const
 
 string database_api_impl::nft_get_token_uri(const nft_id_type token_id) const
 {
+   string result = "";
    const auto &idx_nft = _db.get_index_type<nft_index>().indices().get<by_id>();
    auto itr_nft = idx_nft.find(token_id);
    if (itr_nft != idx_nft.end()) {
+      result = itr_nft->token_uri;
       const auto &idx_nft_md = _db.get_index_type<nft_metadata_index>().indices().get<by_id>();
       auto itr_nft_md = idx_nft_md.find(itr_nft->nft_metadata_id);
       if (itr_nft_md != idx_nft_md.end()) {
-         return itr_nft_md->base_uri + itr_nft->token_uri;
+         result = itr_nft_md->base_uri + itr_nft->token_uri;
       }
    }
-   return "";
+   return result;
 }
 
 uint64_t database_api::nft_get_total_supply(const nft_metadata_id_type nft_metadata_id) const
