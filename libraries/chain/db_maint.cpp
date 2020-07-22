@@ -800,7 +800,11 @@ uint32_t database::get_gpos_current_subperiod()
    //  variables needed
    const fc::time_point_sec period_end = period_start + vesting_period;
    const auto number_of_subperiods = vesting_period / vesting_subperiod;
-   const auto now = this->head_block_time();
+   auto now = this->head_block_time();
+   // This might happen due to missing blocks, we really don't want to cause assert failures
+   if(now > period_end) {
+      now = period_end;
+   }
    auto seconds_since_period_start = now.sec_since_epoch() - period_start.sec_since_epoch();
 
    FC_ASSERT(period_start <= now && now <= period_end);
@@ -926,8 +930,8 @@ void rolling_period_start(database& db)
       if(now.sec_since_epoch() >= (period_start + vesting_period))
       {
          // roll
-         db.modify(db.get_global_properties(), [now](global_property_object& p) {
-            p.parameters.extensions.value.gpos_period_start =  now.sec_since_epoch();
+         db.modify(db.get_global_properties(), [period_start, vesting_period](global_property_object& p) {
+            p.parameters.extensions.value.gpos_period_start =  period_start + vesting_period;
          });
       }
    }
