@@ -6450,7 +6450,7 @@ signed_transaction wallet_api::nft_create(string metadata_owner_account_id_or_na
 
    nft_mint_operation op;
    op.payer = metadata_owner_account.id;
-   op.nft_metadata_id = op.nft_metadata_id;
+   op.nft_metadata_id = metadata_id;
    op.owner = owner_account.id;
    op.approved = approved_account.id;
    op.token_uri = token_uri;
