@@ -80,6 +80,7 @@ object_id_type nft_mint_evaluator::do_apply( const nft_mint_operation& op )
       obj.owner = op.owner;
       obj.approved = op.approved;
       obj.approved_operators = op.approved_operators;
+      obj.token_uri = op.token_uri;
    });
    return new_nft_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
