@@ -22,9 +22,8 @@ namespace graphene
             uint32_t price_per_kbyte =
                 10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
          };
-
+         asset fee;
          set<nft_id_type> item_ids;
-
          // /**
          //  * minimum_price.asset_id == maximum_price.asset_id.
          //  * to set fixed price without auction minimum_price == maximum_price
@@ -34,10 +33,7 @@ namespace graphene
          //  * In this case, minimum_price functions as the sell-it-now price for the
          //  reverse auction
          //  */
-
-         asset fee;
          account_id_type issuer;
-
          /// minimum_price is minimum bid price. 0 if no minimum_price required
          asset minimum_price;
          /// buy_it_now price. 0 if no maximum price
@@ -111,8 +107,7 @@ namespace graphene
 FC_REFLECT(graphene::chain::offer_operation::fee_parameters_type,
            (fee)(price_per_kbyte));
 FC_REFLECT(graphene::chain::offer_operation,
-           (fee)(issuer)(memo)(minimum_price)(maximum_price)(buying_item)(
-               item_ids)(offer_expiration_date)(extensions));
+           (fee)(item_ids)(issuer)(minimum_price)(maximum_price)(buying_item)(offer_expiration_date)(memo)(extensions));
 
 FC_REFLECT(graphene::chain::bid_operation::fee_parameters_type,
            (fee)(price_per_kbyte));
