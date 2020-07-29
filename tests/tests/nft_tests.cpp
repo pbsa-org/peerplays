@@ -27,10 +27,35 @@ BOOST_AUTO_TEST_CASE( nft_metadata_create_test ) {
 
       nft_metadata_create_operation op;
       op.owner = mdowner_id;
-      op.name = "NFT Test";
       op.symbol = "NFT";
       op.base_uri = "http://nft.example.com";
-
+      op.name = "123";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "1ab";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = ".abc";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "abc.";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "ABC";
+      BOOST_CHECK_NO_THROW(op.validate());
+      op.name = "abcdefghijklmnopq";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "ab";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "***";
+      BOOST_CHECK_THROW(op.validate(), fc::exception);
+      op.name = "a12";
+      BOOST_CHECK_NO_THROW(op.validate());
+      op.name = "a1b";
+      BOOST_CHECK_NO_THROW(op.validate());
+      op.name = "abc";
+      BOOST_CHECK_NO_THROW(op.validate());
+      op.name = "abc123defg12345";
+      BOOST_CHECK_NO_THROW(op.validate());
+      op.name = "NFT Test";
       trx.operations.push_back(op);
       sign(trx, mdowner_private_key);
       PUSH_TX(db, trx, ~0);

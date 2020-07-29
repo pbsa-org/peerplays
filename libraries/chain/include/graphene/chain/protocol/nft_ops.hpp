@@ -17,6 +17,7 @@ namespace graphene { namespace chain {
       optional<double> revenue_split;
 
       account_id_type fee_payer()const { return owner; }
+      void validate() const;
    };
 
    struct nft_metadata_update_operation : public base_operation
@@ -33,6 +34,7 @@ namespace graphene { namespace chain {
       optional<double> revenue_split;
 
       account_id_type fee_payer()const { return owner; }
+      void validate() const;
    };
 
    struct nft_mint_operation : public base_operation
@@ -49,6 +51,7 @@ namespace graphene { namespace chain {
       std::string token_uri;
 
       account_id_type fee_payer()const { return payer; }
+      void validate() const;
    };
 
    struct nft_safe_transfer_from_operation : public base_operation

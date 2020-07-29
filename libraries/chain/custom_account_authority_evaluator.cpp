@@ -46,8 +46,12 @@ void_result create_custom_account_authority_evaluator::do_evaluate(const custom_
       const custom_permission_object &pobj = op.permission_id(d);
       FC_ASSERT(pobj.account == op.owner_account, "Only owner account can update account authority object");
       FC_ASSERT(op.valid_to > now, "valid_to expiry should be in future");
+      FC_ASSERT((op.valid_to - op.valid_from) <= fc::seconds(d.get_global_properties().parameters.rbac_max_account_authority_lifetime()), "Validity of the auth beyond max expiry");
       rbac_operation_hardfork_visitor rvtor(now);
       rvtor(op.operation_type);
+      const auto& cindex = d.get_index_type<custom_account_authority_index>().indices().get<by_permission_and_op>();
+      auto count = cindex.count(boost::make_tuple(op.permission_id));
+      FC_ASSERT(count < d.get_global_properties().parameters.rbac_max_authorities_per_permission(), "Max operations that can be linked to a permission reached");
       return void_result();
    }
    FC_CAPTURE_AND_RETHROW((op))
@@ -93,6 +97,7 @@ void_result update_custom_account_authority_evaluator::do_evaluate(const custom_
          valid_to = *op.new_valid_to;
       }
       FC_ASSERT(valid_from < valid_to, "valid_from should be before valid_to");
+      FC_ASSERT((valid_to - valid_from) <= fc::seconds(d.get_global_properties().parameters.rbac_max_account_authority_lifetime()), "Validity of the auth beyond max expiry");
       return void_result();
    }
    FC_CAPTURE_AND_RETHROW((op))

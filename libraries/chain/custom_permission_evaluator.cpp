@@ -26,6 +26,8 @@ void_result create_custom_permission_evaluator::do_evaluate(const custom_permiss
       const auto &pindex = d.get_index_type<custom_permission_index>().indices().get<by_account_and_permission>();
       auto pitr = pindex.find(boost::make_tuple(op.owner_account, op.permission_name));
       FC_ASSERT(pitr == pindex.end(), "Permission name already exists for the given account");
+      auto count = pindex.count(boost::make_tuple(op.owner_account));
+      FC_ASSERT(count < d.get_global_properties().parameters.rbac_max_permissions_per_account(), "Max permissions per account reached");
       return void_result();
    }
    FC_CAPTURE_AND_RETHROW((op))

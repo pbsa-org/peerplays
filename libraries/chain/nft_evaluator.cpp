@@ -5,6 +5,7 @@ namespace graphene { namespace chain {
 
 void_result nft_metadata_create_evaluator::do_evaluate( const nft_metadata_create_operation& op )
 { try {
+   op.owner(db());
    const auto& idx_nft_md_by_name = db().get_index_type<nft_metadata_index>().indices().get<by_name>();
    FC_ASSERT( idx_nft_md_by_name.find(op.name) == idx_nft_md_by_name.end(), "NFT name already in use" );
    const auto& idx_nft_md_by_symbol = db().get_index_type<nft_metadata_index>().indices().get<by_symbol>();
@@ -33,6 +34,7 @@ object_id_type nft_metadata_create_evaluator::do_apply( const nft_metadata_creat
 
 void_result nft_metadata_update_evaluator::do_evaluate( const nft_metadata_update_operation& op )
 { try {
+   op.owner(db());
    const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
    auto itr_nft_md = idx_nft_md.find(op.nft_metadata_id);
    FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
@@ -65,6 +67,12 @@ void_result nft_metadata_update_evaluator::do_apply( const nft_metadata_update_o
 
 void_result nft_mint_evaluator::do_evaluate( const nft_mint_operation& op )
 { try {
+   op.payer(db());
+   op.owner(db());
+   op.approved(db());
+   for(const auto& op_iter: op.approved_operators) {
+      op_iter(db());
+   }
    const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
    auto itr_nft_md = idx_nft_md.find(op.nft_metadata_id);
    FC_ASSERT( itr_nft_md != idx_nft_md.end(), "NFT metadata not found" );
@@ -171,6 +179,7 @@ object_id_type nft_approve_evaluator::do_apply( const nft_approve_operation& op 
 
 void_result nft_set_approval_for_all_evaluator::do_evaluate( const nft_set_approval_for_all_operation& op )
 { try {
+   op.owner(db());
    const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
 
    auto itr_operator = idx_acc.find(op.operator_);
