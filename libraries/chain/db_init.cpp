@@ -267,6 +267,7 @@ void database::initialize_evaluators()
    register_evaluator<delete_custom_account_authority_evaluator>();
    register_evaluator<offer_evaluator>();
    register_evaluator<bid_evaluator>();
+   register_evaluator<cancel_offer_evaluator>();
    register_evaluator<finalize_offer_evaluator>();
    register_evaluator<nft_metadata_create_evaluator>();
    register_evaluator<nft_metadata_update_evaluator>();

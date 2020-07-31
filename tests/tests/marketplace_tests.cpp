@@ -402,6 +402,7 @@ BOOST_AUTO_TEST_CASE(best_buy_bid_for_sell_offer)
         BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
         BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
         BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+        BOOST_CHECK(result_type::Expired == history_obj.result);
     }
     catch (fc::exception &e)
     {
@@ -444,6 +445,7 @@ BOOST_AUTO_TEST_CASE(expire_with_bid_for_sell_offer_test)
     BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
     BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
     BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+    BOOST_CHECK(result_type::Expired == history_obj.result);
 }
 
 BOOST_AUTO_TEST_CASE(expire_no_bid_for_sell_offer_test)
@@ -474,6 +476,7 @@ BOOST_AUTO_TEST_CASE(expire_no_bid_for_sell_offer_test)
     BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
     BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
     BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+    BOOST_CHECK(result_type::ExpiredNoBid == history_obj.result);
 }
 
 BOOST_AUTO_TEST_CASE(create_buy_offer_test)
@@ -697,6 +700,7 @@ BOOST_AUTO_TEST_CASE(best_sell_bid_for_buy_offer)
         BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
         BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
         BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+        BOOST_CHECK(result_type::Expired == history_obj.result);
     }
     catch (fc::exception &e)
     {
@@ -742,6 +746,7 @@ BOOST_AUTO_TEST_CASE(expire_with_bid_for_buy_offer_test)
     BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
     BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
     BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+    BOOST_CHECK(result_type::Expired == history_obj.result);
 }
 
 BOOST_AUTO_TEST_CASE(expire_no_bid_for_buy_offer_test)
@@ -773,6 +778,166 @@ BOOST_AUTO_TEST_CASE(expire_no_bid_for_buy_offer_test)
     BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
     BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
     BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+    BOOST_CHECK(result_type::ExpiredNoBid == history_obj.result);
+}
+
+BOOST_AUTO_TEST_CASE(cancel_sell_offer_no_bid_test)
+{
+    try
+    {
+        INVOKE(create_sell_offer_test);
+        GET_ACTOR(alice);
+        GET_ACTOR(bob);
+        GET_ACTOR(operator1);
+
+        const auto &offer_obj = sell_offer(db);
+        auto cached_offer_obj = offer_obj;
+
+        cancel_offer_operation cancel_op;
+        cancel_op.offer_id = offer_obj.id;
+        // Add non-issuer
+        cancel_op.issuer = bob_id;
+        trx.clear();
+        trx.operations.push_back(cancel_op);
+        sign(trx, bob_private_key);
+        BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+        trx.clear();
+        // Add issuer
+        cancel_op.issuer = alice_id;
+        trx.operations.push_back(cancel_op);
+        sign(trx, alice_private_key);
+        PUSH_TX(db, trx);
+
+        const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
+        const auto &ohidx = db.get_index_type<offer_history_index>().indices().get<by_id>();
+        BOOST_REQUIRE(oidx.size() == 0);
+        BOOST_REQUIRE(ohidx.size() == 1);
+        BOOST_CHECK(db.item_locked(nft_id_type(0)) == false);
+        BOOST_CHECK(db.item_locked(nft_id_type(1)) == false);
+        // Get offer history object
+        const auto &history_obj = offer_history_id_type(0)(db);
+        // History object data check
+        BOOST_CHECK(cached_offer_obj.bid_price == history_obj.bid_price);
+        BOOST_CHECK(cached_offer_obj.bidder == history_obj.bidder);
+        BOOST_CHECK(cached_offer_obj.buying_item == history_obj.buying_item);
+        BOOST_CHECK(cached_offer_obj.issuer == history_obj.issuer);
+        BOOST_CHECK(cached_offer_obj.maximum_price == history_obj.maximum_price);
+        BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
+        BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
+        BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+        BOOST_CHECK(result_type::Cancelled == history_obj.result);
+
+    }
+    catch (fc::exception &e)
+    {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(cancel_sell_offer_with_bid_test)
+{
+    try
+    {
+        INVOKE(buy_bid_for_sell_offer_test);
+        GET_ACTOR(alice);
+        GET_ACTOR(bob);
+        GET_ACTOR(operator1);
+
+        const auto &offer_obj = sell_offer(db);
+        auto cached_offer_obj = offer_obj;
+        int64_t bob_balance = get_balance(bob_id(db), asset_id_type()(db));
+
+        cancel_offer_operation cancel_op;
+        cancel_op.offer_id = offer_obj.id;
+        // Add issuer
+        cancel_op.issuer = alice_id;
+        trx.clear();
+        trx.operations.push_back(cancel_op);
+        sign(trx, alice_private_key);
+        PUSH_TX(db, trx);
+
+        const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
+        const auto &ohidx = db.get_index_type<offer_history_index>().indices().get<by_id>();
+        BOOST_REQUIRE(oidx.size() == 0);
+        BOOST_REQUIRE(ohidx.size() == 1);
+        BOOST_CHECK(db.item_locked(nft_id_type(0)) == false);
+        BOOST_CHECK(db.item_locked(nft_id_type(1)) == false);
+        BOOST_CHECK_EQUAL(get_balance(bob_id(db), asset_id_type()(db)),
+                    (bob_balance + (*cached_offer_obj.bid_price).amount).value);
+        // Get offer history object
+        const auto &history_obj = offer_history_id_type(0)(db);
+        // History object data check
+        BOOST_CHECK(cached_offer_obj.bid_price == history_obj.bid_price);
+        BOOST_CHECK(cached_offer_obj.bidder == history_obj.bidder);
+        BOOST_CHECK(cached_offer_obj.buying_item == history_obj.buying_item);
+        BOOST_CHECK(cached_offer_obj.issuer == history_obj.issuer);
+        BOOST_CHECK(cached_offer_obj.maximum_price == history_obj.maximum_price);
+        BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
+        BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
+        BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+        BOOST_CHECK(result_type::Cancelled == history_obj.result);
+
+    }
+    catch (fc::exception &e)
+    {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(cancel_buy_offer_with_bid_test)
+{
+    try
+    {
+        INVOKE(sell_bid_for_buy_offer_test);
+        GET_ACTOR(alice);
+        GET_ACTOR(bob);
+        GET_ACTOR(operator1);
+
+        const auto &offer_obj = buy_offer(db);
+        auto cached_offer_obj = offer_obj;
+        int64_t alice_balance = get_balance(alice_id(db), asset_id_type()(db));
+
+        cancel_offer_operation cancel_op;
+        cancel_op.offer_id = offer_obj.id;
+        cancel_op.issuer = alice_id;
+
+        trx.clear();
+        trx.operations.push_back(cancel_op);
+        sign(trx, alice_private_key);
+        PUSH_TX(db, trx);
+        trx.clear();
+
+        generate_block();
+
+        const auto &oidx = db.get_index_type<offer_index>().indices().get<by_id>();
+        const auto &ohidx = db.get_index_type<offer_history_index>().indices().get<by_id>();
+        BOOST_REQUIRE(oidx.size() == 0);
+        BOOST_REQUIRE(ohidx.size() == 2);
+        BOOST_CHECK(db.item_locked(nft_id_type(0)) == false);
+        BOOST_CHECK(db.item_locked(nft_id_type(1)) == false);
+        BOOST_CHECK_EQUAL(get_balance(alice_id(db), asset_id_type()(db)),
+                      (alice_balance + cached_offer_obj.maximum_price.amount).value);
+        // Get offer history object
+        const auto &history_obj = offer_history_id_type(1)(db);
+        // History object data check
+        BOOST_CHECK(cached_offer_obj.bid_price == history_obj.bid_price);
+        BOOST_CHECK(cached_offer_obj.bidder == history_obj.bidder);
+        BOOST_CHECK(cached_offer_obj.buying_item == history_obj.buying_item);
+        BOOST_CHECK(cached_offer_obj.issuer == history_obj.issuer);
+        BOOST_CHECK(cached_offer_obj.maximum_price == history_obj.maximum_price);
+        BOOST_CHECK(cached_offer_obj.minimum_price == history_obj.minimum_price);
+        BOOST_CHECK(cached_offer_obj.offer_expiration_date == history_obj.offer_expiration_date);
+        BOOST_CHECK(cached_offer_obj.item_ids == history_obj.item_ids);
+        BOOST_CHECK(result_type::Cancelled == history_obj.result);
+
+    }
+    catch (fc::exception &e)
+    {
+        edump((e.to_detail_string()));
+        throw;
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

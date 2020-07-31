@@ -74,10 +74,32 @@ namespace graphene
          share_type calculate_fee(const fee_parameters_type &k) const;
       };
 
+      struct cancel_offer_operation : public base_operation
+      {
+         struct fee_parameters_type
+         {
+            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+            uint32_t price_per_kbyte =
+                10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         };
+
+         asset fee;
+
+         account_id_type issuer;
+         offer_id_type offer_id;
+
+         extensions_type extensions;
+
+         account_id_type fee_payer() const { return issuer; }
+         void validate() const;
+         share_type calculate_fee(const fee_parameters_type &k) const;
+      };
+
       enum class result_type
       {
          Expired = 0,
-         ExpiredNoBid = 1
+         ExpiredNoBid = 1,
+         Cancelled = 2
       };
 
       struct finalize_offer_operation : public base_operation
@@ -114,7 +136,12 @@ FC_REFLECT(graphene::chain::bid_operation::fee_parameters_type,
 FC_REFLECT(graphene::chain::bid_operation,
            (fee)(bidder)(bid_price)(offer_id)(extensions));
 
-FC_REFLECT_ENUM(graphene::chain::result_type, (Expired)(ExpiredNoBid));
+FC_REFLECT(graphene::chain::cancel_offer_operation::fee_parameters_type,
+           (fee)(price_per_kbyte));
+FC_REFLECT(graphene::chain::cancel_offer_operation,
+           (fee)(issuer)(offer_id)(extensions));
+
+FC_REFLECT_ENUM(graphene::chain::result_type, (Expired)(ExpiredNoBid)(Cancelled));
 FC_REFLECT(graphene::chain::finalize_offer_operation::fee_parameters_type,
            (fee));
 FC_REFLECT(graphene::chain::finalize_offer_operation,

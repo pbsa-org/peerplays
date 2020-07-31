@@ -31,6 +31,17 @@ namespace graphene
       FC_ASSERT(bid_price.amount.value >= 0);
     }
 
+    void cancel_offer_operation::validate() const
+    {
+      FC_ASSERT(fee.amount.value >= 0);
+    }
+
+    share_type cancel_offer_operation::calculate_fee(const fee_parameters_type &schedule) const
+    {
+      share_type core_fee_required = schedule.fee;
+      return core_fee_required;
+    }
+
     void finalize_offer_operation::validate() const
     {
       FC_ASSERT(fee.amount.value >= 0);

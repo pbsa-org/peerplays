@@ -25,6 +25,15 @@ namespace graphene
          void_result do_apply(const bid_operation &o);
       };
 
+      class cancel_offer_evaluator : public evaluator<cancel_offer_evaluator>
+      {
+      public:
+         typedef cancel_offer_operation operation_type;
+
+         void_result do_evaluate(const cancel_offer_operation &o);
+         void_result do_apply(const cancel_offer_operation &o);
+      };
+
       class finalize_offer_evaluator : public evaluator<finalize_offer_evaluator>
       {
       public:

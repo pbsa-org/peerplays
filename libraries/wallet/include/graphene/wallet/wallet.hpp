@@ -2071,6 +2071,12 @@ class wallet_api
        */
       bool nft_is_approved_for_all(string owner_account_id_or_name, string operator_account_id_or_name) const;
 
+      /**
+       * @brief Returns all tokens
+       * @return Returns vector of NFT objects, empty vector if none
+       */
+      vector<nft_object> nft_get_all_tokens() const;
+
       signed_transaction create_offer(set<nft_id_type> item_ids,
                                       string issuer_accound_id_or_name,
                                       asset minimum_price,
@@ -2083,6 +2089,9 @@ class wallet_api
                                     asset bid_price,
                                     offer_id_type offer_id,
                                     bool broadcast);
+      signed_transaction cancel_offer(string issuer_account_id_or_name,
+                                      offer_id_type offer_id,
+                                      bool broadcast);
       vector<offer_object> list_offers(uint32_t limit, optional<offer_id_type> lower_id) const;
       vector<offer_object> list_sell_offers(uint32_t limit, optional<offer_id_type> lower_id) const;
       vector<offer_object> list_buy_offers(uint32_t limit, optional<offer_id_type> lower_id) const;
@@ -2355,8 +2364,10 @@ FC_API( graphene::wallet::wallet_api,
         (nft_set_approval_for_all)
         (nft_get_approved)
         (nft_is_approved_for_all)
+        (nft_get_all_tokens)
         (create_offer)
         (create_bid)
+        (cancel_offer)
         (list_offers)
         (list_sell_offers)
         (list_buy_offers)

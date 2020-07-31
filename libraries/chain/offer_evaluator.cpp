@@ -137,6 +137,60 @@ namespace graphene
             FC_CAPTURE_AND_RETHROW((op))
         }
 
+        void_result cancel_offer_evaluator::do_evaluate(const cancel_offer_operation &op)
+        {
+            try
+            {
+                const database &d = db();
+                const auto &offer = op.offer_id(d);
+                op.issuer(d);
+                FC_ASSERT(op.issuer == offer.issuer, "Only offer issuer can cancel the offer");
+                FC_ASSERT(offer.offer_expiration_date > d.head_block_time(), "Expiration should be in future when cancelling the offer");
+                return void_result();
+            }
+            FC_CAPTURE_AND_RETHROW((op))
+        }
+
+        void_result cancel_offer_evaluator::do_apply(const cancel_offer_operation &op)
+        {
+            try
+            {
+                database &d = db();
+
+                const auto &offer = op.offer_id(d);
+                if(offer.buying_item)
+                {
+                    // Refund the max price to issuer
+                    d.adjust_balance(offer.issuer, offer.maximum_price);
+                }
+                else
+                {
+                    if (offer.bidder)
+                    {
+                        // Refund the bid price to the best bidder till now
+                        d.adjust_balance(*offer.bidder, *offer.bid_price);
+                    }
+                }
+
+                d.create<offer_history_object>([&](offer_history_object &obj) {
+                    obj.issuer = offer.issuer;
+                    obj.item_ids = offer.item_ids;
+                    obj.bidder = offer.bidder;
+                    obj.bid_price = offer.bid_price;
+                    obj.minimum_price = offer.minimum_price;
+                    obj.maximum_price = offer.maximum_price;
+                    obj.buying_item = offer.buying_item;
+                    obj.offer_expiration_date = offer.offer_expiration_date;
+                    obj.result = result_type::Cancelled;
+                });
+                // This should unlock the item
+                d.remove(op.offer_id(d));
+
+                return void_result();
+            }
+            FC_CAPTURE_AND_RETHROW((op))
+        }
+
         void_result finalize_offer_evaluator::do_evaluate(const finalize_offer_operation &op)
         {
             try
@@ -265,6 +319,7 @@ namespace graphene
                     obj.maximum_price = offer.maximum_price;
                     obj.buying_item = offer.buying_item;
                     obj.offer_expiration_date = offer.offer_expiration_date;
+                    obj.result = op.result;
                 });
                 // This should unlock the item
                 d.remove(op.offer_id(d));

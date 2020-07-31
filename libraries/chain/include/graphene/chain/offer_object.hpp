@@ -48,6 +48,7 @@ namespace graphene
 
             bool buying_item;
             fc::time_point_sec offer_expiration_date;
+            result_type result;
 
             offer_history_id_type get_id() const { return id; }
         };
@@ -105,4 +106,4 @@ FC_REFLECT_DERIVED(graphene::chain::offer_object, (graphene::db::object),
 FC_REFLECT_DERIVED(graphene::chain::offer_history_object,
                    (graphene::db::object),
                    (issuer)(item_ids)(bidder)(bid_price)(minimum_price)(
-                       maximum_price)(buying_item)(offer_expiration_date))
+                       maximum_price)(buying_item)(offer_expiration_date)(result))

@@ -148,6 +148,7 @@ namespace graphene { namespace chain {
             custom_account_authority_delete_operation,
             offer_operation,
             bid_operation,
+            cancel_offer_operation,
             finalize_offer_operation,
             nft_metadata_create_operation,
             nft_metadata_update_operation,

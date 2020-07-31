@@ -333,9 +333,9 @@
       "scale": 10000
     },
     "block_interval": 3,
-    "maintenance_interval": 86400,
+    "maintenance_interval": 240,
     "maintenance_skip_slots": 3,
-    "committee_proposal_review_period": 1209600,
+    "committee_proposal_review_period": 600,
     "maximum_transaction_size": 2048,
     "maximum_block_size": 1228800000,
     "maximum_time_until_expiration": 86400,
@@ -384,7 +384,9 @@
       "gpos_period": 15552000,
       "gpos_subperiod": 2592000,
       "gpos_period_start": 1601528400,
-      "gpos_vesting_lockin_period": 2592000
+      "gpos_vesting_lockin_period": 2592000,
+      "rbac_max_permissions_per_account": 3,
+      "rbac_max_authorities_per_permission":3
     }
   },
   "initial_bts_accounts": [],

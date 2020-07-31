@@ -6563,6 +6563,11 @@ bool wallet_api::nft_is_approved_for_all(string owner_account_id_or_name, string
    return my->_remote_db->nft_is_approved_for_all(owner_account.id, operator_account.id);
 }
 
+vector<nft_object> wallet_api::nft_get_all_tokens() const
+{
+   return my->_remote_db->nft_get_all_tokens();
+}
+
 signed_transaction wallet_api::create_offer(set<nft_id_type> item_ids,
                                              string issuer_accound_id_or_name,
                                              asset minimum_price,
@@ -6602,6 +6607,24 @@ signed_transaction wallet_api::create_bid(string bidder_account_id_or_name,
    op.bidder = bidder_account.id;
    op.offer_id = offer_id;
    op.bid_price = bid_price;
+
+   signed_transaction trx;
+   trx.operations.push_back(op);
+   my->set_operation_fees( trx, my->_remote_db->get_global_properties().parameters.current_fees );
+   trx.validate();
+
+   return my->sign_transaction( trx, broadcast );
+}
+
+signed_transaction wallet_api::cancel_offer(string issuer_account_id_or_name,
+                                            offer_id_type offer_id,
+                                            bool broadcast)
+{
+   account_object issuer_account = my->get_account(issuer_account_id_or_name);
+
+   cancel_offer_operation op;
+   op.issuer = issuer_account.id;
+   op.offer_id = offer_id;
 
    signed_transaction trx;
    trx.operations.push_back(op);

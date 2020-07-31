@@ -338,6 +338,9 @@ struct get_impacted_account_visitor
    void operator()( const bid_operation& op ) {
 	  _impacted.insert( op.bidder );
    }
+   void operator()( const cancel_offer_operation& op ) {
+	  _impacted.insert( op.issuer );
+   }
    void operator()( const finalize_offer_operation& op ) {
        _impacted.insert( op.fee_paying_account );
    }
