@@ -18,6 +18,8 @@ namespace graphene { namespace chain {
          std::string     base_uri;
          optional<account_id_type> revenue_partner;
          optional<double> revenue_split;
+         bool            isTransferable = false;
+         bool            isSellable = true;
    };
 
    class nft_object : public abstract_object<nft_object>
@@ -91,7 +93,9 @@ FC_REFLECT_DERIVED( graphene::chain::nft_metadata_object, (graphene::db::object)
                     (symbol)
                     (base_uri)
                     (revenue_partner)
-                    (revenue_split) )
+                    (revenue_split)
+                    (isTransferable)
+                    (isSellable) )
 
 FC_REFLECT_DERIVED( graphene::chain::nft_object, (graphene::db::object),
                     (nft_metadata_id)

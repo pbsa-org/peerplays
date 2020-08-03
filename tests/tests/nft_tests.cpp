@@ -30,6 +30,7 @@ BOOST_AUTO_TEST_CASE( nft_metadata_create_test ) {
       op.symbol = "NFT";
       op.base_uri = "http://nft.example.com";
       op.name = "123";
+      op.isTransferable = true;
       BOOST_CHECK_THROW(op.validate(), fc::exception);
       op.name = "";
       BOOST_CHECK_THROW(op.validate(), fc::exception);

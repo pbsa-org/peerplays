@@ -34,6 +34,8 @@ namespace graphene
                     {
                         FC_ASSERT(is_owner, "Issuer has no authority to sell the item");
                     }
+                    const auto& nft_meta_obj = nft_obj.nft_metadata_id(d);
+                    FC_ASSERT( nft_meta_obj.isSellable == true, "NFT is not sellable");
                 }
                 FC_ASSERT(op.offer_expiration_date > d.head_block_time(), "Expiration should be in future");
                 FC_ASSERT(op.fee.amount >= 0, "Invalid fee");
@@ -229,7 +231,6 @@ namespace graphene
             {
                 database &d = db();
                 offer_object offer = op.offer_id(d);
-                vector<nft_safe_transfer_from_operation> xfer_ops;
                 // Calculate the fees for all revenue partners of the items
                 auto calc_fee = [&](int64_t &tot_fees) {
                     map<account_id_type, asset> fee_map;
@@ -282,25 +283,22 @@ namespace graphene
                         // Sell Offer, send the seller his amount
                         d.adjust_balance(offer.issuer, seller_amount);
                     }
-                    // Safely tranfer the NFTs with the ops
-                    for (const auto &item : offer.item_ids)
+                    // Tranfer the NFTs
+                    for (auto item : offer.item_ids)
                     {
-                        const auto &nft_obj = item(d);
-                        nft_safe_transfer_from_operation xfer_op;
-                        xfer_op.from = nft_obj.owner;
-                        xfer_op.token_id = item;
-                        xfer_op.fee = asset(0, asset_id_type());
-                        if (offer.buying_item)
-                        {
-                            xfer_op.to = offer.issuer;
-                            xfer_op.operator_ = *offer.bidder;
-                        }
-                        else
-                        {
-                            xfer_op.to = *offer.bidder;
-                            xfer_op.operator_ = offer.issuer;
-                        }
-                        xfer_ops.push_back(std::move(xfer_op));
+                        auto &nft_obj = item(d);
+                        d.modify(nft_obj, [&offer](nft_object &obj) {
+                            if (offer.buying_item)
+                            {
+                                obj.owner = offer.issuer;
+                            }
+                            else
+                            {
+                                obj.owner = *offer.bidder;
+                            }
+                            obj.approved = {};
+                            obj.approved_operators.clear();
+                        });
                     }
                 }
                 else
@@ -323,16 +321,6 @@ namespace graphene
                 });
                 // This should unlock the item
                 d.remove(op.offer_id(d));
-                // Send safe transfer from ops
-                if (xfer_ops.size() > 0)
-                {
-                    transaction_evaluation_state xfer_context(&d);
-                    xfer_context.skip_fee_schedule_check = true;
-                    for (const auto &xfer_op : xfer_ops)
-                    {
-                        d.apply_operation(xfer_context, xfer_op);
-                    }
-                }
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
