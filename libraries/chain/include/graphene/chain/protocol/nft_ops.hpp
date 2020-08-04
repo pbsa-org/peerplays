@@ -15,8 +15,8 @@ namespace graphene { namespace chain {
       std::string base_uri;
       optional<account_id_type> revenue_partner;
       optional<double> revenue_split;
-      bool isTransferable = false;
-      bool isSellable = true;
+      bool is_transferable = false;
+      bool is_sellable = true;
 
       account_id_type fee_payer()const { return owner; }
       void validate() const;
@@ -34,8 +34,8 @@ namespace graphene { namespace chain {
       optional<std::string> base_uri;
       optional<account_id_type> revenue_partner;
       optional<double> revenue_split;
-      optional<bool> isTransferable;
-      optional<bool> isSellable;
+      optional<bool> is_transferable;
+      optional<bool> is_sellable;
 
       account_id_type fee_payer()const { return owner; }
       void validate() const;
@@ -108,8 +108,8 @@ FC_REFLECT( graphene::chain::nft_safe_transfer_from_operation::fee_parameters_ty
 FC_REFLECT( graphene::chain::nft_approve_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::nft_set_approval_for_all_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT( graphene::chain::nft_metadata_create_operation, (fee) (owner) (name) (symbol) (base_uri) (revenue_partner) (revenue_split) (isTransferable) (isSellable) )
-FC_REFLECT( graphene::chain::nft_metadata_update_operation, (fee) (owner) (nft_metadata_id) (name) (symbol) (base_uri) (revenue_partner) (revenue_split) (isTransferable) (isSellable) )
+FC_REFLECT( graphene::chain::nft_metadata_create_operation, (fee) (owner) (name) (symbol) (base_uri) (revenue_partner) (revenue_split) (is_transferable) (is_sellable) )
+FC_REFLECT( graphene::chain::nft_metadata_update_operation, (fee) (owner) (nft_metadata_id) (name) (symbol) (base_uri) (revenue_partner) (revenue_split) (is_transferable) (is_sellable) )
 FC_REFLECT( graphene::chain::nft_mint_operation, (fee) (payer) (nft_metadata_id) (owner) (approved) (approved_operators) (token_uri) )
 FC_REFLECT( graphene::chain::nft_safe_transfer_from_operation, (fee) (operator_) (from) (to) (token_id) (data) )
 FC_REFLECT( graphene::chain::nft_approve_operation, (fee) (operator_) (approved) (token_id) )

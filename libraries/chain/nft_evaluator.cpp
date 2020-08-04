@@ -27,8 +27,8 @@ object_id_type nft_metadata_create_evaluator::do_apply( const nft_metadata_creat
       obj.base_uri = op.base_uri;
       obj.revenue_partner = op.revenue_partner;
       obj.revenue_split = op.revenue_split;
-      obj.isTransferable = op.isTransferable;
-      obj.isSellable = op.isSellable;
+      obj.is_transferable = op.is_transferable;
+      obj.is_sellable = op.is_sellable;
    });
    return new_nft_metadata_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -62,10 +62,10 @@ void_result nft_metadata_update_evaluator::do_apply( const nft_metadata_update_o
          obj.revenue_partner = op.revenue_partner;
       if( op.revenue_split.valid() )
          obj.revenue_split = op.revenue_split;
-      if( op.isTransferable.valid() )
-         obj.isTransferable = *op.isTransferable;
-      if( op.isSellable.valid() )
-         obj.isSellable = *op.isSellable;
+      if( op.is_transferable.valid() )
+         obj.is_transferable = *op.is_transferable;
+      if( op.is_sellable.valid() )
+         obj.is_sellable = *op.is_sellable;
    });
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -127,7 +127,7 @@ void_result nft_safe_transfer_from_evaluator::do_evaluate( const nft_safe_transf
    FC_ASSERT( (itr_nft->owner == op.operator_) || (itr_nft->approved == itr_operator->id) || (itr_approved_op != itr_nft->approved_operators.end()), "Operator is not NFT owner or approved operator" );
 
    const auto& nft_meta_obj = itr_nft->nft_metadata_id(db());
-   FC_ASSERT( nft_meta_obj.isTransferable == true, "NFT is not transferable");
+   FC_ASSERT( nft_meta_obj.is_transferable == true, "NFT is not transferable");
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }

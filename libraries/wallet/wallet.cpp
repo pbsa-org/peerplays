@@ -6373,8 +6373,8 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
                                                    string base_uri,
                                                    optional<string> revenue_partner,
                                                    optional<double> revenue_split,
-                                                   bool isTransferable,
-                                                   bool isSellable,
+                                                   bool is_transferable,
+                                                   bool is_sellable,
                                                    bool broadcast)
 {
    account_object owner_account = my->get_account(owner_account_id_or_name);
@@ -6395,8 +6395,8 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
       }
       op.revenue_split = rev_split;
    }
-   op.isTransferable = isTransferable;
-   op.isSellable = isSellable;
+   op.is_transferable = is_transferable;
+   op.is_sellable = is_sellable;
 
    signed_transaction trx;
    trx.operations.push_back(op);
@@ -6412,8 +6412,8 @@ signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_na
                                                    string base_uri,
                                                    optional<string> revenue_partner,
                                                    optional<double> revenue_split,
-                                                   optional<bool> isTransferable,
-                                                   optional<bool> isSellable,
+                                                   optional<bool> is_transferable,
+                                                   optional<bool> is_sellable,
                                                    bool broadcast)
 {
    account_object owner_account = my->get_account(owner_account_id_or_name);
@@ -6434,8 +6434,8 @@ signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_na
       }
       op.revenue_split = rev_split;
    }
-   op.isTransferable = isTransferable;
-   op.isSellable = isSellable;
+   op.is_transferable = is_transferable;
+   op.is_sellable = is_sellable;
 
    signed_transaction trx;
    trx.operations.push_back(op);

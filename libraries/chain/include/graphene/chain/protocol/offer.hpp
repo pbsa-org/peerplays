@@ -114,7 +114,7 @@ namespace graphene
 
          offer_id_type offer_id;
 
-         fc::enum_type<uint8_t, result_type> result;
+         result_type result;
 
          extensions_type extensions;
 

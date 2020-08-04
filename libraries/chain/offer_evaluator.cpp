@@ -34,8 +34,8 @@ namespace graphene
                     {
                         FC_ASSERT(is_owner, "Issuer has no authority to sell the item");
                     }
-                    const auto& nft_meta_obj = nft_obj.nft_metadata_id(d);
-                    FC_ASSERT( nft_meta_obj.isSellable == true, "NFT is not sellable");
+                    const auto &nft_meta_obj = nft_obj.nft_metadata_id(d);
+                    FC_ASSERT(nft_meta_obj.is_sellable == true, "NFT is not sellable");
                 }
                 FC_ASSERT(op.offer_expiration_date > d.head_block_time(), "Expiration should be in future");
                 FC_ASSERT(op.fee.amount >= 0, "Invalid fee");
@@ -160,7 +160,7 @@ namespace graphene
                 database &d = db();
 
                 const auto &offer = op.offer_id(d);
-                if(offer.buying_item)
+                if (offer.buying_item)
                 {
                     // Refund the max price to issuer
                     d.adjust_balance(offer.issuer, offer.maximum_price);
@@ -243,9 +243,10 @@ namespace graphene
                             const auto &rev_partner = *nft_meta_obj.revenue_partner;
                             const auto &rev_split = *nft_meta_obj.revenue_split;
                             int64_t item_fee = static_cast<int64_t>((rev_split * (*offer.bid_price).amount.value) / offer.item_ids.size());
-                            const auto& fee_asset = asset(item_fee, (*offer.bid_price).asset_id);
+                            const auto &fee_asset = asset(item_fee, (*offer.bid_price).asset_id);
                             auto ret_val = fee_map.insert({rev_partner, fee_asset});
-                            if ( ret_val.second == false ) {
+                            if (ret_val.second == false)
+                            {
                                 fee_map[rev_partner] += fee_asset;
                             }
                             tot_fees += item_fee;
