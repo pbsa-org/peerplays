@@ -6407,9 +6407,10 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
 }
 
 signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_name,
-                                                   string name,
-                                                   string symbol,
-                                                   string base_uri,
+                                                   nft_metadata_id_type nft_metadata_id,
+                                                   optional<string> name,
+                                                   optional<string> symbol,
+                                                   optional<string> base_uri,
                                                    optional<string> revenue_partner,
                                                    optional<double> revenue_split,
                                                    optional<bool> is_transferable,
@@ -6419,6 +6420,7 @@ signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_na
    account_object owner_account = my->get_account(owner_account_id_or_name);
 
    nft_metadata_update_operation op;
+   op.nft_metadata_id = nft_metadata_id;
    op.owner = owner_account.id;
    op.name = name;
    op.symbol = symbol;

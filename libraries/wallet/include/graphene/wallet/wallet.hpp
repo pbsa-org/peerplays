@@ -1955,6 +1955,7 @@ class wallet_api
       /**
        * @brief Updates NFT metadata
        * @param owner_account_id_or_name Owner account ID or name
+       * @param nft_metadata_id Metadata ID to modify
        * @param name Name of the token group
        * @param symbol Symbol of the token group
        * @param base_uri Base URI for token URI
@@ -1966,9 +1967,10 @@ class wallet_api
        * @return Signed transaction transfering the funds
        */
       signed_transaction nft_metadata_update(string owner_account_id_or_name,
-                                    string name,
-                                    string symbol,
-                                    string base_uri,
+                                    nft_metadata_id_type nft_metadata_id,
+                                    optional<string> name,
+                                    optional<string> symbol,
+                                    optional<string> base_uri,
                                     optional<string> revenue_partner,
                                     optional<double> revenue_split,
                                     optional<bool> is_transferable,
