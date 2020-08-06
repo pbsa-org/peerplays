@@ -1,4 +1,5 @@
 #include <graphene/chain/protocol/offer.hpp>
+#include <fc/io/raw.hpp>
 
 namespace graphene
 {
@@ -6,8 +7,7 @@ namespace graphene
   {
     share_type offer_operation::calculate_fee(const fee_parameters_type &schedule) const
     {
-      share_type core_fee_required = schedule.fee;
-      return core_fee_required;
+      return schedule.fee + calculate_data_fee( fc::raw::pack_size(*this), schedule.price_per_kbyte );
     }
 
     void offer_operation::validate() const
@@ -47,9 +47,9 @@ namespace graphene
       FC_ASSERT(fee.amount.value >= 0);
     }
 
-    share_type finalize_offer_operation::calculate_fee(const fee_parameters_type &k) const
+    share_type finalize_offer_operation::calculate_fee(const fee_parameters_type &schedule) const
     {
-      share_type core_fee_required = k.fee;
+      share_type core_fee_required = schedule.fee;
       return core_fee_required;
     }
 

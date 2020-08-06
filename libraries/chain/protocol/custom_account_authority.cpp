@@ -34,5 +34,10 @@ void custom_account_authority_delete_operation::validate() const
              "Custom permissions and account auths cannot be created for special accounts");
 }
 
+share_type custom_account_authority_create_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+}
+
 } // namespace chain
 } // namespace graphene

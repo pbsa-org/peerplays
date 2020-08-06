@@ -13,7 +13,8 @@ BOOST_FIXTURE_TEST_SUITE( nft_tests, database_fixture )
 BOOST_AUTO_TEST_CASE( nft_metadata_create_test ) {
 
    BOOST_TEST_MESSAGE("nft_metadata_create_test");
-
+   generate_blocks(HARDFORK_NFT_TIME);
+   generate_block();
    generate_block();
    set_expiration(db, trx);
 

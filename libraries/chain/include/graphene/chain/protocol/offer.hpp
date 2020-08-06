@@ -18,9 +18,8 @@ namespace graphene
       {
          struct fee_parameters_type
          {
-            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-            uint32_t price_per_kbyte =
-                10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+            uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
+            uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
          };
          asset fee;
          set<nft_id_type> item_ids;
@@ -56,9 +55,7 @@ namespace graphene
       {
          struct fee_parameters_type
          {
-            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-            uint32_t price_per_kbyte =
-                10 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+            uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
          };
 
          asset fee;
@@ -78,9 +75,7 @@ namespace graphene
       {
          struct fee_parameters_type
          {
-            uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-            uint32_t price_per_kbyte =
-                10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+            uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
          };
 
          asset fee;
@@ -132,12 +127,12 @@ FC_REFLECT(graphene::chain::offer_operation,
            (fee)(item_ids)(issuer)(minimum_price)(maximum_price)(buying_item)(offer_expiration_date)(memo)(extensions));
 
 FC_REFLECT(graphene::chain::bid_operation::fee_parameters_type,
-           (fee)(price_per_kbyte));
+           (fee));
 FC_REFLECT(graphene::chain::bid_operation,
            (fee)(bidder)(bid_price)(offer_id)(extensions));
 
 FC_REFLECT(graphene::chain::cancel_offer_operation::fee_parameters_type,
-           (fee)(price_per_kbyte));
+           (fee));
 FC_REFLECT(graphene::chain::cancel_offer_operation,
            (fee)(issuer)(offer_id)(extensions));
 

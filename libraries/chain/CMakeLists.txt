@@ -123,7 +123,7 @@ add_library( graphene_chain
              offer_object.cpp
              offer_evaluator.cpp
              nft_evaluator.cpp
-             nft_object.cpp
+             protocol/nft.cpp
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}

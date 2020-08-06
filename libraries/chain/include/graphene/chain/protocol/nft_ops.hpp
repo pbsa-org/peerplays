@@ -6,7 +6,11 @@ namespace graphene { namespace chain {
 
    struct nft_metadata_create_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type
+      {
+         uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+      };
       asset fee;
 
       account_id_type owner;
@@ -20,6 +24,7 @@ namespace graphene { namespace chain {
 
       account_id_type fee_payer()const { return owner; }
       void validate() const;
+      share_type calculate_fee(const fee_parameters_type &k) const;
    };
 
    struct nft_metadata_update_operation : public base_operation
@@ -39,11 +44,16 @@ namespace graphene { namespace chain {
 
       account_id_type fee_payer()const { return owner; }
       void validate() const;
+      share_type calculate_fee(const fee_parameters_type &k) const;
    };
 
    struct nft_mint_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type
+      {
+         uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+      };
       asset fee;
 
       account_id_type payer;
@@ -56,11 +66,16 @@ namespace graphene { namespace chain {
 
       account_id_type fee_payer()const { return payer; }
       void validate() const;
+      share_type calculate_fee(const fee_parameters_type &k) const;
    };
 
    struct nft_safe_transfer_from_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type
+      {
+         uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+      };
       asset fee;
 
       account_id_type operator_;
@@ -71,6 +86,7 @@ namespace graphene { namespace chain {
       string data;
 
       account_id_type fee_payer()const { return operator_; }
+      share_type calculate_fee(const fee_parameters_type &k) const;
    };
 
    struct nft_approve_operation : public base_operation
@@ -84,6 +100,7 @@ namespace graphene { namespace chain {
       nft_id_type token_id;
 
       account_id_type fee_payer()const { return operator_; }
+      share_type calculate_fee(const fee_parameters_type &k) const;
    };
 
    struct nft_set_approval_for_all_operation : public base_operation
@@ -97,14 +114,15 @@ namespace graphene { namespace chain {
       bool approved;
 
       account_id_type fee_payer()const { return owner; }
+      share_type calculate_fee(const fee_parameters_type &k) const;
    };
 
 } } // graphene::chain
 
-FC_REFLECT( graphene::chain::nft_metadata_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::nft_metadata_create_operation::fee_parameters_type, (fee) (price_per_kbyte) )
 FC_REFLECT( graphene::chain::nft_metadata_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::nft_mint_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::nft_safe_transfer_from_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::nft_mint_operation::fee_parameters_type, (fee) (price_per_kbyte) )
+FC_REFLECT( graphene::chain::nft_safe_transfer_from_operation::fee_parameters_type, (fee) (price_per_kbyte) )
 FC_REFLECT( graphene::chain::nft_approve_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::nft_set_approval_for_all_operation::fee_parameters_type, (fee) )
 

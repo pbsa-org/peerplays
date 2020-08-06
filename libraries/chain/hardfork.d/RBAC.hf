@@ -1,4 +1,0 @@
-// RBAC HARDFORK Wednesday, 20-May-20 00:00:00 UTC
-#ifndef HARDFORK_RBAC_TIME
-#define HARDFORK_RBAC_TIME (fc::time_point_sec( 1589932800 ))
-#endif

@@ -16,6 +16,8 @@ namespace graphene
             try
             {
                 const database &d = db();
+                auto now = d.head_block_time();
+                FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
                 op.issuer(d);
                 for (const auto &item : op.item_ids)
                 {
@@ -78,6 +80,8 @@ namespace graphene
             try
             {
                 const database &d = db();
+                auto now = d.head_block_time();
+                FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
                 const auto &offer = op.offer_id(d);
                 op.bidder(d);
                 for (const auto &item : offer.item_ids)
@@ -144,6 +148,8 @@ namespace graphene
             try
             {
                 const database &d = db();
+                auto now = d.head_block_time();
+                FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
                 const auto &offer = op.offer_id(d);
                 op.issuer(d);
                 FC_ASSERT(op.issuer == offer.issuer, "Only offer issuer can cancel the offer");
@@ -198,6 +204,8 @@ namespace graphene
             try
             {
                 const database &d = db();
+                auto now = d.head_block_time();
+                FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
                 const auto &offer = op.offer_id(d);
 
                 if (op.result != result_type::ExpiredNoBid)

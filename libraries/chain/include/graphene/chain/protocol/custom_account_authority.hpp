@@ -10,7 +10,8 @@ struct custom_account_authority_create_operation : public base_operation
 {
    struct fee_parameters_type
    {
-      uint64_t fee = 0;
+      uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
    };
 
    asset fee;
@@ -22,14 +23,14 @@ struct custom_account_authority_create_operation : public base_operation
 
    account_id_type fee_payer() const { return owner_account; }
    void validate() const;
-   share_type calculate_fee(const fee_parameters_type &k) const { return 0; }
+   share_type calculate_fee(const fee_parameters_type &k) const;
 };
 
 struct custom_account_authority_update_operation : public base_operation
 {
    struct fee_parameters_type
    {
-      uint64_t fee = 0;
+      uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
    };
 
    asset fee;
@@ -40,14 +41,14 @@ struct custom_account_authority_update_operation : public base_operation
 
    account_id_type fee_payer() const { return owner_account; }
    void validate() const;
-   share_type calculate_fee(const fee_parameters_type &k) const { return 0; }
+   share_type calculate_fee(const fee_parameters_type &k) const { return k.fee; }
 };
 
 struct custom_account_authority_delete_operation : public base_operation
 {
    struct fee_parameters_type
    {
-      uint64_t fee = 0;
+      uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION;
    };
 
    asset fee;
@@ -56,13 +57,13 @@ struct custom_account_authority_delete_operation : public base_operation
 
    account_id_type fee_payer() const { return owner_account; }
    void validate() const;
-   share_type calculate_fee(const fee_parameters_type &k) const { return 0; }
+   share_type calculate_fee(const fee_parameters_type &k) const { return k.fee; }
 };
 
 } // namespace chain
 } // namespace graphene
 
-FC_REFLECT(graphene::chain::custom_account_authority_create_operation::fee_parameters_type, (fee))
+FC_REFLECT(graphene::chain::custom_account_authority_create_operation::fee_parameters_type, (fee)(price_per_kbyte))
 FC_REFLECT(graphene::chain::custom_account_authority_create_operation, (fee)(permission_id)(operation_type)(valid_from)(valid_to)(owner_account))
 
 FC_REFLECT(graphene::chain::custom_account_authority_update_operation::fee_parameters_type, (fee))

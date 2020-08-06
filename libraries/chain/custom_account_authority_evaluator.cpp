@@ -27,7 +27,7 @@ struct rbac_operation_hardfork_visitor
       case operation::tag<custom_account_authority_create_operation>::value:
       case operation::tag<custom_account_authority_update_operation>::value:
       case operation::tag<custom_account_authority_delete_operation>::value:
-         FC_ASSERT(block_time >= HARDFORK_RBAC_TIME, "Custom permission not allowed on this operation yet!");
+         FC_ASSERT(block_time >= HARDFORK_NFT_TIME, "Custom permission not allowed on this operation yet!");
          break;
       default:
          FC_ASSERT(op_type < first_allowed_op, "Custom permission not allowed on this operation!");
@@ -41,7 +41,7 @@ void_result create_custom_account_authority_evaluator::do_evaluate(const custom_
    {
       const database &d = db();
       auto now = d.head_block_time();
-      FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
+      FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
       op.owner_account(d);
       const custom_permission_object &pobj = op.permission_id(d);
       FC_ASSERT(pobj.account == op.owner_account, "Only owner account can update account authority object");
@@ -79,7 +79,7 @@ void_result update_custom_account_authority_evaluator::do_evaluate(const custom_
    {
       const database &d = db();
       auto now = d.head_block_time();
-      FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
+      FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
       op.owner_account(d);
       const custom_account_authority_object &aobj = op.auth_id(d);
       const custom_permission_object &pobj = aobj.permission_id(d);
@@ -126,7 +126,7 @@ void_result delete_custom_account_authority_evaluator::do_evaluate(const custom_
    {
       const database &d = db();
       auto now = d.head_block_time();
-      FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
+      FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
       op.owner_account(d);
       const custom_account_authority_object &aobj = op.auth_id(d);
       const custom_permission_object &pobj = aobj.permission_id(d);

@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(permission_create_fail_test)
          BOOST_REQUIRE(pidx.size() == 0);
       }
       // alice  fails to create custom permission
-      generate_blocks(HARDFORK_RBAC_TIME);
+      generate_blocks(HARDFORK_NFT_TIME);
       generate_block();
       set_expiration(db, trx);
       {
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(permission_create_success_test)
 {
    try
    {
-      generate_blocks(HARDFORK_RBAC_TIME);
+      generate_blocks(HARDFORK_NFT_TIME);
       generate_block();
       set_expiration(db, trx);
       ACTORS((alice)(bob)(charlie)(dave)(erin));
@@ -893,7 +893,7 @@ BOOST_AUTO_TEST_CASE(transfer_op_multi_sig_with_out_common_auth_test)
 {
    try
    {
-      generate_blocks(HARDFORK_RBAC_TIME);
+      generate_blocks(HARDFORK_NFT_TIME);
       generate_block();
       set_expiration(db, trx);
       ACTORS((alice)(bob)(charlie)(dave));

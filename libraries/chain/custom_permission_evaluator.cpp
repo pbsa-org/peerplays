@@ -16,7 +16,7 @@ void_result create_custom_permission_evaluator::do_evaluate(const custom_permiss
    {
       const database &d = db();
       auto now = d.head_block_time();
-      FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
+      FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
       op.owner_account(d);
       for (const auto &account_weight_pair : op.auth.account_auths)
       {
@@ -54,7 +54,7 @@ void_result update_custom_permission_evaluator::do_evaluate(const custom_permiss
    {
       const database &d = db();
       auto now = d.head_block_time();
-      FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
+      FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
       op.owner_account(d);
       const custom_permission_object &pobj = op.permission_id(d);
       FC_ASSERT(pobj.account == op.owner_account, "Only owner account can update permission object");
@@ -93,7 +93,7 @@ void_result delete_custom_permission_evaluator::do_evaluate(const custom_permiss
    {
       const database &d = db();
       auto now = d.head_block_time();
-      FC_ASSERT(now >= HARDFORK_RBAC_TIME, "Not allowed until RBAC HF");
+      FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
       op.owner_account(d);
       const custom_permission_object &pobj = op.permission_id(d);
       FC_ASSERT(pobj.account == op.owner_account, "Only owner account can delete permission object");

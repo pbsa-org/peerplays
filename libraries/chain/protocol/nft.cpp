@@ -65,5 +65,35 @@ void nft_mint_operation::validate() const
    FC_ASSERT(token_uri.length() <= NFT_URI_MAX_LENGTH, "Invalid NFT Token URI");
 }
 
+share_type nft_metadata_create_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+}
+
+share_type nft_metadata_update_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee;
+}
+
+share_type nft_mint_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+}
+
+share_type nft_safe_transfer_from_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
+}
+
+share_type nft_approve_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee;
+}
+
+share_type nft_set_approval_for_all_operation::calculate_fee(const fee_parameters_type &k) const
+{
+   return k.fee;
+}
+
 } // namespace chain
 } // namespace graphene

@@ -1,10 +1,13 @@
 #include <graphene/chain/nft_evaluator.hpp>
 #include <graphene/chain/nft_object.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 namespace graphene { namespace chain {
 
 void_result nft_metadata_create_evaluator::do_evaluate( const nft_metadata_create_operation& op )
 { try {
+   auto now = db().head_block_time();
+   FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
    op.owner(db());
    const auto& idx_nft_md_by_name = db().get_index_type<nft_metadata_index>().indices().get<by_name>();
    FC_ASSERT( idx_nft_md_by_name.find(op.name) == idx_nft_md_by_name.end(), "NFT name already in use" );
@@ -36,6 +39,8 @@ object_id_type nft_metadata_create_evaluator::do_apply( const nft_metadata_creat
 
 void_result nft_metadata_update_evaluator::do_evaluate( const nft_metadata_update_operation& op )
 { try {
+   auto now = db().head_block_time();
+   FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
    op.owner(db());
    const auto& idx_nft_md = db().get_index_type<nft_metadata_index>().indices().get<by_id>();
    auto itr_nft_md = idx_nft_md.find(op.nft_metadata_id);
@@ -79,6 +84,8 @@ void_result nft_metadata_update_evaluator::do_apply( const nft_metadata_update_o
 
 void_result nft_mint_evaluator::do_evaluate( const nft_mint_operation& op )
 { try {
+   auto now = db().head_block_time();
+   FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
    op.payer(db());
    op.owner(db());
    op.approved(db());
@@ -108,6 +115,8 @@ object_id_type nft_mint_evaluator::do_apply( const nft_mint_operation& op )
 
 void_result nft_safe_transfer_from_evaluator::do_evaluate( const nft_safe_transfer_from_operation& op )
 { try {
+   auto now = db().head_block_time();
+   FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
    const auto& idx_nft = db().get_index_type<nft_index>().indices().get<by_id>();
    const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
 
@@ -156,6 +165,8 @@ object_id_type nft_safe_transfer_from_evaluator::do_apply( const nft_safe_transf
 
 void_result nft_approve_evaluator::do_evaluate( const nft_approve_operation& op )
 { try {
+   auto now = db().head_block_time();
+   FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
    const auto& idx_nft = db().get_index_type<nft_index>().indices().get<by_id>();
    const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
 
@@ -194,6 +205,8 @@ object_id_type nft_approve_evaluator::do_apply( const nft_approve_operation& op 
 
 void_result nft_set_approval_for_all_evaluator::do_evaluate( const nft_set_approval_for_all_operation& op )
 { try {
+   auto now = db().head_block_time();
+   FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
    op.owner(db());
    const auto& idx_acc = db().get_index_type<account_index>().indices().get<by_id>();
 

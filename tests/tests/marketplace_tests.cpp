@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(nft_metadata_create_test)
 {
 
     BOOST_TEST_MESSAGE("nft_metadata_create_test");
-
+    generate_blocks(HARDFORK_NFT_TIME);
     generate_block();
     set_expiration(db, trx);
 
@@ -59,10 +59,8 @@ BOOST_AUTO_TEST_CASE(nft_mint_test)
 
     BOOST_TEST_MESSAGE("nft_mint_test");
 
-    generate_block();
-    set_expiration(db, trx);
-
     INVOKE(nft_metadata_create_test);
+    set_expiration(db, trx);
 
     ACTORS((alice)(bob)(charlie)(operator1)(operator2));
     upgrade_to_lifetime_member(alice);
