@@ -6372,7 +6372,7 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
                                                    string symbol,
                                                    string base_uri,
                                                    optional<string> revenue_partner,
-                                                   optional<double> revenue_split,
+                                                   optional<uint16_t> revenue_split,
                                                    bool is_transferable,
                                                    bool is_sellable,
                                                    bool broadcast)
@@ -6388,7 +6388,7 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
    {
       account_object partner_account = my->get_account(*revenue_partner);
       op.revenue_partner = partner_account.id;
-      double rev_split = 0.0;
+      uint16_t rev_split = 0;
       if( revenue_split )
       {
          rev_split = *revenue_split;
@@ -6412,7 +6412,7 @@ signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_na
                                                    optional<string> symbol,
                                                    optional<string> base_uri,
                                                    optional<string> revenue_partner,
-                                                   optional<double> revenue_split,
+                                                   optional<uint16_t> revenue_split,
                                                    optional<bool> is_transferable,
                                                    optional<bool> is_sellable,
                                                    bool broadcast)
@@ -6429,7 +6429,7 @@ signed_transaction wallet_api::nft_metadata_update(string owner_account_id_or_na
    {
       account_object partner_account = my->get_account(*revenue_partner);
       op.revenue_partner = partner_account.id;
-      double rev_split = 0.0;
+      uint16_t rev_split = 0;
       if( revenue_split )
       {
          rev_split = *revenue_split;

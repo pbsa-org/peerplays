@@ -17,7 +17,7 @@ namespace graphene { namespace chain {
          std::string     symbol;
          std::string     base_uri;
          optional<account_id_type> revenue_partner;
-         optional<double> revenue_split;
+         optional<uint16_t> revenue_split;
          bool            is_transferable = false;
          bool            is_sellable = true;
    };

@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(nft_metadata_create_test)
         op.symbol = "NFT";
         op.base_uri = "http://nft.example.com";
         op.revenue_partner = mdowner_id;
-        op.revenue_split = 0.1;
+        op.revenue_split = 1000;
 
         trx.operations.push_back(op);
         sign(trx, mdowner_private_key);

@@ -1947,7 +1947,7 @@ class wallet_api
                                     string symbol,
                                     string base_uri,
                                     optional<string> revenue_partner,
-                                    optional<double> revenue_split,
+                                    optional<uint16_t> revenue_split,
                                     bool is_transferable,
                                     bool is_sellable,
                                     bool broadcast);
@@ -1972,7 +1972,7 @@ class wallet_api
                                     optional<string> symbol,
                                     optional<string> base_uri,
                                     optional<string> revenue_partner,
-                                    optional<double> revenue_split,
+                                    optional<uint16_t> revenue_split,
                                     optional<bool> is_transferable,
                                     optional<bool> is_sellable,
                                     bool broadcast);

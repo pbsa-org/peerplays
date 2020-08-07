@@ -246,11 +246,11 @@ namespace graphene
                     {
                         const auto &nft_obj = item(d);
                         const auto &nft_meta_obj = nft_obj.nft_metadata_id(d);
-                        if (nft_meta_obj.revenue_partner && *nft_meta_obj.revenue_split > 0.0)
+                        if (nft_meta_obj.revenue_partner && *nft_meta_obj.revenue_split > 0)
                         {
                             const auto &rev_partner = *nft_meta_obj.revenue_partner;
                             const auto &rev_split = *nft_meta_obj.revenue_split;
-                            int64_t item_fee = static_cast<int64_t>((rev_split * (*offer.bid_price).amount.value) / offer.item_ids.size());
+                            int64_t item_fee = static_cast<int64_t>((rev_split * (*offer.bid_price).amount.value / GRAPHENE_100_PERCENT) / offer.item_ids.size());
                             const auto &fee_asset = asset(item_fee, (*offer.bid_price).asset_id);
                             auto ret_val = fee_map.insert({rev_partner, fee_asset});
                             if (ret_val.second == false)
