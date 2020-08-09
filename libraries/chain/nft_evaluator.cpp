@@ -16,7 +16,7 @@ void_result nft_metadata_create_evaluator::do_evaluate( const nft_metadata_creat
    FC_ASSERT((op.revenue_partner && op.revenue_split) || (!op.revenue_partner && !op.revenue_split), "NFT revenue partner info invalid");
    if (op.revenue_partner) {
        (*op.revenue_partner)(db());
-       FC_ASSERT(*op.revenue_split >= GRAPHENE_1_PERCENT && *op.revenue_split <= GRAPHENE_100_PERCENT, "Revenue split percent invalid");
+       FC_ASSERT(*op.revenue_split >= 0 && *op.revenue_split <= GRAPHENE_100_PERCENT, "Revenue split percent invalid");
    }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -55,7 +55,7 @@ void_result nft_metadata_update_evaluator::do_evaluate( const nft_metadata_updat
    FC_ASSERT((op.revenue_partner && op.revenue_split) || (!op.revenue_partner && !op.revenue_split), "NFT revenue partner info invalid");
    if (op.revenue_partner) {
        (*op.revenue_partner)(db());
-       FC_ASSERT(*op.revenue_split >= GRAPHENE_1_PERCENT && *op.revenue_split <= GRAPHENE_100_PERCENT, "Revenue split percent invalid");
+       FC_ASSERT(*op.revenue_split >= 0 && *op.revenue_split <= GRAPHENE_100_PERCENT, "Revenue split percent invalid");
    }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
