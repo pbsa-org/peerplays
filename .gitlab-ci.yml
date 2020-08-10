@@ -4,7 +4,6 @@ include:
 stages:
   - build
   - test
-  - deploy
 
 build:
   stage: build
@@ -32,16 +31,3 @@ test:
     - ./tests/cli_test
   tags:
     - builder
-
-deploy-rng:
-  stage: deploy
-  dependencies: 
-    - build
-  script:
-    - mv ./programs/witness_node/witness_node /tmp
-    - ansible-playbook /usr/local/bin/update-witness.yml
-    - sh /usr/local/bin/update-info.sh
-    - sh /usr/local/bin/cleanup.sh
-  when: manual
-  tags:
-     - rng-cc

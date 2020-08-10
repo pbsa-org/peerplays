@@ -45,6 +45,10 @@
 #include <graphene/chain/protocol/event.hpp>
 #include <graphene/chain/protocol/betting_market.hpp>
 #include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/chain/protocol/custom_permission.hpp>
+#include <graphene/chain/protocol/custom_account_authority.hpp>
+#include <graphene/chain/protocol/offer.hpp>
+#include <graphene/chain/protocol/nft_ops.hpp>
 #include <graphene/chain/protocol/random_number.hpp>
 
 namespace graphene { namespace chain {
@@ -137,6 +141,22 @@ namespace graphene { namespace chain {
             lottery_reward_operation,
             lottery_end_operation,
             sweeps_vesting_claim_operation,
+            custom_permission_create_operation,
+            custom_permission_update_operation,
+            custom_permission_delete_operation,
+            custom_account_authority_create_operation,
+            custom_account_authority_update_operation,
+            custom_account_authority_delete_operation,
+            offer_operation,
+            bid_operation,
+            cancel_offer_operation,
+            finalize_offer_operation,
+            nft_metadata_create_operation,
+            nft_metadata_update_operation,
+            nft_mint_operation,
+            nft_safe_transfer_from_operation,
+            nft_approve_operation,
+            nft_set_approval_for_all_operation,
             random_number_store_operation
          > operation;
 
