@@ -92,7 +92,6 @@ namespace graphene { namespace chain {
    using                               fc::enum_type;
    using                               fc::optional;
    using                               fc::unsigned_int;
-   using                               fc::signed_int;
    using                               fc::time_point_sec;
    using                               fc::time_point;
    using                               fc::safe;
@@ -323,7 +322,6 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_sweeps_vesting_balance_object_type, sweeps_vesting_balance_object>       sweeps_vesting_balance_id_type;
    typedef object_id< implementation_ids, impl_offer_history_object_type, offer_history_object>                         offer_history_id_type;
 
-   typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
    typedef fc::ripemd160                                        checksum_type;
    typedef fc::ripemd160                                        transaction_id_type;
