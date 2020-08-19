@@ -78,19 +78,6 @@ namespace fc
    void from_variant( const fc::variant& var,  graphene::chain::address& vo, uint32_t max_depth = 1 );
 }
 
-namespace std
-{
-   template<>
-   struct hash<graphene::chain::address>
-   {
-       public:
-         size_t operator()(const graphene::chain::address &a) const
-         {
-            return (uint64_t(a.addr._hash[0])<<32) | uint64_t( a.addr._hash[0] );
-         }
-   };
-}
-
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( graphene::chain::address, (addr) )
 
