@@ -374,7 +374,7 @@ private:
    // return true if any of my_accounts are players in this tournament
    bool tournament_is_relevant_to_my_accounts(const tournament_object& tournament_obj)
    {
-      tournament_details_object tournament_details = get_object<tournament_details_object>(tournament_obj.tournament_details_id);
+      tournament_details_object tournament_details = get_object(tournament_obj.tournament_details_id);
       for (const account_object& account_obj : _wallet.my_accounts)
          if (tournament_details.registered_players.find(account_obj.id) != tournament_details.registered_players.end())
             return true;
@@ -967,7 +967,7 @@ public:
                     ("match", match_obj.id)("account", get_account(account_id).name));
                for (const game_id_type& game_id : match_obj.games)
                {
-                  game_object game_obj = get_object<game_object>(game_id);
+                  game_object game_obj = get_object(game_id);
                   auto insert_result = game_cache.insert(game_obj);
                   if (insert_result.second)
                      game_in_new_state(game_obj);
@@ -981,10 +981,10 @@ public:
    // updates on those matches
    void monitor_matches_in_tournament(const tournament_object& tournament_obj)
    { try {
-      tournament_details_object tournament_details = get_object<tournament_details_object>(tournament_obj.tournament_details_id);
+      tournament_details_object tournament_details = get_object(tournament_obj.tournament_details_id);
       for (const match_id_type& match_id : tournament_details.matches)
       {
-         match_object match_obj = get_object<match_object>(match_id);
+         match_object match_obj = get_object(match_id);
          auto insert_result = match_cache.insert(match_obj);
          if (insert_result.second)
             match_in_new_state(match_obj);
@@ -1006,7 +1006,7 @@ public:
          {
             try
             {
-               tournament_object tournament = get_object<tournament_object>(tournament_id);
+               tournament_object tournament = get_object(tournament_id);
                auto insert_result = tournament_cache.insert(tournament);
                if (insert_result.second)
                {
@@ -2118,7 +2118,7 @@ public:
             FC_THROW("Account ${account} has no core Token ${TOKEN} vested and thus its not allowed to withdraw.", ("account", witness_name)("TOKEN", GRAPHENE_SYMBOL));
       }
 
-      vesting_balance_object vbo = get_object< vesting_balance_object >( *vbid );
+      vesting_balance_object vbo = get_object( *vbid );
 
       if(vbo.balance_type != vesting_balance_type::normal)
          FC_THROW("Allowed to withdraw only Normal type vest balances with this method");
@@ -2163,7 +2163,7 @@ public:
 
       //whether it is a witness or user, keep it in a container and iterate over to process all vesting balances and types 
       if(!vbos.size())
-         vbos.emplace_back( get_object<vesting_balance_object>(*vbid) );
+         vbos.emplace_back( get_object(*vbid) );
  
       for (const vesting_balance_object& vesting_balance_obj: vbos) {
          if(vesting_balance_obj.balance_type == vesting_balance_type::gpos)
@@ -2924,7 +2924,7 @@ public:
                      std::string player_name;
                      if (round == num_rounds)
                      {
-                        match_object match = get_object<match_object>(tournament_details.matches[num_matches - 1]);
+                        match_object match = get_object(tournament_details.matches[num_matches - 1]);
                         if (match.get_state() == match_state::match_complete && 
                             !match.match_winners.empty())
                         {
@@ -2934,7 +2934,7 @@ public:
                      }
                      else
                      {
-                        match_object match = get_object<match_object>(tournament_details.matches[match_number]);
+                        match_object match = get_object(tournament_details.matches[match_number]);
                         if (!match.players.empty())
                         {
                            if (player_in_match < match.players.size())
@@ -2972,7 +2972,7 @@ public:
 
          return ss.str();
       };
-      m["get_order_book"] = [this](variant result, const fc::variants& a)
+      m["get_order_book"] = [](variant result, const fc::variants&)
       {
          auto orders = result.as<order_book>( GRAPHENE_MAX_NESTED_OBJECTS );
          auto bids = orders.bids;
@@ -4773,7 +4773,7 @@ string wallet_api::help()const
 {
    std::vector<std::string> method_names = my->method_documentation.get_method_names();
    std::stringstream ss;
-   for (const std::string method_name : method_names)
+   for (const std::string& method_name : method_names)
    {
       try
       {
@@ -6296,9 +6296,9 @@ signed_transaction wallet_api::rps_throw(game_id_type game_id,
    FC_ASSERT( !is_locked() );
 
    // check whether the gesture is appropriate for the game we're playing
-   graphene::chain::game_object game_obj = my->get_object<graphene::chain::game_object>(game_id);
-   graphene::chain::match_object match_obj = my->get_object<graphene::chain::match_object>(game_obj.match_id);
-   graphene::chain::tournament_object tournament_obj = my->get_object<graphene::chain::tournament_object>(match_obj.tournament_id);
+   graphene::chain::game_object game_obj = my->get_object(game_id);
+   graphene::chain::match_object match_obj = my->get_object(game_obj.match_id);
+   graphene::chain::tournament_object tournament_obj = my->get_object(match_obj.tournament_id);
    graphene::chain::rock_paper_scissors_game_options game_options = 
       tournament_obj.options.game_options.get<graphene::chain::rock_paper_scissors_game_options>();
    if ((int)gesture >= game_options.number_of_gestures)
