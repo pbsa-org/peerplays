@@ -66,12 +66,22 @@ add_library( graphene_chain
              fba_object.cpp
              proposal_object.cpp
              vesting_balance_object.cpp
-             transaction_history_object.cpp
              small_objects.cpp
 
              block_database.cpp
 
              is_authorized_asset.cpp
+
+             sport_evaluator.cpp
+             event_group_evaluator.cpp
+             event_group_object.cpp
+             event_evaluator.cpp
+             event_object.cpp
+             betting_market_evaluator.cpp
+             betting_market_object.cpp
+             betting_market_group_object.cpp
+
+             affiliate_payout.cpp
 
              ${HEADERS}
              "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"

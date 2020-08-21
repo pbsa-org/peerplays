@@ -27,7 +27,6 @@ list(APPEND SOURCES account.cpp
                     withdraw_permission.cpp
                     worker.cpp
                     betting_market.cpp
-                    competitor.cpp
                     event.cpp
                     event_group.cpp
                     lottery_ops.cpp
