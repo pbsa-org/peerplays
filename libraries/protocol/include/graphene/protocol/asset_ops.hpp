@@ -23,11 +23,10 @@
  */
 #pragma once
 #include <graphene/protocol/base.hpp>
-#include <graphene/protocol/asset.hpp>
 #include <graphene/protocol/memo.hpp>
+#include <graphene/protocol/asset.hpp>
 
-namespace graphene { namespace protocol { 
-
+namespace graphene { namespace protocol {
    bool is_valid_symbol( const string& symbol );
 
    struct benefactor   {
@@ -152,13 +151,13 @@ namespace graphene { namespace protocol {
       /// the options are updated again.
       fc::optional<uint32_t> payout_interval;
       /// Each dividend distribution incurs a fee that is based on the number of accounts
-      /// that hold the dividend asset, not as a percentage of the amount paid out. 
+      /// that hold the dividend asset, not as a percentage of the amount paid out.
       /// This parameter prevents assets from being distributed unless the fee is less than
       /// the percentage here, to prevent a slow trickle of deposits to the account from being
       /// completely consumed.
       /// In other words, if you set this parameter to 10% and the fees work out to 100 BTS
       /// to share out, balances in the dividend distribution accounts will not be shared out
-      /// if the balance is less than 10000 BTS.  
+      /// if the balance is less than 10000 BTS.
       uint64_t minimum_fee_percentage;
 
       /// Normally, pending dividend payments are calculated each maintenance interval in
@@ -171,7 +170,7 @@ namespace graphene { namespace protocol {
       ///
       /// Payouts will always occur at the next payout time whether or not it falls on a
       /// multiple of the distribution interval, and the timer on the distribution interval
-      /// are reset at payout time.  So if you have the distribution interval at three days 
+      /// are reset at payout time.  So if you have the distribution interval at three days
       /// and the payout interval at one week, payouts will occur at days 3, 6, 7, 10, 13, 14...
       fc::optional<uint32_t> minimum_distribution_interval;
 
@@ -188,7 +187,7 @@ namespace graphene { namespace protocol {
     */
    struct asset_create_operation : public base_operation
    {
-      struct fee_parameters_type { 
+      struct fee_parameters_type {
          uint64_t symbol3        = 500000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t symbol4        = 300000 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint64_t long_symbol    = 5000   * GRAPHENE_BLOCKCHAIN_PRECISION;
@@ -225,7 +224,7 @@ namespace graphene { namespace protocol {
    ///Operation for creation of lottery
    struct lottery_asset_create_operation : public base_operation
    {
-      struct fee_parameters_type { 
+      struct fee_parameters_type {
          uint64_t lottery_asset  = 20   * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte = 10; /// only required for large lottery names.
       };
@@ -296,9 +295,9 @@ namespace graphene { namespace protocol {
     */
    struct asset_settle_operation : public base_operation
    {
-      struct fee_parameters_type { 
+      struct fee_parameters_type {
          /** this fee should be high to encourage small settlement requests to
-          * be performed on the market rather than via forced settlement. 
+          * be performed on the market rather than via forced settlement.
           *
           * Note that in the event of a black swan or prediction market close out
           * everyone will have to pay this fee.
@@ -367,7 +366,7 @@ namespace graphene { namespace protocol {
           * payments.
           */
          uint64_t distribution_base_fee;
-         /** This fee is charged (in addition to the distribution_base_fee) for each 
+         /** This fee is charged (in addition to the distribution_base_fee) for each
           * user the dividend payment is shared out amongst
           */
          uint32_t distribution_fee_per_holder;
@@ -429,7 +428,7 @@ namespace graphene { namespace protocol {
     */
    struct asset_update_operation : public base_operation
    {
-      struct fee_parameters_type { 
+      struct fee_parameters_type {
          uint64_t fee            = 500 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte = 10;
       };
@@ -482,9 +481,9 @@ namespace graphene { namespace protocol {
     * @brief Update options specific to dividend-paying assets
     * @ingroup operations
     *
-    * Dividend-paying assets have some options which are not relevant to other asset types. 
+    * Dividend-paying assets have some options which are not relevant to other asset types.
     * This operation is used to update those options an an existing dividend-paying asset.
-    * This can also be used to convert a non-dividend-paying asset into a dividend-paying 
+    * This can also be used to convert a non-dividend-paying asset into a dividend-paying
     * asset.
     *
     * @pre @ref issuer MUST be an existing account and MUST match asset_object::issuer on @ref asset_to_update
@@ -573,8 +572,8 @@ namespace graphene { namespace protocol {
     */
    struct asset_issue_operation : public base_operation
    {
-      struct fee_parameters_type { 
-         uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; 
+      struct fee_parameters_type {
+         uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
          uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
       };
 
@@ -629,19 +628,19 @@ namespace graphene { namespace protocol {
       account_id_type fee_payer()const { return issuer; }
       void            validate()const;
    };
-   
+
    struct sweeps_vesting_claim_operation : public base_operation
    {
       struct fee_parameters_type {
          uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
       };
-      
+
       asset           fee;
       account_id_type account;
       asset           amount_to_claim;
       extensions_type extensions;
-      
-      
+
+
       account_id_type fee_payer()const { return account; }
       void            validate()const {};
    };
@@ -691,6 +690,7 @@ FC_REFLECT( graphene::protocol::benefactor, (id)(share) )
 
 FC_REFLECT( graphene::protocol::lottery_asset_options, (benefactors)(owner)(winning_tickets)(ticket_price)(end_date)(ending_on_soldout)(is_active) )
 
+
 FC_REFLECT( graphene::protocol::asset_create_operation::fee_parameters_type, (symbol3)(symbol4)(long_symbol)(price_per_kbyte) )
 FC_REFLECT( graphene::protocol::lottery_asset_create_operation::fee_parameters_type, (lottery_asset)(price_per_kbyte) )
 FC_REFLECT( graphene::protocol::asset_global_settle_operation::fee_parameters_type, (fee) )
@@ -734,21 +734,14 @@ FC_REFLECT( graphene::protocol::asset_update_operation,
             (new_options)
             (extensions)
           )
-FC_REFLECT( graphene::protocol::asset_update_issuer_operation,
-            (fee)
-            (issuer)
-            (asset_to_update)
-            (new_options)
-            (extensions)
-          )
-FC_REFLECT( graphene::chain::asset_update_dividend_operation,
-            (fee)
-            (issuer)
-            (asset_to_update)
-            (new_options)
-            (extensions)
-          )
 FC_REFLECT( graphene::protocol::asset_update_bitasset_operation,
+            (fee)
+            (issuer)
+            (asset_to_update)
+            (new_options)
+            (extensions)
+          )
+FC_REFLECT( graphene::protocol::asset_update_dividend_operation,
             (fee)
             (issuer)
             (asset_to_update)

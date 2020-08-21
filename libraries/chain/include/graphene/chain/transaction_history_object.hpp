@@ -23,7 +23,10 @@
  */
 #pragma once
 
+#include <graphene/chain/types.hpp>
+
 #include <graphene/protocol/transaction.hpp>
+
 #include <graphene/db/index.hpp>
 #include <graphene/db/generic_index.hpp>
 

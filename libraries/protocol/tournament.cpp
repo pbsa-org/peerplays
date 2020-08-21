@@ -21,10 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/chain/protocol/tournament.hpp>
+#include <graphene/protocol/tournament.hpp>
 #include <fc/io/raw.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 void tournament_options::validate() const
 {
@@ -73,4 +73,4 @@ void  game_move_operation::validate()const
 {
 }
 
-} } // namespace graphene::chain
+} } // namespace graphene::protocol

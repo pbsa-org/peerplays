@@ -37,7 +37,7 @@
 
 #include <graphene/app/api.hpp>
 #include <graphene/chain/config.hpp>
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/protocol.hpp>
 #include <graphene/egenesis/egenesis.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/wallet/wallet.hpp>

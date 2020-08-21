@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/chain/protocol/betting_market.hpp>
+#include <graphene/protocol/betting_market.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 void betting_market_rules_create_operation::validate() const
 {
@@ -77,5 +77,5 @@ void bet_cancel_operation::validate() const
 
 
 
-} } // graphene::chain
+} } // graphene::protocol
 

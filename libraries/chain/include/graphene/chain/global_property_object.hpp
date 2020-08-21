@@ -26,7 +26,6 @@
 
 #include <graphene/protocol/chain_parameters.hpp>
 #include <graphene/chain/types.hpp>
-#include <graphene/chain/database.hpp>
 #include <graphene/db/object.hpp>
 
 namespace graphene { namespace chain {

@@ -22,5 +22,5 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/block.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/block.hpp>

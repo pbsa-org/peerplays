@@ -177,6 +177,9 @@ using digest_type = fc::sha256;
 using signature_type = fc::ecc::compact_signature;
 using share_type = safe<int64_t>;
 using weight_type = uint16_t;
+using secret_hash_type = fc::ripemd160;
+using bet_multiplier_type = uint32_t;
+using internationalized_string_type = flat_map<std::string, std::string>;
 
 struct public_key_type {
     struct binary_key {
@@ -195,6 +198,9 @@ struct public_key_type {
     friend bool operator == (const public_key_type& p1, const fc::ecc::public_key& p2);
     friend bool operator == (const public_key_type& p1, const public_key_type& p2);
     friend bool operator != (const public_key_type& p1, const public_key_type& p2);
+    // TODO: This is temporary for testing
+    bool is_valid_v1( const std::string& base58str );
+    bool is_valid_muse( const std::string& base58str );
 };
 
 class pubkey_comparator {
@@ -242,22 +248,22 @@ GRAPHENE_DEFINE_IDS(protocol, protocol_ids, /*protocol objects are not prefixed*
                     (vesting_balance)
                     (worker)
                     (balance)
-                    (tournament_object_type)
-                    (tournament_details_object_type)
-                    (match_object_type)
-                    (game_object_type)
-                    (sport_object_type)
-                    (event_group_object_type)
-                    (event_object_type)
-                    (betting_market_rules_object_type)
-                    (betting_market_group_object_type)
-                    (betting_market_object_type)
-                    (bet_object_type)
-                    (custom_permission_object_type)
-                    (custom_account_authority_object_type)
-                    (offer_object_type)
+                    (tournament)
+                    (tournament_details)
+                    (match)
+                    (game)
+                    (sport)
+                    (event_group)
+                    (event)
+                    (betting_market_rules)
+                    (betting_market_group)
+                    (betting_market)
+                    (bet)
+                    (custom_permission)
+                    (custom_account_authority)
+                    (offer)
                     (nft_metadata_type)
-                    (nft_object_type))
+                    (nft))
 
 FC_REFLECT(graphene::protocol::public_key_type, (key_data))
 FC_REFLECT(graphene::protocol::public_key_type::binary_key, (data)(check))

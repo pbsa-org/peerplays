@@ -44,7 +44,6 @@ namespace graphene { namespace chain {
 void database::update_global_dynamic_data( const signed_block& b, const uint32_t missed_blocks )
 {
    const dynamic_global_property_object& _dgp = get_dynamic_global_properties();
-   const global_property_object& gpo = get_global_properties();
 
    // dynamic global properties updating
    modify( _dgp, [&b,this,missed_blocks]( dynamic_global_property_object& dgp ){
@@ -424,7 +423,7 @@ void database::clear_expired_orders()
          auto& pays = order.balance;
          auto receives = (order.balance * mia.current_feed.settlement_price);
          receives.amount = (fc::uint128_t(receives.amount.value) *
-                            (GRAPHENE_100_PERCENT - mia.options.force_settlement_offset_percent) / GRAPHENE_100_PERCENT).to_uint64();
+                            (GRAPHENE_100_PERCENT - mia.options.force_settlement_offset_percent) / GRAPHENE_100_PERCENT);
          assert(receives <= order.balance * mia.current_feed.settlement_price);
 
          price settlement_price = pays / receives;

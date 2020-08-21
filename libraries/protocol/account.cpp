@@ -23,6 +23,8 @@
  */
 #include <graphene/protocol/account.hpp>
 
+#include <boost/algorithm/string/predicate.hpp>
+
 namespace graphene { namespace protocol {
 
 /**
@@ -58,13 +60,6 @@ namespace graphene { namespace protocol {
 bool is_valid_name( const string& name )
 { try {
     const size_t len = name.size();
-
-    /** this condition will prevent witnesses from including new names before this time, but
-     * allow them after this time.   This check can be removed from the code after HARDFORK_385_TIME
-     * has passed.
-     */
-    if( fc::time_point::now() < fc::time_point(HARDFORK_385_TIME) )
-       FC_ASSERT( len >= 3 );
 
     if( len < GRAPHENE_MIN_ACCOUNT_NAME_LENGTH )
     {

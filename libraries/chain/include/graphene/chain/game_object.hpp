@@ -23,12 +23,17 @@
  */
 
 #pragma once
-#include <graphene/chain/match_object.hpp>
 #include <graphene/chain/rock_paper_scissors.hpp>
-#include <boost/multi_index/composite_key.hpp>
+
+#include <graphene/protocol/tournament.hpp>
+
 #include <graphene/db/flat_index.hpp>
 #include <graphene/db/generic_index.hpp>
+
 #include <fc/crypto/hex.hpp>
+
+#include <boost/multi_index/composite_key.hpp>
+
 #include <sstream>
 
 namespace graphene { namespace chain {
@@ -158,6 +163,8 @@ namespace graphene { namespace chain {
    }
 
 } }
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::game_object)
 
 FC_REFLECT_ENUM(graphene::chain::game_state,
                 (game_in_progress)

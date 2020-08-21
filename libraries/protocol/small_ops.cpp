@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <graphene/protocol/exceptions.hpp>
 #include <graphene/protocol/balance.hpp>
 #include <graphene/protocol/buyback.hpp>
 #include <graphene/protocol/fba.hpp>

@@ -207,7 +207,6 @@ typedef generic_index<force_settlement_object, force_settlement_object_multi_ind
 MAP_OBJECT_ID_TO_TYPE(graphene::chain::limit_order_object)
 MAP_OBJECT_ID_TO_TYPE(graphene::chain::call_order_object)
 MAP_OBJECT_ID_TO_TYPE(graphene::chain::force_settlement_object)
-MAP_OBJECT_ID_TO_TYPE(graphene::chain::collateral_bid_object)
 
 FC_REFLECT_DERIVED( graphene::chain::limit_order_object,
                     (graphene::db::object),

@@ -22,10 +22,10 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/asset_object.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
    /**
     * @ingroup operations
@@ -104,9 +104,9 @@ namespace graphene { namespace chain {
       share_type      calculate_fee( const fee_parameters_type& k )const { return k.fee; } 
    };
 
-} } // graphene::chain
+} } // graphene::protocol
 
-FC_REFLECT( graphene::chain::ticket_purchase_operation,
+FC_REFLECT( graphene::protocol::ticket_purchase_operation,
             (fee)
             (lottery)
             (buyer)
@@ -114,10 +114,10 @@ FC_REFLECT( graphene::chain::ticket_purchase_operation,
             (amount)
             (extensions)
           )
-FC_REFLECT( graphene::chain::ticket_purchase_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::ticket_purchase_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT_TYPENAME( graphene::chain::ticket_num )
-FC_REFLECT( graphene::chain::lottery_reward_operation,
+FC_REFLECT_TYPENAME( graphene::protocol::ticket_num )
+FC_REFLECT( graphene::protocol::lottery_reward_operation,
             (fee)
             (lottery)
             (winner)
@@ -126,13 +126,13 @@ FC_REFLECT( graphene::chain::lottery_reward_operation,
             (is_benefactor_reward)
             (winner_ticket_id)
           )
-FC_REFLECT( graphene::chain::lottery_reward_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::lottery_reward_operation::fee_parameters_type, (fee) )
 
 
-FC_REFLECT( graphene::chain::lottery_end_operation,
+FC_REFLECT( graphene::protocol::lottery_end_operation,
             (fee)
             (lottery)
             (participants)
             (extensions)
           )
-FC_REFLECT( graphene::chain::lottery_end_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::lottery_end_operation::fee_parameters_type, (fee) )

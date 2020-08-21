@@ -22,7 +22,8 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
 #include <graphene/db/object.hpp>
 
 namespace graphene { namespace chain {

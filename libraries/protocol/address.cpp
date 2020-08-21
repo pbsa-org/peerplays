@@ -89,7 +89,7 @@ namespace graphene { namespace protocol {
    address::operator std::string()const
    {
         std::array<char,24> bin_addr;
-        static_assert( bin_addr.size() >= sizeof(addr) + 4 );
+        static_assert( bin_addr.size() >= sizeof(addr) + 4, "" );
         memcpy( bin_addr.data(), addr.data(), sizeof(addr) );
         auto checksum = fc::ripemd160::hash( addr.data(), sizeof(addr) );
         memcpy( bin_addr.data() + 20, (char*)&checksum._hash[0], 4 );

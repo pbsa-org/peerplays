@@ -23,6 +23,8 @@
  */
 #pragma once
 
+#include <graphene/protocol/vesting.hpp>
+
 #include <graphene/protocol/asset.hpp>
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>

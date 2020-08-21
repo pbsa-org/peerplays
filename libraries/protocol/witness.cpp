@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <fc/io/raw.hpp>
 #include <graphene/protocol/witness.hpp>
 
 #include <fc/io/raw.hpp>

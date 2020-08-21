@@ -167,8 +167,7 @@ FC_REFLECT( graphene::protocol::fill_order_operation::fee_parameters_type,  ) //
 FC_REFLECT( graphene::protocol::limit_order_create_operation,(fee)(seller)(amount_to_sell)(min_to_receive)(expiration)(fill_or_kill)(extensions))
 FC_REFLECT( graphene::protocol::limit_order_cancel_operation,(fee)(fee_paying_account)(order)(extensions) )
 FC_REFLECT( graphene::protocol::call_order_update_operation, (fee)(funding_account)(delta_collateral)(delta_debt)(extensions) )
-FC_REFLECT( graphene::protocol::fill_order_operation, (fee)(order_id)(account_id)(pays)(receives)(fill_price)(is_maker) )
-FC_REFLECT( graphene::chain::fill_order_operation, (fee)(order_id)(account_id)(pays)(receives) )
+FC_REFLECT( graphene::protocol::fill_order_operation, (fee)(order_id)(account_id)(pays)(receives) )
 
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::protocol::limit_order_create_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::protocol::limit_order_cancel_operation::fee_parameters_type )

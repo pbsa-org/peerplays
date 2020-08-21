@@ -22,11 +22,13 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/chain/protocol/account.hpp>
-#include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/protocol/memo.hpp>
 
-namespace graphene { namespace chain {
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/account.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/memo.hpp>
+
+namespace graphene { namespace protocol {
 
    /**
     * Virtual op generated when an affiliate receives payout.
@@ -83,10 +85,10 @@ namespace graphene { namespace chain {
       { return 0; }
    };
 
-} } // graphene::chain
+} } // graphene::protocol
 
-FC_REFLECT( graphene::chain::affiliate_payout_operation::fee_parameters_type, )
-FC_REFLECT( graphene::chain::affiliate_referral_payout_operation::fee_parameters_type, )
+FC_REFLECT( graphene::protocol::affiliate_payout_operation::fee_parameters_type, )
+FC_REFLECT( graphene::protocol::affiliate_referral_payout_operation::fee_parameters_type, )
 
-FC_REFLECT( graphene::chain::affiliate_payout_operation, (fee)(affiliate)(tag)(payout) )
-FC_REFLECT( graphene::chain::affiliate_referral_payout_operation, (fee)(player)(payout) )
+FC_REFLECT( graphene::protocol::affiliate_payout_operation, (fee)(affiliate)(tag)(payout) )
+FC_REFLECT( graphene::protocol::affiliate_referral_payout_operation, (fee)(player)(payout) )

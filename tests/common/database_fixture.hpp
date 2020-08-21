@@ -31,6 +31,9 @@
 #include <graphene/chain/committee_member_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/operation_history_object.hpp>
+#include <graphene/chain/sport_object.hpp>
+#include <graphene/chain/event_object.hpp>
+#include <graphene/chain/event_group_object.hpp>
 
 #include <graphene/chain/database.hpp>
 #include <graphene/app/application.hpp>

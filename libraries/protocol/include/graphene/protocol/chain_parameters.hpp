@@ -24,8 +24,8 @@
 #pragma once
 
 #include <memory>
-#include <../hardfork.d/GPOS.hf>
-#include <memory>
+
+#include <graphene/protocol/config.hpp>
 #include <graphene/protocol/base.hpp>
 
 namespace graphene { namespace protocol {
@@ -44,7 +44,7 @@ namespace graphene { namespace protocol {
       /* gpos parameters */
       optional < uint32_t >           gpos_period                       = GPOS_PERIOD;
       optional < uint32_t >           gpos_subperiod                    = GPOS_SUBPERIOD;
-      optional < uint32_t >           gpos_period_start                 = HARDFORK_GPOS_TIME.sec_since_epoch();
+      optional < uint32_t >           gpos_period_start                 = GPOS_PERIOD_START.sec_since_epoch();
       optional < uint32_t >           gpos_vesting_lockin_period        = GPOS_VESTING_LOCKIN_PERIOD;
       /* rbac parameters */
       optional < uint16_t >           rbac_max_permissions_per_account    = RBAC_MAX_PERMISSIONS_PER_ACCOUNT;
@@ -101,6 +101,8 @@ namespace graphene { namespace protocol {
       
       extension<parameter_extension> extensions;
 
+      chain_parameters();
+
       /** defined in fee_schedule.cpp */
       void validate()const;
       inline bet_multiplier_type min_bet_multiplier()const {
@@ -135,7 +137,7 @@ namespace graphene { namespace protocol {
          return extensions.value.gpos_subperiod.valid() ? *extensions.value.gpos_subperiod : GPOS_SUBPERIOD; /// gpos_period % gpos_subperiod = 0
       }
       inline uint32_t gpos_period_start()const {
-         return extensions.value.gpos_period_start.valid() ? *extensions.value.gpos_period_start : HARDFORK_GPOS_TIME.sec_since_epoch(); /// current period start date
+         return extensions.value.gpos_period_start.valid() ? *extensions.value.gpos_period_start : GPOS_PERIOD_START.sec_since_epoch(); /// current period start date
       }
       inline uint32_t gpos_vesting_lockin_period()const {
          return extensions.value.gpos_vesting_lockin_period.valid() ? *extensions.value.gpos_vesting_lockin_period : GPOS_VESTING_LOCKIN_PERIOD; /// GPOS vesting lockin period

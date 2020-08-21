@@ -23,10 +23,11 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/base.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 struct sport_create_operation : public base_operation
 {
@@ -74,14 +75,14 @@ struct sport_delete_operation : public base_operation
 
 } }
 
-FC_REFLECT( graphene::chain::sport_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::sport_create_operation, 
+FC_REFLECT( graphene::protocol::sport_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::sport_create_operation,
             (fee)(name)(extensions) )
 
-FC_REFLECT( graphene::chain::sport_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::sport_update_operation,
+FC_REFLECT( graphene::protocol::sport_update_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::sport_update_operation,
             (fee)(sport_id)(new_name)(extensions) )
 
-FC_REFLECT( graphene::chain::sport_delete_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::sport_delete_operation,
+FC_REFLECT( graphene::protocol::sport_delete_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::sport_delete_operation,
             (fee)(sport_id)(extensions) )

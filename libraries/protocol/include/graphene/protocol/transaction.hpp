@@ -230,7 +230,8 @@ namespace graphene { namespace protocol {
 FC_REFLECT( graphene::protocol::transaction, (ref_block_num)(ref_block_prefix)(expiration)(operations)(extensions) )
 // Note: not reflecting signees field for backward compatibility; in addition, it should not be in p2p messages
 FC_REFLECT_DERIVED( graphene::protocol::signed_transaction, (graphene::protocol::transaction), (signatures) )
-FC_REFLECT_DERIVED( graphene::protocol::processed_transaction, (graphene::protocol::precomputable_transaction), (operation_results) )
+FC_REFLECT_DERIVED( graphene::protocol::processed_transaction, (graphene::protocol::signed_transaction),
+                    (operation_results) )
 
 
 GRAPHENE_EXTERNAL_SERIALIZATION(extern, graphene::protocol::transaction)

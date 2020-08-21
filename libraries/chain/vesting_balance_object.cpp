@@ -59,7 +59,7 @@ asset linear_vesting_policy::get_allowed_withdraw( const vesting_policy_context&
                share_type total_vested = 0;
                if( elapsed_seconds < vesting_duration_seconds )
                {
-                  total_vested = (fc::uint128_t( begin_balance.value ) * elapsed_seconds / vesting_duration_seconds).to_uint64();
+                  total_vested = (fc::uint128_t( begin_balance.value ) * elapsed_seconds / vesting_duration_seconds);
                }
                else
                {

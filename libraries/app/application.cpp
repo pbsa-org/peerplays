@@ -226,7 +226,7 @@ namespace detail {
 
       void new_connection( const fc::http::websocket_connection_ptr& c )
       {
-         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c, GRAPHENE_MAX_NESTED_OBJECTS);
+         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_MAX_NESTED_OBJECTS);
          auto login = std::make_shared<graphene::app::login_api>( std::ref(*_self) );
          login->enable_api("database_api");
 
@@ -380,7 +380,6 @@ namespace detail {
             _chain_db->enable_standby_votes_tracking( _options->at("enable-standby-votes-tracking").as<bool>() );
          }
          
-         bool replay = false;
          std::string replay_reason = "reason not provided";
 
          if( _options->count("replay-blockchain") )
@@ -554,7 +553,7 @@ namespace detail {
          _chain_db->push_transaction( transaction_message.trx );
       } FC_CAPTURE_AND_RETHROW( (transaction_message) ) }
 
-      virtual void handle_message(const message& message_to_process) override
+      virtual void handle_message(const message&) override
       {
          // not a transaction, not a block
          FC_THROW( "Invalid Message Type" );

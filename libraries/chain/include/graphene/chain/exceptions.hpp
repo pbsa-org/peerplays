@@ -202,9 +202,6 @@ namespace graphene { namespace chain {
    //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( bid_collateral_operation )
    //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( asset_claim_pool_operation )
    //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( asset_update_issuer_operation )
-   //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( htlc_create_operation )
-   //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( htlc_redeem_operation )
-   //GRAPHENE_DECLARE_OP_BASE_EXCEPTIONS( htlc_extend_operation )
 
    #define GRAPHENE_RECODE_EXC( cause_type, effect_type ) \
       catch( const cause_type& e ) \

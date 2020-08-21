@@ -132,7 +132,6 @@ FC_REFLECT( graphene::protocol::vesting_balance_withdraw_operation, (fee)(vestin
 
 FC_REFLECT(graphene::protocol::linear_vesting_policy_initializer, (begin_timestamp)(vesting_cliff_seconds)(vesting_duration_seconds) )
 FC_REFLECT(graphene::protocol::cdd_vesting_policy_initializer, (start_claim)(vesting_seconds) )
-FC_REFLECT_EMPTY( graphene::protocol::instant_vesting_policy_initializer )
 FC_REFLECT_TYPENAME( graphene::protocol::vesting_policy_initializer )
 
 FC_REFLECT_ENUM( graphene::protocol::vesting_balance_type, (normal)(gpos) )

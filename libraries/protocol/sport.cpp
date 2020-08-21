@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/chain/protocol/sport.hpp>
+#include <graphene/protocol/sport.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 void sport_create_operation::validate() const
 {
@@ -40,5 +40,5 @@ void sport_delete_operation::validate() const
     FC_ASSERT( fee.amount >= 0 );
 }
 
-} } // graphene::chain
+} } // graphene::protocol
 

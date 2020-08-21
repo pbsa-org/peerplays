@@ -74,7 +74,7 @@
 #include <graphene/chain/tournament_object.hpp>
 #include <graphene/chain/match_object.hpp>
 #include <graphene/chain/game_object.hpp>
-#include <graphene/chain/protocol/rock_paper_scissors.hpp>
+#include <graphene/protocol/rock_paper_scissors.hpp>
 #include <graphene/chain/rock_paper_scissors.hpp>
 
 #include <graphene/bookie/bookie_api.hpp>

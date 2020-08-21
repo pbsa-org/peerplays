@@ -40,6 +40,7 @@
 namespace graphene { namespace chain {
    class account_object;
    class asset_bitasset_data_object;
+   class asset_dividend_data_object;
    class database;
    class transaction_evaluation_state;
    using namespace graphene::db;
@@ -371,7 +372,7 @@ namespace graphene { namespace chain {
    {
       public:
          static const uint8_t space_id = implementation_ids;
-         static const uint8_t type_id  = impl_asset_dividend_data_type;
+         static const uint8_t type_id  = impl_asset_dividend_data_object_type;
 
          /// The tunable options for Dividend-paying assets are stored in this field.
          dividend_asset_options options;
@@ -415,7 +416,7 @@ namespace graphene { namespace chain {
    {
       public:
          static const uint8_t space_id = implementation_ids;
-         static const uint8_t type_id  = impl_distributed_dividend_balance_data_type;
+         static const uint8_t type_id  = impl_total_distributed_dividend_balance_object_type;
 
          asset_id_type dividend_holder_asset_type;
          asset_id_type dividend_payout_asset_type;
@@ -517,6 +518,10 @@ namespace graphene { namespace chain {
 MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_object)
 MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_dynamic_data_object)
 MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_bitasset_data_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::asset_dividend_data_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::total_distributed_dividend_balance_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::lottery_balance_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::sweeps_vesting_balance_object)
 
 FC_REFLECT_DERIVED( graphene::chain::asset_dynamic_data_object, (graphene::db::object),
                     (current_supply)(sweeps_tickets_sold)(confidential_supply)(accumulated_fees)(fee_pool) )

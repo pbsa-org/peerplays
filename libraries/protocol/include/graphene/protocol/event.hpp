@@ -23,10 +23,11 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/base.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 struct event_create_operation : public base_operation
 {
@@ -132,16 +133,16 @@ struct event_update_status_operation : public base_operation
 
 } }
 
-FC_REFLECT( graphene::chain::event_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::event_create_operation, 
+FC_REFLECT( graphene::protocol::event_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::event_create_operation,
             (fee)(name)(season)(start_time)(event_group_id)(extensions) )
 
-FC_REFLECT( graphene::chain::event_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::event_update_operation,
+FC_REFLECT( graphene::protocol::event_update_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::event_update_operation,
             (fee)(event_id)(new_event_group_id)(new_name)(new_season)(new_start_time)(new_status)(extensions) )
 
-FC_REFLECT_ENUM( graphene::chain::event_status, (upcoming)(in_progress)(frozen)(finished)(canceled)(settled)(STATUS_COUNT) )
-FC_REFLECT( graphene::chain::event_update_status_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::event_update_status_operation, 
+FC_REFLECT_ENUM( graphene::protocol::event_status, (upcoming)(in_progress)(frozen)(finished)(canceled)(settled)(STATUS_COUNT) )
+FC_REFLECT( graphene::protocol::event_update_status_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::event_update_status_operation,
             (fee)(event_id)(status)(scores)(extensions) )
 

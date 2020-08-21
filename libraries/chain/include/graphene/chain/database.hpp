@@ -33,6 +33,7 @@
 #include <graphene/chain/block_database.hpp>
 #include <graphene/chain/genesis_state.hpp>
 #include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/betting_market_object.hpp>
 
 #include <graphene/db/object_database.hpp>
 #include <graphene/db/object.hpp>
@@ -41,7 +42,7 @@
 
 #include <fc/crypto/hash_ctr_rng.hpp>
 
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/protocol.hpp>
 
 #include <fc/log/logger.hpp>
 
@@ -59,7 +60,6 @@ namespace graphene { namespace chain {
    class witness_object;
    class force_settlement_object;
    class limit_order_object;
-   class collateral_bid_object;
    class call_order_object;
 
    struct budget_record;

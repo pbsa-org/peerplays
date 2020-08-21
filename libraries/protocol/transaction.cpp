@@ -29,7 +29,6 @@
 #include <graphene/protocol/pts_address.hpp>
 
 #include <fc/io/raw.hpp>
-#include <fc/bitutil.hpp>
 #include <algorithm>
 #include <fc/io/raw.hpp>
 
@@ -64,7 +63,7 @@ void transaction::validate() const
       operation_validate(op); 
 }
 
-graphene::chain::transaction_id_type graphene::chain::transaction::id() const
+graphene::protocol::transaction_id_type graphene::protocol::transaction::id() const
 {
    auto h = digest();
    transaction_id_type result;
@@ -448,4 +447,3 @@ void signed_transaction::verify_authority(
 GRAPHENE_EXTERNAL_SERIALIZATION(/*not extern*/, graphene::protocol::transaction)
 GRAPHENE_EXTERNAL_SERIALIZATION(/*not extern*/, graphene::protocol::signed_transaction)
 GRAPHENE_EXTERNAL_SERIALIZATION(/*not extern*/, graphene::protocol::processed_transaction)
-

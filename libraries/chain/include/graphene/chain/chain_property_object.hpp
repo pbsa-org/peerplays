@@ -24,6 +24,7 @@
 #pragma once
 
 #include <graphene/chain/immutable_chain_parameters.hpp>
+#include <graphene/chain/types.hpp>
 
 namespace graphene { namespace chain {
 

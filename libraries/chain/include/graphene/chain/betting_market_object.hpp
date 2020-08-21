@@ -23,13 +23,16 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
+#include <graphene/protocol/betting_market.hpp>
+
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
-#include <graphene/chain/protocol/betting_market.hpp>
-#include <sstream>
 
 #include <boost/multi_index/composite_key.hpp>
+
+#include <sstream>
 
 namespace graphene { namespace chain {
    class betting_market_object;
@@ -45,7 +48,7 @@ namespace fc {
 
 namespace graphene { namespace chain {
 
-FC_DECLARE_EXCEPTION(no_transition, 100000, "Invalid state transition");
+FC_DECLARE_EXCEPTION(no_transition, 100000);
 class database;
 
 struct by_event_id;
@@ -716,6 +719,12 @@ inline Stream& operator>>( Stream& s, betting_market_group_object& betting_marke
 }
 
 } } // graphene::chain
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::betting_market_rules_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::betting_market_group_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::betting_market_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::bet_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::betting_market_position_object)
 
 FC_REFLECT_DERIVED( graphene::chain::betting_market_rules_object, (graphene::db::object), (name)(description) )
 FC_REFLECT_DERIVED( graphene::chain::betting_market_group_object, (graphene::db::object), (description) )

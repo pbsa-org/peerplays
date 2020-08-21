@@ -35,7 +35,7 @@
 #include <fc/log/appender.hpp>
 #include <openssl/rand.h>
 
-#include <graphene/chain/protocol/proposal.hpp>
+#include <graphene/protocol/proposal.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
 #include <graphene/chain/asset_object.hpp>

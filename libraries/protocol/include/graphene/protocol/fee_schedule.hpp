@@ -83,10 +83,6 @@ namespace graphene { namespace protocol {
 
 } } // graphene::protocol
 
-namespace fc {
-  template<> struct get_typename<std::shared_ptr<graphene::protocol::fee_schedule>> { static const char* name() { return "shared_ptr<fee_schedule>"; } };
-}
-
 FC_REFLECT_TYPENAME( graphene::protocol::fee_parameters )
 FC_REFLECT( graphene::protocol::fee_schedule, (parameters)(scale) )
 

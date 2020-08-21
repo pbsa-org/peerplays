@@ -834,7 +834,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
    for( const auto& handout : genesis_state.initial_balances )
    {
       const auto asset_id = get_asset_id(handout.asset_symbol);
-      create<balance_object>([&handout,&get_asset_id,total_allocation,asset_id](balance_object& b) {
+      create<balance_object>([&handout,total_allocation,asset_id](balance_object& b) {
          b.balance = asset(handout.amount, asset_id);
          b.owner = handout.owner;
       });
@@ -986,7 +986,7 @@ void database::init_genesis(const genesis_state_type& genesis_state)
 
       _wso.last_scheduling_block = 0;
 
-      _wso.recent_slots_filled = fc::uint128_t::max_value();
+      _wso.recent_slots_filled = std::numeric_limits<fc::uint128_t>::max();
 
       // for shuffled
       for( const witness_id_type& wid : get_global_properties().active_witnesses )

@@ -23,10 +23,11 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/base.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 struct event_group_create_operation : public base_operation
 {
@@ -86,14 +87,14 @@ struct event_group_delete_operation : public base_operation
 
 } }
 
-FC_REFLECT( graphene::chain::event_group_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::event_group_create_operation, 
+FC_REFLECT( graphene::protocol::event_group_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::event_group_create_operation,
             (fee)(name)(sport_id)(extensions) )
 
-FC_REFLECT( graphene::chain::event_group_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::event_group_update_operation,
+FC_REFLECT( graphene::protocol::event_group_update_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::event_group_update_operation,
             (fee)(new_sport_id)(new_name)(event_group_id)(extensions) )
 
-FC_REFLECT( graphene::chain::event_group_delete_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::event_group_delete_operation,
+FC_REFLECT( graphene::protocol::event_group_delete_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::event_group_delete_operation,
             (fee)(event_group_id)(extensions) )

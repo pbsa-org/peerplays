@@ -133,7 +133,6 @@ template<> struct js_name<fc::uint160>         { static std::string name(){ retu
 template<> struct js_name<fc::sha224>          { static std::string name(){ return "bytes 28";   } };
 template<> struct js_name<fc::sha256>          { static std::string name(){ return "bytes 32";   } };
 template<> struct js_name<fc::unsigned_int>    { static std::string name(){ return "varuint32";  } };
-template<> struct js_name<fc::signed_int>      { static std::string name(){ return "varint32";   } };
 template<> struct js_name< vote_id_type >      { static std::string name(){ return "vote_id";    } };
 template<> struct js_name< time_point_sec >    { static std::string name(){ return "time_point_sec"; } };
 
@@ -141,12 +140,8 @@ template<uint8_t S, uint8_t T>
 struct js_name<graphene::protocol::object_id<S,T> >
 {
    static std::string name(){
-<<<<<<< HEAD
-      return "protocol_id_type \"" + remove_namespace(fc::get_typename<O>::name()) + "\"";
-=======
       return "protocol_id_type(\"" +
              remove_namespace(fc::get_typename<object_downcast_t<object_id<S,T>>>::name()) + "\")";
->>>>>>> eec1da5b... Ref #1506: Isolate chain/protocol to its own library
    };
 };
 
@@ -351,14 +346,15 @@ class register_member_visitor
       }
 };
 
-template <typename T, typename IsEnum = fc::false_type>
+template <typename T, bool IsEnum = std::is_enum<T>()>
 struct serializer_init_helper {
   static void init()
   {
     auto name = js_name<T>::name();
     if( st.find(name) == st.end() )
     {
-       fc::reflector<T>::visit( register_member_visitor() );
+       register_member_visitor visitor;
+       fc::reflector<T>::visit( visitor );
        register_serializer( name, [=](){ generate(); } );
     }
   }
@@ -370,14 +366,15 @@ struct serializer_init_helper {
                << " = new Serializer( \n"
                << "    \"" + name + "\"\n";
 
-     fc::reflector<T>::visit( serialize_member_visitor() );
+     serialize_member_visitor visitor;
+     fc::reflector<T>::visit( visitor );
 
      std::cout <<")\n\n";
   }
 };
 
 template <typename T>
-struct serializer_init_helper<T, fc::true_type> {
+struct serializer_init_helper<T, true> {
   static void init()
   {
   }
@@ -390,7 +387,7 @@ struct serializer
 
    static void init()
    {
-     serializer_init_helper< T, typename fc::reflector<T>::is_enum >::init();
+     serializer_init_helper< T >::init();
    }
 };
 

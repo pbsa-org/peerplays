@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/chain/protocol/lottery_ops.hpp>
+#include <graphene/protocol/lottery_ops.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 void ticket_purchase_operation::validate() const 
 {
@@ -36,4 +36,4 @@ share_type ticket_purchase_operation::calculate_fee( const fee_parameters_type& 
    return k.fee;
 }
 
-} } // namespace graphene::chain
+} } // namespace graphene::protocol

@@ -30,11 +30,11 @@
 
 #include <fc/container/flat.hpp>
 #include <fc/reflect/reflect.hpp>
-#include <graphene/chain/protocol/asset.hpp>
-#include <graphene/chain/protocol/rock_paper_scissors.hpp>
-#include <graphene/chain/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
+#include <graphene/protocol/rock_paper_scissors.hpp>
+#include <graphene/protocol/base.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
     enum class payout_type
     {
@@ -220,15 +220,15 @@ namespace graphene { namespace chain {
 
 } }
 
-FC_REFLECT_ENUM(graphene::chain::payout_type,
+FC_REFLECT_ENUM(graphene::protocol::payout_type,
                 (prize_award)
                 (buyin_refund)
                 (rake_fee)
                 )
 
-FC_REFLECT_TYPENAME( graphene::chain::game_specific_options )
-FC_REFLECT_TYPENAME( graphene::chain::game_specific_moves )
-FC_REFLECT( graphene::chain::tournament_options, 
+FC_REFLECT_TYPENAME( graphene::protocol::game_specific_options )
+FC_REFLECT_TYPENAME( graphene::protocol::game_specific_moves )
+FC_REFLECT( graphene::protocol::tournament_options,
             (registration_deadline)
             (number_of_players)
             (buy_in)
@@ -239,31 +239,31 @@ FC_REFLECT( graphene::chain::tournament_options,
             (number_of_wins)
             (meta)
             (game_options))
-FC_REFLECT( graphene::chain::tournament_create_operation,
+FC_REFLECT( graphene::protocol::tournament_create_operation,
             (fee)
             (creator)
             (options)
             (extensions))
-FC_REFLECT( graphene::chain::tournament_join_operation,
+FC_REFLECT( graphene::protocol::tournament_join_operation,
             (fee)
             (payer_account_id)
             (player_account_id)
             (tournament_id)
             (buy_in)
             (extensions))
-FC_REFLECT( graphene::chain::tournament_leave_operation,
+FC_REFLECT( graphene::protocol::tournament_leave_operation,
             (fee)
             (canceling_account_id)
             (player_account_id)
             (tournament_id)
             (extensions))
-FC_REFLECT( graphene::chain::game_move_operation,
+FC_REFLECT( graphene::protocol::game_move_operation,
             (fee)
             (game_id)
             (player_account_id)
             (move)
             (extensions))
-FC_REFLECT( graphene::chain::tournament_payout_operation,
+FC_REFLECT( graphene::protocol::tournament_payout_operation,
             (fee)
             (payout_account_id)
             (tournament_id)
@@ -271,9 +271,9 @@ FC_REFLECT( graphene::chain::tournament_payout_operation,
             (type)
             (extensions))
 
-FC_REFLECT( graphene::chain::tournament_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::tournament_join_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::tournament_leave_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::game_move_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::tournament_payout_operation::fee_parameters_type,  )
+FC_REFLECT( graphene::protocol::tournament_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::tournament_join_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::tournament_leave_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::game_move_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::tournament_payout_operation::fee_parameters_type,  )
 

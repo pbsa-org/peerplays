@@ -1,11 +1,18 @@
 #pragma once
-#include <graphene/chain/protocol/tournament.hpp>
+
+#include <graphene/chain/types.hpp>
 #include <graphene/chain/rock_paper_scissors.hpp>
-#include <boost/multi_index/composite_key.hpp>
+#include <graphene/chain/match_object.hpp>
+
+#include <graphene/protocol/tournament.hpp>
+
 #include <graphene/db/flat_index.hpp>
 #include <graphene/db/generic_index.hpp>
+
 #include <fc/crypto/hex.hpp>
 #include <sstream>
+
+#include <boost/multi_index/composite_key.hpp>
 
 namespace graphene { namespace chain {
    class tournament_object;
@@ -233,6 +240,9 @@ namespace graphene { namespace chain {
 
 
 } }
+
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::tournament_details_object)
+MAP_OBJECT_ID_TO_TYPE(graphene::chain::tournament_object)
 
 FC_REFLECT_DERIVED(graphene::chain::tournament_details_object, (graphene::db::object),
                    (tournament_id)

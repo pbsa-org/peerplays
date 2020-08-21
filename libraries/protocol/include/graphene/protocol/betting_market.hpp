@@ -23,10 +23,11 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/protocol/base.hpp>
+#include <graphene/protocol/types.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/asset.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 struct betting_market_rules_create_operation : public base_operation
 {
@@ -417,22 +418,22 @@ struct bet_adjusted_operation : public base_operation
 
 } }
 
-FC_REFLECT( graphene::chain::betting_market_rules_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_rules_create_operation, 
+FC_REFLECT( graphene::protocol::betting_market_rules_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_rules_create_operation,
             (fee)(name)(description)(extensions) )
 
-FC_REFLECT( graphene::chain::betting_market_rules_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_rules_update_operation,
+FC_REFLECT( graphene::protocol::betting_market_rules_update_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_rules_update_operation,
             (fee)(new_name)(new_description)(extensions)(betting_market_rules_id) )
 
-FC_REFLECT_ENUM( graphene::chain::betting_market_status,
+FC_REFLECT_ENUM( graphene::protocol::betting_market_status,
                  (unresolved)
                  (frozen)
                  (graded)
                  (canceled)
                  (settled)
                  (BETTING_MARKET_STATUS_COUNT) )
-FC_REFLECT_ENUM( graphene::chain::betting_market_group_status, 
+FC_REFLECT_ENUM( graphene::protocol::betting_market_group_status,
                  (upcoming)
                  (in_play)
                  (closed)
@@ -443,51 +444,51 @@ FC_REFLECT_ENUM( graphene::chain::betting_market_group_status,
                  (canceled)
                  (BETTING_MARKET_GROUP_STATUS_COUNT) )
 
-FC_REFLECT( graphene::chain::betting_market_group_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_group_create_operation, 
+FC_REFLECT( graphene::protocol::betting_market_group_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_group_create_operation,
             (fee)(description)(event_id)(rules_id)(asset_id)
             (never_in_play)(delay_before_settling)
             (extensions) )
 
-FC_REFLECT( graphene::chain::betting_market_group_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_group_update_operation,
+FC_REFLECT( graphene::protocol::betting_market_group_update_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_group_update_operation,
             (fee)(betting_market_group_id)(new_description)(new_rules_id)(status)(extensions) )
 
-FC_REFLECT( graphene::chain::betting_market_create_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_create_operation, 
+FC_REFLECT( graphene::protocol::betting_market_create_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_create_operation,
             (fee)(group_id)(description)(payout_condition)(extensions) )
 
-FC_REFLECT( graphene::chain::betting_market_update_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_update_operation,
+FC_REFLECT( graphene::protocol::betting_market_update_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_update_operation,
             (fee)(betting_market_id)(new_group_id)(new_description)(new_payout_condition)(extensions) )
 
-FC_REFLECT_ENUM( graphene::chain::betting_market_resolution_type, (win)(not_win)(cancel)(BETTING_MARKET_RESOLUTION_COUNT) )
+FC_REFLECT_ENUM( graphene::protocol::betting_market_resolution_type, (win)(not_win)(cancel)(BETTING_MARKET_RESOLUTION_COUNT) )
 
-FC_REFLECT( graphene::chain::betting_market_group_resolve_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_group_resolve_operation,
+FC_REFLECT( graphene::protocol::betting_market_group_resolve_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_group_resolve_operation,
             (fee)(betting_market_group_id)(resolutions)(extensions) )
 
-FC_REFLECT( graphene::chain::betting_market_group_resolved_operation::fee_parameters_type, )
-FC_REFLECT( graphene::chain::betting_market_group_resolved_operation,
+FC_REFLECT( graphene::protocol::betting_market_group_resolved_operation::fee_parameters_type, )
+FC_REFLECT( graphene::protocol::betting_market_group_resolved_operation,
             (bettor_id)(betting_market_group_id)(resolutions)(winnings)(fees_paid)(fee) )
 
-FC_REFLECT( graphene::chain::betting_market_group_cancel_unmatched_bets_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::betting_market_group_cancel_unmatched_bets_operation,
+FC_REFLECT( graphene::protocol::betting_market_group_cancel_unmatched_bets_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::betting_market_group_cancel_unmatched_bets_operation,
             (fee)(betting_market_group_id)(extensions) )
 
-FC_REFLECT_ENUM( graphene::chain::bet_type, (back)(lay) )
-FC_REFLECT( graphene::chain::bet_place_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::bet_place_operation, 
+FC_REFLECT_ENUM( graphene::protocol::bet_type, (back)(lay) )
+FC_REFLECT( graphene::protocol::bet_place_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::bet_place_operation,
             (fee)(bettor_id)(betting_market_id)(amount_to_bet)(backer_multiplier)(back_or_lay)(extensions) )
 
-FC_REFLECT( graphene::chain::bet_matched_operation::fee_parameters_type, )
-FC_REFLECT( graphene::chain::bet_matched_operation, (bettor_id)(bet_id)(amount_bet)(backer_multiplier)(guaranteed_winnings_returned) )
+FC_REFLECT( graphene::protocol::bet_matched_operation::fee_parameters_type, )
+FC_REFLECT( graphene::protocol::bet_matched_operation, (fee)(bettor_id)(bet_id)(amount_bet)(backer_multiplier)(guaranteed_winnings_returned) )
 
-FC_REFLECT( graphene::chain::bet_cancel_operation::fee_parameters_type, (fee) )
-FC_REFLECT( graphene::chain::bet_cancel_operation, (fee) (bettor_id) (bet_to_cancel) (extensions) )
+FC_REFLECT( graphene::protocol::bet_cancel_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::protocol::bet_cancel_operation, (fee) (bettor_id) (bet_to_cancel) (extensions) )
 
-FC_REFLECT( graphene::chain::bet_canceled_operation::fee_parameters_type, )
-FC_REFLECT( graphene::chain::bet_canceled_operation, (bettor_id)(bet_id)(stake_returned) )
+FC_REFLECT( graphene::protocol::bet_canceled_operation::fee_parameters_type, )
+FC_REFLECT( graphene::protocol::bet_canceled_operation, (fee)(bettor_id)(bet_id)(stake_returned) )
 
-FC_REFLECT( graphene::chain::bet_adjusted_operation::fee_parameters_type, )
-FC_REFLECT( graphene::chain::bet_adjusted_operation, (bettor_id)(bet_id)(stake_returned) )
+FC_REFLECT( graphene::protocol::bet_adjusted_operation::fee_parameters_type, )
+FC_REFLECT( graphene::protocol::bet_adjusted_operation, (fee) (bettor_id)(bet_id)(stake_returned) )

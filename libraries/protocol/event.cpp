@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/chain/protocol/event.hpp>
+#include <graphene/protocol/event.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
 void event_create_operation::validate() const
 {
@@ -40,5 +40,5 @@ void event_update_status_operation::validate() const
    FC_ASSERT( fee.amount >= 0 );
 }
 
-} } // graphene::chain
+} } // graphene::protocol
 

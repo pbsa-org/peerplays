@@ -30,8 +30,9 @@
 
 #include <fc/container/flat.hpp>
 #include <fc/reflect/reflect.hpp>
+#include <fc/crypto/sha256.hpp>
 
-namespace graphene { namespace chain {
+namespace graphene { namespace protocol {
 
    struct rock_paper_scissors_game_options
    {
@@ -69,14 +70,17 @@ namespace graphene { namespace chain {
       uint64_t nonce1;
       uint64_t nonce2;
       rock_paper_scissors_gesture gesture;
-      fc::sha256 calculate_hash() const;
+      fc::sha256 calculate_hash() const {
+         std::vector<char> full_throw_packed(fc::raw::pack(*this));
+         return fc::sha256::hash(full_throw_packed.data(), full_throw_packed.size());
+      }
    };
 
    struct rock_paper_scissors_throw_commit
    {
       uint64_t nonce1;
       fc::sha256 throw_hash;
-      bool operator<(const graphene::chain::rock_paper_scissors_throw_commit& rhs) const
+      bool operator<(const graphene::protocol::rock_paper_scissors_throw_commit& rhs) const
       {
          return std::tie(nonce1, throw_hash) < std::tie(rhs.nonce1, rhs.throw_hash);
       }
@@ -92,25 +96,25 @@ namespace graphene { namespace chain {
 
 } }
 
-FC_REFLECT( graphene::chain::rock_paper_scissors_game_options, (insurance_enabled)(time_per_commit_move)(time_per_reveal_move)(number_of_gestures) )
+FC_REFLECT( graphene::protocol::rock_paper_scissors_game_options, (insurance_enabled)(time_per_commit_move)(time_per_reveal_move)(number_of_gestures) )
 
-// FC_REFLECT_TYPENAME( graphene::chain::rock_paper_scissors_gesture)
-FC_REFLECT_ENUM( graphene::chain::rock_paper_scissors_gesture,
+// FC_REFLECT_TYPENAME( graphene::protocol::rock_paper_scissors_gesture)
+FC_REFLECT_ENUM( graphene::protocol::rock_paper_scissors_gesture,
                  (rock)
                  (paper)
                  (scissors)
                  (spock)
                  (lizard))
 
-FC_REFLECT( graphene::chain::rock_paper_scissors_throw,
+FC_REFLECT( graphene::protocol::rock_paper_scissors_throw,
             (nonce1)
             (nonce2)
             (gesture) )
 
-FC_REFLECT( graphene::chain::rock_paper_scissors_throw_commit,
+FC_REFLECT( graphene::protocol::rock_paper_scissors_throw_commit,
             (nonce1)
             (throw_hash) )
 
-FC_REFLECT( graphene::chain::rock_paper_scissors_throw_reveal,
+FC_REFLECT( graphene::protocol::rock_paper_scissors_throw_reveal,
             (nonce2)(gesture) )
 

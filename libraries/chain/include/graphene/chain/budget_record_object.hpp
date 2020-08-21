@@ -22,7 +22,8 @@
  * THE SOFTWARE.
  */
 #pragma once
-#include <graphene/protocol/types.hpp>
+#include <graphene/chain/types.hpp>
+
 #include <graphene/db/object.hpp>
 #include <graphene/db/generic_index.hpp>
 
