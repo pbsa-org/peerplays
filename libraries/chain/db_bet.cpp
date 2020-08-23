@@ -495,7 +495,7 @@ int match_bet(database& db, const bet_object& taker_bet, const bet_object& maker
       payout_128 += taker_amount_to_match.value;
       payout_128 *= GRAPHENE_BETTING_ODDS_PRECISION;
       payout_128 /= maker_bet.back_or_lay == bet_type::back ? maker_amount_to_match.value : taker_amount_to_match.value;
-      assert(payout_128.to_uint64() == maker_bet.backer_multiplier);
+      assert(payout_128 == maker_bet.backer_multiplier);
    }
 #endif
 
