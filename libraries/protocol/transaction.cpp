@@ -231,7 +231,7 @@ struct sign_state
 
       sign_state( const flat_set<public_key_type>& sigs,
                   const std::function<const authority*(account_id_type)>& a,
-                  const flat_set<public_key_type>& keys = flat_set<public_key_type>() )
+                  const flat_set<public_key_type>& keys )
       :get_active(a),available_keys(keys)
       {
          for( const auto& key : sigs )
@@ -260,8 +260,9 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
    flat_set<account_id_type> required_active;
    flat_set<account_id_type> required_owner;
    vector<authority> other;
+   flat_set<public_key_type> available_keys;
 
-   sign_state s(sigs,get_active);
+   sign_state s(sigs,get_active, available_keys);
    s.max_recursion = max_recursion_depth;
    for( auto& id : active_aprovals )
       s.approved_by.insert( id );
