@@ -1,5 +1,5 @@
-# Defines BitShares library target.
-project( BitShares )
+# Defines Peerplays library target.
+project( Peerplays )
 cmake_minimum_required( VERSION 2.8.12 )
 
 set( BLOCKCHAIN_NAME "BitShares" )
