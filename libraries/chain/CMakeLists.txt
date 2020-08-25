@@ -80,8 +80,14 @@ add_library( graphene_chain
              betting_market_evaluator.cpp
              betting_market_object.cpp
              betting_market_group_object.cpp
+             custom_permission_evaluator.cpp
+             custom_account_authority_evaluator.cpp
 
              affiliate_payout.cpp
+
+             offer_object.cpp
+             offer_evaluator.cpp
+             nft_evaluator.cpp
 
              ${HEADERS}
              "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"

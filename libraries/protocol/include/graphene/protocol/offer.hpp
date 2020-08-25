@@ -1,10 +1,10 @@
 #pragma once
-#include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/protocol/memo.hpp>
+#include <graphene/protocol/base.hpp>
+#include <graphene/protocol/memo.hpp>
 
 namespace graphene
 {
-   namespace chain
+   namespace protocol
    {
 
       /*
@@ -118,26 +118,26 @@ namespace graphene
          share_type calculate_fee(const fee_parameters_type &k) const;
       };
 
-   } // namespace chain
+   } // namespace protocol
 } // namespace graphene
 
-FC_REFLECT(graphene::chain::offer_operation::fee_parameters_type,
+FC_REFLECT(graphene::protocol::offer_operation::fee_parameters_type,
            (fee)(price_per_kbyte));
-FC_REFLECT(graphene::chain::offer_operation,
+FC_REFLECT(graphene::protocol::offer_operation,
            (fee)(item_ids)(issuer)(minimum_price)(maximum_price)(buying_item)(offer_expiration_date)(memo)(extensions));
 
-FC_REFLECT(graphene::chain::bid_operation::fee_parameters_type,
+FC_REFLECT(graphene::protocol::bid_operation::fee_parameters_type,
            (fee));
-FC_REFLECT(graphene::chain::bid_operation,
+FC_REFLECT(graphene::protocol::bid_operation,
            (fee)(bidder)(bid_price)(offer_id)(extensions));
 
-FC_REFLECT(graphene::chain::cancel_offer_operation::fee_parameters_type,
+FC_REFLECT(graphene::protocol::cancel_offer_operation::fee_parameters_type,
            (fee));
-FC_REFLECT(graphene::chain::cancel_offer_operation,
+FC_REFLECT(graphene::protocol::cancel_offer_operation,
            (fee)(issuer)(offer_id)(extensions));
 
-FC_REFLECT_ENUM(graphene::chain::result_type, (Expired)(ExpiredNoBid)(Cancelled));
-FC_REFLECT(graphene::chain::finalize_offer_operation::fee_parameters_type,
+FC_REFLECT_ENUM(graphene::protocol::result_type, (Expired)(ExpiredNoBid)(Cancelled));
+FC_REFLECT(graphene::protocol::finalize_offer_operation::fee_parameters_type,
            (fee));
-FC_REFLECT(graphene::chain::finalize_offer_operation,
+FC_REFLECT(graphene::protocol::finalize_offer_operation,
            (fee)(fee_paying_account)(offer_id)(result)(extensions));

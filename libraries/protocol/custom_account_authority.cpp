@@ -1,9 +1,9 @@
-#include <graphene/chain/protocol/custom_account_authority.hpp>
-#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/protocol/custom_account_authority.hpp>
+#include <graphene/protocol/operations.hpp>
 
 namespace graphene
 {
-namespace chain
+namespace protocol
 {
 
 void custom_account_authority_create_operation::validate() const
@@ -39,5 +39,5 @@ share_type custom_account_authority_create_operation::calculate_fee(const fee_pa
    return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
 }
 
-} // namespace chain
+} // namespace protocol
 } // namespace graphene

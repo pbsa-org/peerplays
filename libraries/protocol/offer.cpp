@@ -1,9 +1,9 @@
-#include <graphene/chain/protocol/offer.hpp>
+#include <graphene/protocol/offer.hpp>
 #include <fc/io/raw.hpp>
 
 namespace graphene
 {
-  namespace chain
+  namespace protocol
   {
     share_type offer_operation::calculate_fee(const fee_parameters_type &schedule) const
     {
@@ -53,5 +53,5 @@ namespace graphene
       return core_fee_required;
     }
 
-  } // namespace chain
+  } // namespace protocol
 } // namespace graphene

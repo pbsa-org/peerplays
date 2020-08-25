@@ -25,6 +25,7 @@
 
 #include <graphene/protocol/ext.hpp>
 #include <graphene/protocol/types.hpp>
+#include <graphene/protocol/asset.hpp>
 
 #include <fc/thread/future.hpp>
 

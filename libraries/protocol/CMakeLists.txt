@@ -37,6 +37,7 @@ list(APPEND SOURCES account.cpp
                     custom_permission.cpp
                     custom_account_authority.cpp
                     offer.cpp
+                    nft.cpp
                     )
 
 

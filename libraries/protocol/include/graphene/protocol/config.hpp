@@ -152,21 +152,21 @@
  */
 ///@{
 /// Represents the current committee members, two-week review period
-#define GRAPHENE_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(0))
+#define GRAPHENE_COMMITTEE_ACCOUNT (graphene::protocol::account_id_type(0))
 /// Represents the current witnesses
-#define GRAPHENE_WITNESS_ACCOUNT (graphene::chain::account_id_type(1))
+#define GRAPHENE_WITNESS_ACCOUNT (graphene::protocol::account_id_type(1))
 /// Represents the current committee members
-#define GRAPHENE_RELAXED_COMMITTEE_ACCOUNT (graphene::chain::account_id_type(2))
+#define GRAPHENE_RELAXED_COMMITTEE_ACCOUNT (graphene::protocol::account_id_type(2))
 /// Represents the canonical account with NO authority (nobody can access funds in null account)
-#define GRAPHENE_NULL_ACCOUNT (graphene::chain::account_id_type(3))
+#define GRAPHENE_NULL_ACCOUNT (graphene::protocol::account_id_type(3))
 /// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
-#define GRAPHENE_TEMP_ACCOUNT (graphene::chain::account_id_type(4))
+#define GRAPHENE_TEMP_ACCOUNT (graphene::protocol::account_id_type(4))
 /// Represents the canonical account for specifying you will vote directly (as opposed to a proxy)
-#define GRAPHENE_PROXY_TO_SELF_ACCOUNT (graphene::chain::account_id_type(5))
+#define GRAPHENE_PROXY_TO_SELF_ACCOUNT (graphene::protocol::account_id_type(5))
 ///
-#define GRAPHENE_RAKE_FEE_ACCOUNT_ID (graphene::chain::account_id_type(6))
+#define GRAPHENE_RAKE_FEE_ACCOUNT_ID (graphene::protocol::account_id_type(6))
 /// Sentinel value used in the scheduler.
-#define GRAPHENE_NULL_WITNESS (graphene::chain::witness_id_type(0))
+#define GRAPHENE_NULL_WITNESS (graphene::protocol::witness_id_type(0))
 ///@}
 
 #define GRAPHENE_FBA_STEALTH_DESIGNATED_ASSET (asset_id_type(743))
@@ -219,9 +219,10 @@
 #define TOURNAMENT_MAX_START_TIME_IN_FUTURE                 (60*60*24*7*4) // 1 month
 #define TOURNAMENT_MAX_START_DELAY                          (60*60*24*7) // 1 week
 #define SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE              (2*GRAPHENE_1_PERCENT)
-#define SWEEPS_DEFAULT_DISTRIBUTION_ASSET                   (graphene::chain::asset_id_type(0))
+#define SWEEPS_DEFAULT_DISTRIBUTION_ASSET                   (graphene::protocol::asset_id_type(0))
 #define SWEEPS_VESTING_BALANCE_MULTIPLIER                   100000000
-#define SWEEPS_ACCUMULATOR_ACCOUNT                          (graphene::chain::account_id_type(0))
+#define SWEEPS_ACCUMULATOR_ACCOUNT                          (graphene::protocol::account_id_type(0))
+#define GPOS_PERIOD_START                                   (fc::time_point_sec(1578272400))
 #define GPOS_PERIOD                                         (60*60*24*30*6) // 6 months
 #define GPOS_SUBPERIOD                                      (60*60*24*30) // 1 month
 #define GPOS_VESTING_LOCKIN_PERIOD                          (60*60*24*30) // 1 month

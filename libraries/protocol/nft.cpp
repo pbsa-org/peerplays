@@ -1,9 +1,9 @@
-#include <graphene/chain/protocol/nft_ops.hpp>
-#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/protocol/nft_ops.hpp>
+#include <graphene/protocol/operations.hpp>
 
 namespace graphene
 {
-namespace chain
+namespace protocol
 {
 
 bool is_valid_nft_token_name(const string &name)
@@ -95,5 +95,5 @@ share_type nft_set_approval_for_all_operation::calculate_fee(const fee_parameter
    return k.fee;
 }
 
-} // namespace chain
+} // namespace protocol
 } // namespace graphene

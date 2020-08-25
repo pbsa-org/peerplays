@@ -262,7 +262,7 @@ GRAPHENE_DEFINE_IDS(protocol, protocol_ids, /*protocol objects are not prefixed*
                     (custom_permission)
                     (custom_account_authority)
                     (offer)
-                    (nft_metadata_type)
+                    (nft_metadata)
                     (nft))
 
 FC_REFLECT(graphene::protocol::public_key_type, (key_data))

@@ -1,9 +1,9 @@
-#include <graphene/chain/protocol/custom_permission.hpp>
-#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/protocol/custom_permission.hpp>
+#include <graphene/protocol/operations.hpp>
 
 namespace graphene
 {
-namespace chain
+namespace protocol
 {
 
 bool is_valid_permission_name(const string &name)
@@ -81,5 +81,5 @@ share_type custom_permission_create_operation::calculate_fee(const fee_parameter
    return k.fee + calculate_data_fee( fc::raw::pack_size(*this), k.price_per_kbyte );
 }
 
-} // namespace chain
+} // namespace protocol
 } // namespace graphene

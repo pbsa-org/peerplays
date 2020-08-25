@@ -41,6 +41,8 @@
 #include <graphene/protocol/operations.hpp>
 #include <graphene/protocol/betting_market.hpp>
 
+#include <fc/crypto/digest.hpp>
+
 namespace {
     
    struct proposed_operations_digest_accumulator
