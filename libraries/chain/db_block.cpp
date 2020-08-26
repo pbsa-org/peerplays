@@ -371,6 +371,8 @@ void database::update_witnesses( fork_item& fork_entry )const
  */
 processed_transaction database::push_transaction( const signed_transaction& trx, uint32_t skip )
 { try {
+   // see https://github.com/bitshares/bitshares-core/issues/1573
+   FC_ASSERT( fc::raw::pack_size( trx ) < (1024 * 1024), "Transaction exceeds maximum transaction size." );
    processed_transaction result;
    detail::with_skip_flags( *this, skip, [&]()
    {
@@ -814,6 +816,10 @@ processed_transaction database::_apply_transaction(const signed_transaction& trx
       FC_ASSERT( trx.expiration <= now + chain_parameters.maximum_time_until_expiration, "",
                  ("trx.expiration",trx.expiration)("now",now)("max_til_exp",chain_parameters.maximum_time_until_expiration));
       FC_ASSERT( now <= trx.expiration, "", ("now",now)("trx.exp",trx.expiration) );
+      if ( !(skip & skip_block_size_check ) ) // don't waste time on replay
+         FC_ASSERT( head_block_time() <= HARDFORK_1002_TIME
+               || trx.get_packed_size() <= chain_parameters.maximum_transaction_size,
+               "Transaction exceeds maximum transaction size." );
    }
 
    //Insert transaction into unique transactions database.
