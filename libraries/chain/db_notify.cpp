@@ -40,7 +40,13 @@
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/transaction_history_object.hpp>
 #include <graphene/chain/impacted.hpp>
-
+#include <graphene/chain/tournament_object.hpp>
+#include <graphene/chain/asset_object.hpp>
+#include <graphene/chain/account_object.hpp>
+#include <graphene/chain/betting_market_object.hpp>
+#include <graphene/chain/offer_object.hpp>
+#include <graphene/chain/custom_permission_object.hpp>
+#include <graphene/chain/nft_object.hpp>
 
 using namespace fc;
 using namespace graphene::chain;
@@ -431,6 +437,84 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
         } case balance_object_type:{
            /** these are free from any accounts */
            break;
+        } case tournament_object_type:{
+           auto aobj = dynamic_cast<const tournament_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->creator);
+           accounts.insert(aobj->options.whitelist.begin(), aobj->options.whitelist.end());
+           break;
+        } case tournament_details_object_type:{
+           auto aobj = dynamic_cast<const tournament_details_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->registered_players.begin(), aobj->registered_players.end());
+           std::transform(aobj->payers.begin(), aobj->payers.end(), std::inserter(accounts, accounts.end()),
+                          [](const auto& pair) { return pair.first; });
+           std::for_each(aobj->players_payers.begin(), aobj->players_payers.end(),
+                         [&accounts](const auto& pair) {
+               accounts.insert(pair.first);
+               accounts.insert(pair.second);
+           });
+           break;
+        } case match_object_type:{
+           auto aobj = dynamic_cast<const match_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->players.begin(), aobj->players.end());
+           std::for_each(aobj->game_winners.begin(), aobj->game_winners.end(),
+                         [&accounts](const auto& set) { accounts.insert(set.begin(), set.end()); });
+           accounts.insert(aobj->match_winners.begin(), aobj->match_winners.end());
+           break;
+        } case game_object_type:{
+           auto aobj = dynamic_cast<const game_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->players.begin(), aobj->players.end());
+           accounts.insert(aobj->winners.begin(), aobj->winners.end());
+           break;
+        } case sport_object_type:
+           break;
+          case event_group_object_type:
+           break;
+          case event_object_type:
+           break;
+          case betting_market_rules_object_type:
+           break;
+          case betting_market_group_object_type:
+           break;
+          case betting_market_object_type:
+           break;
+          case bet_object_type:{
+           auto aobj = dynamic_cast<const bet_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->bettor_id);
+           break;
+        } case custom_permission_object_type:{
+           auto aobj = dynamic_cast<const custom_permission_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->account);
+           add_authority_accounts(accounts, aobj->auth);
+           break;
+        } case custom_account_authority_object_type:
+           break;
+          case offer_object_type:{
+           auto aobj = dynamic_cast<const offer_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->issuer);
+           if (aobj->bidder.valid())
+               accounts.insert(*aobj->bidder);
+           break;
+        } case nft_metadata_object_type:{
+           auto aobj = dynamic_cast<const nft_metadata_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->owner);
+           if (aobj->revenue_partner.valid())
+               accounts.insert(*aobj->revenue_partner);
+           break;
+        } case nft_object_type:{
+           auto aobj = dynamic_cast<const nft_object*>(obj);
+           assert(aobj != nullptr);
+           accounts.insert(aobj->owner);
+           accounts.insert(aobj->approved);
+           accounts.insert(aobj->approved_operators.begin(), aobj->approved_operators.end());
+           break;
         }
       }
    }
@@ -485,6 +569,40 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
               break;
              case impl_fba_accumulator_object_type:
               break;
+             case impl_asset_dividend_data_object_type:{
+              const auto& aobj = dynamic_cast<const asset_dividend_data_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert(aobj->dividend_distribution_account);
+              break;
+           } case impl_pending_dividend_payout_balance_for_holder_object_type:{
+              const auto& aobj = dynamic_cast<const pending_dividend_payout_balance_for_holder_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert(aobj->owner);
+              break;
+           } case impl_total_distributed_dividend_balance_object_type:
+              break;
+             case impl_betting_market_position_object_type:{
+              const auto& aobj = dynamic_cast<const betting_market_position_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert(aobj->bettor_id);
+              break;
+           } case impl_global_betting_statistics_object_type:
+              break;
+             case impl_lottery_balance_object_type:
+              break;
+             case impl_sweeps_vesting_balance_object_type:{
+              const auto& aobj = dynamic_cast<const sweeps_vesting_balance_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert(aobj->owner);
+              break;
+           } case impl_offer_history_object_type:{
+              const auto& aobj = dynamic_cast<const offer_history_object*>(obj);
+              assert( aobj != nullptr );
+              accounts.insert(aobj->issuer);
+              if (aobj->bidder.valid())
+                  accounts.insert(*aobj->bidder);
+              break;
+           }
       }
    }
 } // end get_relevant_accounts( const object* obj, flat_set<account_id_type>& accounts )
