@@ -35,7 +35,15 @@ BOOST_AUTO_TEST_CASE(account_role_create_test)
         generate_block();
         generate_block();
         set_expiration(db, trx);
-        ACTORS((resourceowner)(alice)(bob));
+        ACTORS((resourceowner)(alice)(bob)(charlie));
+        upgrade_to_lifetime_member(resourceowner);
+        upgrade_to_lifetime_member(alice);
+        upgrade_to_lifetime_member(bob);
+        upgrade_to_lifetime_member(charlie);
+        transfer(committee_account, resourceowner_id, asset(100000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+        transfer(committee_account, alice_id, asset(100000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+        transfer(committee_account, bob_id, asset(100000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+        transfer(committee_account, charlie_id, asset(100000 * GRAPHENE_BLOCKCHAIN_PRECISION));
         {
             BOOST_TEST_MESSAGE("Send account_role_create_operation");
 
@@ -87,8 +95,8 @@ BOOST_AUTO_TEST_CASE(account_role_update_test)
         INVOKE(account_role_create_test);
         GET_ACTOR(alice);
         GET_ACTOR(bob);
+        GET_ACTOR(charlie);
         GET_ACTOR(resourceowner);
-        ACTORS((charlie));
         set_expiration(db, trx);
         {
             BOOST_TEST_MESSAGE("Send account_role_update_operation");
@@ -232,7 +240,7 @@ BOOST_AUTO_TEST_CASE(nft_safe_transfer_account_role_test)
         INVOKE(nft_metadata_create_mint_with_account_role_test);
         GET_ACTOR(alice);
         GET_ACTOR(bob);
-        ACTORS((charlie));
+        GET_ACTOR(charlie);
 
         {
             BOOST_TEST_MESSAGE("Send nft_safe_transfer_from_operation");
@@ -272,6 +280,91 @@ BOOST_AUTO_TEST_CASE(nft_safe_transfer_account_role_test)
             trx.operations.push_back(op);
             sign(trx, bob_private_key);
             // Charlie is not whitelisted by resource creator
+            BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+            trx.clear();
+        }
+    }
+    FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE(nft_offer_bid_account_role_test)
+{
+    try
+    {
+        BOOST_TEST_MESSAGE("nft_offer_bid_account_role_test");
+        INVOKE(nft_metadata_create_mint_with_account_role_test);
+        GET_ACTOR(alice);
+        GET_ACTOR(bob);
+        GET_ACTOR(charlie);
+
+        {
+            BOOST_TEST_MESSAGE("Send create_offer");
+
+            offer_operation offer_op;
+            offer_op.item_ids.emplace(nft_id_type(0));
+            offer_op.issuer = alice_id;
+            offer_op.buying_item = false;
+            offer_op.maximum_price = asset(10000);
+            offer_op.minimum_price = asset(10);
+            offer_op.offer_expiration_date = db.head_block_time() + fc::seconds(15);
+
+            trx.operations.push_back(offer_op);
+            sign(trx, alice_private_key);
+            PUSH_TX(db, trx);
+            trx.clear();
+        }
+        // Charlie tries to bid but fails.
+        {
+            BOOST_TEST_MESSAGE("Send create_bid by charlie");
+            bid_operation bid_op;
+            bid_op.offer_id = offer_id_type(0);
+            // Buy it now price
+            bid_op.bid_price = asset(10000);
+            bid_op.bidder = charlie_id;
+            trx.operations.push_back(bid_op);
+            sign(trx, charlie_private_key);
+            // Charlie is not whitelisting to perform bid_operation by resource/metadata owner
+            BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
+            trx.clear();
+        }
+        // Bob succeeds in bidding.
+        {
+            BOOST_TEST_MESSAGE("Send create_bid by bob");
+            bid_operation bid_op;
+            bid_op.offer_id = offer_id_type(0);
+            // Buy it now price
+            bid_op.bid_price = asset(10000);
+            bid_op.bidder = bob_id;
+            trx.operations.push_back(bid_op);
+            sign(trx, bob_private_key);
+            // Bob is whitelisted in account role created by resource/metadata owner
+            PUSH_TX(db, trx);
+            trx.clear();
+        }
+        generate_block();
+
+        BOOST_TEST_MESSAGE("Check offer results");
+
+        const auto &nft_idx = db.get_index_type<nft_index>().indices().get<by_id>();
+        BOOST_REQUIRE(nft_idx.size() == 1);
+        auto nft_obj = nft_idx.begin();
+        BOOST_REQUIRE(nft_obj != nft_idx.end());
+        BOOST_CHECK(nft_obj->owner == bob_id);
+        // Charlie tries to bid (buy offer) but fails
+        {
+            BOOST_TEST_MESSAGE("Send create_offer");
+
+            offer_operation offer_op;
+            offer_op.item_ids.emplace(nft_id_type(0));
+            offer_op.issuer = charlie_id;
+            offer_op.buying_item = true;
+            offer_op.maximum_price = asset(10000);
+            offer_op.minimum_price = asset(10);
+            offer_op.offer_expiration_date = db.head_block_time() + fc::seconds(15);
+
+            trx.operations.push_back(offer_op);
+            sign(trx, charlie_private_key);
+            // Charlie is not whitelisting to perform offer_operation by resource/metadata owner
             BOOST_CHECK_THROW(PUSH_TX(db, trx), fc::exception);
             trx.clear();
         }
