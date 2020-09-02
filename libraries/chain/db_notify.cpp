@@ -344,6 +344,15 @@ struct get_impacted_account_visitor
    void operator()( const finalize_offer_operation& op ) {
        _impacted.insert( op.fee_paying_account );
    }
+   void operator()( const account_role_create_operation& op ){
+      _impacted.insert( op.owner );
+   }
+   void operator()( const account_role_update_operation& op ){
+      _impacted.insert( op.owner );
+   }
+   void operator()( const account_role_delete_operation& op ){
+      _impacted.insert( op.owner );
+   }
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
@@ -431,6 +440,12 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
            break;
         } case balance_object_type:{
            /** these are free from any accounts */
+           break;
+        } case account_role_type:{
+           const auto& aobj = dynamic_cast<const account_role_object*>(obj);
+           assert( aobj != nullptr );
+           accounts.insert( aobj->owner );
+           accounts.insert( aobj->whitelisted_accounts.begin(), aobj->whitelisted_accounts.end() );
            break;
         }
       }
