@@ -205,7 +205,7 @@ namespace graphene { namespace chain {
                           const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
                           bool ignore_custom_operation_required_auths,
                           uint32_t max_recursion = GRAPHENE_MAX_SIG_CHECK_DEPTH,
-                          bool allow_committe = false,
+                          bool allow_committee = false,
                           const flat_set<account_id_type>& active_aprovals = flat_set<account_id_type>(),
                           const flat_set<account_id_type>& owner_approvals = flat_set<account_id_type>() );
 

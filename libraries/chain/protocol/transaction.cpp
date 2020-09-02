@@ -254,7 +254,7 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
                        const std::function<vector<authority>(account_id_type, const operation&)>& get_custom,
                        bool ignore_custom_operation_required_auths,
                        uint32_t max_recursion_depth,
-                       bool  allow_committe,
+                       bool  allow_committee,
                        const flat_set<account_id_type>& active_aprovals,
                        const flat_set<account_id_type>& owner_approvals )
 { try {
@@ -416,7 +416,7 @@ set<public_key_type> signed_transaction::minimize_required_signatures(
    uint32_t max_recursion
    ) const
 {
-   set< public_key_type > s = get_required_signatures( chain_id, available_keys, get_active, get_owner,
+   set< public_key_type > s = get_required_signatures( chain_id, available_keys, get_active, get_owner, get_custom,
                                                        ignore_custom_operation_required_auths, max_recursion );
    flat_set< public_key_type > result( s.begin(), s.end() );
 

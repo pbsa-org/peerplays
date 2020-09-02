@@ -1205,9 +1205,9 @@ BOOST_FIXTURE_TEST_CASE( get_required_signatures_test, database_fixture )
       {
          //wdump( (tx)(available_keys) );
          set<public_key_type> result_set = tx.get_required_signatures(db.get_chain_id(), available_keys,
-                                                                      get_active, get_owner, false, false);
+                                                                      get_active, get_owner, get_custom, false);
          set<public_key_type> result_set2 = tx.get_required_signatures(db.get_chain_id(), available_keys,
-                                                                       get_active, get_owner, true, false);
+                                                                       get_active, get_owner, get_custom, true);
          //wdump( (result_set)(result_set2)(ref_set) );
          return result_set == ref_set && result_set2 == ref_set;
       } ;
@@ -1330,9 +1330,9 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
       {
          //wdump( (tx)(available_keys) );
          set<public_key_type> result_set = tx.get_required_signatures(db.get_chain_id(), available_keys,
-                                                                      get_active, get_owner, false, false);
+                                                                      get_active, get_owner, get_custom, false);
          set<public_key_type> result_set2 = tx.get_required_signatures(db.get_chain_id(), available_keys,
-                                                                       get_active, get_owner, true, false);
+                                                                       get_active, get_owner, get_custom, true);
          //wdump( (result_set)(result_set2)(ref_set) );
          return result_set == ref_set && result_set2 == ref_set;
       } ;
@@ -1345,9 +1345,9 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
       {
          //wdump( (tx)(available_keys) );
          set<public_key_type> result_set = tx.minimize_required_signatures(db.get_chain_id(), available_keys,
-                                                                           get_active, get_owner, false, false);
+                                                                           get_active, get_owner, get_custom, false);
          set<public_key_type> result_set2 = tx.minimize_required_signatures(db.get_chain_id(), available_keys,
-                                                                            get_active, get_owner, true, false);
+                                                                            get_active, get_owner, get_custom, true);
          //wdump( (result_set)(result_set2)(ref_set) );
          return result_set == ref_set && result_set2 == ref_set;
       } ;
@@ -1366,11 +1366,13 @@ BOOST_FIXTURE_TEST_CASE( nonminimal_sig_test, database_fixture )
       BOOST_CHECK( chk( tx, { alice_public_key, bob_public_key }, { alice_public_key, bob_public_key } ) );
       BOOST_CHECK( chk_min( tx, { alice_public_key, bob_public_key }, { alice_public_key } ) );
 
-      GRAPHENE_REQUIRE_THROW( tx.verify_authority( db.get_chain_id(), get_active, get_owner, false, false ), fc::exception );
-      GRAPHENE_REQUIRE_THROW( tx.verify_authority( db.get_chain_id(), get_active, get_owner, true, false ), fc::exception );
+      GRAPHENE_REQUIRE_THROW( tx.verify_authority( db.get_chain_id(), get_active, get_owner, get_custom, false ),
+                              fc::exception );
+      GRAPHENE_REQUIRE_THROW( tx.verify_authority( db.get_chain_id(), get_active, get_owner, get_custom, true ),
+                              fc::exception );
       sign( tx, alice_private_key );
-      tx.verify_authority( db.get_chain_id(), get_active, get_owner, false, false );
-      tx.verify_authority( db.get_chain_id(), get_active, get_owner, true, false );
+      tx.verify_authority( db.get_chain_id(), get_active, get_owner, get_custom, false );
+      tx.verify_authority( db.get_chain_id(), get_active, get_owner, get_custom, true );
    }
    catch(fc::exception& e)
    {

@@ -207,16 +207,17 @@ struct proposal_operation_hardfork_visitor
 void_result proposal_create_evaluator::do_evaluate( const proposal_create_operation& o )
 { try {
    const database& d = db();
+   auto block_time = d.head_block_time();
 
-   proposal_operation_hardfork_visitor vtor( d.head_block_time() );
+   proposal_operation_hardfork_visitor vtor( block_time );
    vtor( o );
 
    const auto& global_parameters = d.get_global_properties().parameters;
 
-   FC_ASSERT( o.expiration_time > d.head_block_time(), "Proposal has already expired on creation." );
-   FC_ASSERT( o.expiration_time <= d.head_block_time() + global_parameters.maximum_proposal_lifetime,
+   FC_ASSERT( o.expiration_time > block_time, "Proposal has already expired on creation." );
+   FC_ASSERT( o.expiration_time <= block_time + global_parameters.maximum_proposal_lifetime,
               "Proposal expiration time is too far in the future.");
-   FC_ASSERT( !o.review_period_seconds || fc::seconds(*o.review_period_seconds) < (o.expiration_time - d.head_block_time()),
+   FC_ASSERT( !o.review_period_seconds || fc::seconds(*o.review_period_seconds) < (o.expiration_time - block_time),
               "Proposal review period must be less than its overall lifetime." );
 
    {
@@ -276,7 +277,7 @@ object_id_type proposal_create_evaluator::do_apply( const proposal_create_operat
       // TODO: consider caching values from evaluate?
       for( auto& op : _proposed_trx.operations )
          operation_get_required_authorities( op, required_active, proposal.required_owner_approvals, other,
-                                             MUST_IGNORE_CUSTOM_OP_REQD_AUTHS(block_time) );
+                                             MUST_IGNORE_CUSTOM_OP_REQD_AUTHS(chain_time) );
 
       //All accounts which must provide both owner and active authority should be omitted from the active authority set;
       //owner authority approval implies active authority approval.
