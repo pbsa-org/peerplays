@@ -39,7 +39,7 @@ namespace graphene
                     FC_ASSERT(block_time >= HARDFORK_NFT_TIME, "Custom permissions and roles not allowed on this operation yet!");
                     break;
                 default:
-                    FC_ASSERT(op_type < first_allowed_op, "Custom permissions and roles not allowed on this operation!");
+                    FC_ASSERT(op_type >= operation::tag<transfer_operation>::value && op_type < first_allowed_op, "Custom permissions and roles not allowed on this operation!");
                 }
             }
         };
