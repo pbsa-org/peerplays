@@ -280,7 +280,8 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
 
    for( const auto& op : ops ) {
       flat_set<account_id_type> operation_required_active;
-      operation_get_required_authorities( op, required_active, required_owner, other, ignore_custom_operation_required_auths );
+      operation_get_required_authorities( op, operation_required_active, required_owner, other,
+                                          ignore_custom_operation_required_auths );
 
       auto itr = operation_required_active.begin();
       while ( itr != operation_required_active.end() ) {
