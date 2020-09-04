@@ -20,9 +20,11 @@ namespace graphene
             std::string metadata;
             flat_set<int> allowed_operations;
             flat_set<account_id_type> whitelisted_accounts;
+            time_point_sec valid_to;
         };
 
         struct by_owner;
+        struct by_expiration;
         using account_role_multi_index_type = multi_index_container<
             account_role_object,
             indexed_by<
@@ -31,6 +33,11 @@ namespace graphene
                 >,
                 ordered_non_unique< tag<by_owner>, 
                                     member<account_role_object, account_id_type, &account_role_object::owner>
+                >,
+                ordered_unique< tag<by_expiration>,
+                                    composite_key<account_role_object,
+                                        member<account_role_object, time_point_sec, &account_role_object::valid_to>,
+                                        member<object, object_id_type, &object::id>>
                 >
             >
         >;
@@ -39,4 +46,4 @@ namespace graphene
 } // namespace graphene
 
 FC_REFLECT_DERIVED(graphene::chain::account_role_object, (graphene::db::object),
-                   (owner)(name)(metadata)(allowed_operations)(whitelisted_accounts))
+                   (owner)(name)(metadata)(allowed_operations)(whitelisted_accounts)(valid_to))

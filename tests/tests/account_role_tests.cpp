@@ -61,6 +61,7 @@ BOOST_AUTO_TEST_CASE(account_role_create_test)
             op.allowed_operations.insert(ops, ops + 6);
             op.whitelisted_accounts.emplace(alice_id);
             op.whitelisted_accounts.emplace(bob_id);
+            op.valid_to = db.head_block_time() + 1000;
 
             trx.operations.push_back(op);
             sign(trx, resourceowner_private_key);
@@ -83,6 +84,7 @@ BOOST_AUTO_TEST_CASE(account_role_create_test)
         BOOST_CHECK(obj->allowed_operations == expected_allowed_operations);
         flat_set<account_id_type> expected_whitelisted_accounts = {alice_id, bob_id};
         BOOST_CHECK(obj->whitelisted_accounts == expected_whitelisted_accounts);
+        BOOST_CHECK(obj->valid_to == db.head_block_time() + 1000);
     }
     FC_LOG_AND_RETHROW()
 }
@@ -111,6 +113,7 @@ BOOST_AUTO_TEST_CASE(account_role_update_test)
             int ops_delete[] = {operation::tag<nft_safe_transfer_from_operation>::value, operation::tag<nft_approve_operation>::value};
             op.allowed_operations_to_add.insert(ops_add, ops_add + 1);
             op.allowed_operations_to_remove.insert(ops_delete, ops_delete + 2);
+            op.valid_to = db.head_block_time() + 10000;
 
             trx.operations.push_back(op);
             sign(trx, resourceowner_private_key);
@@ -132,6 +135,7 @@ BOOST_AUTO_TEST_CASE(account_role_update_test)
         BOOST_CHECK(obj->allowed_operations == expected_allowed_operations);
         flat_set<account_id_type> expected_whitelisted_accounts = {alice_id, bob_id};
         BOOST_CHECK(obj->whitelisted_accounts == expected_whitelisted_accounts);
+        BOOST_CHECK(obj->valid_to == db.head_block_time() + 10000);
     }
     FC_LOG_AND_RETHROW()
 }

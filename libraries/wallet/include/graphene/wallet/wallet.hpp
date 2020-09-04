@@ -2120,6 +2120,7 @@ class wallet_api
                                              string metadata,
                                              flat_set<int> allowed_operations,
                                              flat_set<account_id_type> whitelisted_accounts,
+                                             time_point_sec valid_to,
                                              bool broadcast);
       signed_transaction update_account_role(string owner_account_id_or_name,
                                              account_role_id_type role_id,
@@ -2129,6 +2130,7 @@ class wallet_api
                                              flat_set<int> operations_to_remove,
                                              flat_set<account_id_type> accounts_to_add,
                                              flat_set<account_id_type> accounts_to_remove,
+                                             optional<time_point_sec> valid_to,
                                              bool broadcast);
       signed_transaction delete_account_role(string owner_account_id_or_name,
                                              account_role_id_type role_id,

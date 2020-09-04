@@ -6729,6 +6729,7 @@ signed_transaction wallet_api::create_account_role(string owner_account_id_or_na
                                                    string metadata,
                                                    flat_set<int> allowed_operations,
                                                    flat_set<account_id_type> whitelisted_accounts,
+                                                   time_point_sec valid_to,
                                                    bool broadcast)
 {
    account_object owner_account = my->get_account(owner_account_id_or_name);
@@ -6739,6 +6740,7 @@ signed_transaction wallet_api::create_account_role(string owner_account_id_or_na
    op.metadata = metadata;
    op.allowed_operations = allowed_operations;
    op.whitelisted_accounts = whitelisted_accounts;
+   op.valid_to = valid_to;
 
    signed_transaction trx;
    trx.operations.push_back(op);
@@ -6756,6 +6758,7 @@ signed_transaction wallet_api::update_account_role(string owner_account_id_or_na
                                                    flat_set<int> operations_to_remove,
                                                    flat_set<account_id_type> accounts_to_add,
                                                    flat_set<account_id_type> accounts_to_remove,
+                                                   optional<time_point_sec> valid_to,
                                                    bool broadcast)
 {
    account_object owner_account = my->get_account(owner_account_id_or_name);
@@ -6769,6 +6772,7 @@ signed_transaction wallet_api::update_account_role(string owner_account_id_or_na
    op.allowed_operations_to_remove = operations_to_remove;
    op.accounts_to_add = accounts_to_add;
    op.accounts_to_remove = accounts_to_remove;
+   op.valid_to = valid_to;
 
    signed_transaction trx;
    trx.operations.push_back(op);

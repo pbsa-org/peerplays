@@ -21,6 +21,7 @@ namespace graphene
             std::string metadata;
             flat_set<int> allowed_operations;
             flat_set<account_id_type> whitelisted_accounts;
+            time_point_sec valid_to;
             extensions_type extensions;
 
             account_id_type fee_payer() const { return owner; }
@@ -45,6 +46,7 @@ namespace graphene
             flat_set<int> allowed_operations_to_remove;
             flat_set<account_id_type> accounts_to_add;
             flat_set<account_id_type> accounts_to_remove;
+            optional<time_point_sec> valid_to;
             extensions_type extensions;
 
             account_id_type fee_payer() const { return owner; }
@@ -75,6 +77,6 @@ FC_REFLECT(graphene::chain::account_role_create_operation::fee_parameters_type, 
 FC_REFLECT(graphene::chain::account_role_update_operation::fee_parameters_type, (fee)(price_per_kbyte))
 FC_REFLECT(graphene::chain::account_role_delete_operation::fee_parameters_type, (fee))
 
-FC_REFLECT(graphene::chain::account_role_create_operation, (fee)(owner)(name)(metadata)(allowed_operations)(whitelisted_accounts)(extensions))
-FC_REFLECT(graphene::chain::account_role_update_operation, (fee)(owner)(account_role_id)(name)(metadata)(allowed_operations_to_add)(allowed_operations_to_remove)(accounts_to_add)(accounts_to_remove)(extensions))
+FC_REFLECT(graphene::chain::account_role_create_operation, (fee)(owner)(name)(metadata)(allowed_operations)(whitelisted_accounts)(valid_to)(extensions))
+FC_REFLECT(graphene::chain::account_role_update_operation, (fee)(owner)(account_role_id)(name)(metadata)(allowed_operations_to_add)(allowed_operations_to_remove)(accounts_to_add)(accounts_to_remove)(valid_to)(extensions))
 FC_REFLECT(graphene::chain::account_role_delete_operation, (fee)(owner)(account_role_id)(owner)(extensions))

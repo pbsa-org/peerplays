@@ -29,6 +29,13 @@ namespace graphene
                 {
                     acc(d);
                 }
+
+                FC_ASSERT(op.valid_to > now, "valid_to expiry should be in future");
+                FC_ASSERT((op.valid_to - now) <= fc::seconds(d.get_global_properties().parameters.account_roles_max_lifetime()), "Validity of the account role beyond max expiry");
+
+                const auto &ar_idx = d.get_index_type<account_role_index>().indices().get<by_owner>();
+                auto aro_range = ar_idx.equal_range(op.owner);
+                FC_ASSERT(std::distance(aro_range.first, aro_range.second) < d.get_global_properties().parameters.account_roles_max_per_account(), "Max account roles that can be created by one owner is reached");
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
@@ -45,6 +52,7 @@ namespace graphene
                             obj.metadata = op.metadata;
                             obj.allowed_operations = op.allowed_operations;
                             obj.whitelisted_accounts = op.whitelisted_accounts;
+                            obj.valid_to = op.valid_to;
                         })
                     .id;
             }
@@ -87,6 +95,12 @@ namespace graphene
                 }
                 FC_ASSERT((aobj.whitelisted_accounts.size() + op.accounts_to_add.size() - op.accounts_to_remove.size()) > 0, "Accounts should be positive");
 
+                if (op.valid_to)
+                {
+                    FC_ASSERT(*op.valid_to > now, "valid_to expiry should be in future");
+                    FC_ASSERT((*op.valid_to - now) <= fc::seconds(d.get_global_properties().parameters.account_roles_max_lifetime()), "Validity of the account role beyond max expiry");
+                }
+
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
@@ -109,6 +123,8 @@ namespace graphene
                         obj.allowed_operations.erase(op_type);
                     for (const auto &acc : op.accounts_to_remove)
                         obj.whitelisted_accounts.erase(acc);
+                    if (op.valid_to)
+                        obj.valid_to = *op.valid_to;
                 });
                 return void_result();
             }
@@ -136,7 +152,6 @@ namespace graphene
             {
                 database &d = db();
                 const account_role_object &aobj = op.account_role_id(d);
-                // TODO: Remove from Resource Objects
                 d.remove(aobj);
                 return void_result();
             }
