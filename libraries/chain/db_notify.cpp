@@ -350,6 +350,9 @@ struct get_impacted_account_visitor
    void operator()( const finalize_offer_operation& op ) {
        _impacted.insert( op.fee_paying_account );
    }
+   void operator()( const random_number_store_operation& op ) {
+      _impacted.insert( op.account );
+   }
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result, bool ignore_custom_operation_required_auths ) {

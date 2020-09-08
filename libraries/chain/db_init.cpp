@@ -52,6 +52,7 @@
 #include <graphene/chain/custom_permission_object.hpp>
 #include <graphene/chain/custom_account_authority_object.hpp>
 #include <graphene/chain/offer_object.hpp>
+#include <graphene/chain/random_number_object.hpp>
 
 #include <graphene/chain/nft_object.hpp>
 
@@ -85,6 +86,7 @@
 #include <graphene/chain/custom_account_authority_evaluator.hpp>
 #include <graphene/chain/offer_evaluator.hpp>
 #include <graphene/chain/nft_evaluator.hpp>
+#include <graphene/chain/random_number_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -186,6 +188,9 @@ const uint8_t offer_object::type_id;
 const uint8_t offer_history_object::space_id;
 const uint8_t offer_history_object::type_id;
 
+const uint8_t random_number_object::space_id;
+const uint8_t random_number_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -275,6 +280,7 @@ void database::initialize_evaluators()
    register_evaluator<nft_safe_transfer_from_evaluator>();
    register_evaluator<nft_approve_evaluator>();
    register_evaluator<nft_set_approval_for_all_evaluator>();
+   register_evaluator<random_number_store_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -353,6 +359,7 @@ void database::initialize_indexes()
    add_index< primary_index<lottery_balance_index                         > >();
    add_index< primary_index<sweeps_vesting_balance_index                  > >();
    add_index< primary_index<offer_history_index                           > >();
+   add_index< primary_index<random_number_index                           > >();
 
 }
 

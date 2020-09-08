@@ -125,6 +125,8 @@ add_library( graphene_chain
              nft_evaluator.cpp
              protocol/nft.cpp
 
+             random_number_evaluator.cpp
+
              ${HEADERS}
              ${PROTOCOL_HEADERS}
              "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"

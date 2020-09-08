@@ -829,7 +829,28 @@ class database_api
       vector<offer_history_object> get_offer_history_by_issuer(const offer_history_id_type lower_id, const account_id_type issuer_account_id, uint32_t limit) const;
       vector<offer_history_object> get_offer_history_by_item(const offer_history_id_type lower_id, const nft_id_type item, uint32_t limit) const;
       vector<offer_history_object> get_offer_history_by_bidder(const offer_history_id_type lower_id, const account_id_type bidder_account_id, uint32_t limit) const;
-private:
+
+      /////////////////////////////
+      // Random number generator //
+      /////////////////////////////
+      /**
+       * @brief Returns the random number
+       * @param minimum Lower bound of segment containing random number
+       * @param maximum Upper bound of segment containing random number
+       * @param selections Number of random numbers to return
+       * @param duplicates Allow duplicated numbers
+       * @return Vector containing random numbers from segment [minimum, maximum)
+       */
+      vector<uint64_t> get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const;
+
+      /**
+       * @brief Returns the random number
+       * @param bound Upper bound of segment containing random number
+       * @return Random number from segment [0, bound)
+       */
+      uint64_t get_random_number(uint64_t bound) const;
+
+   private:
       std::shared_ptr< database_api_impl > my;
 };
 
@@ -999,4 +1020,8 @@ FC_API(graphene::app::database_api,
    (get_offer_history_by_issuer)
    (get_offer_history_by_item)
    (get_offer_history_by_bidder)
+
+   // rngs
+   (get_random_number_ex)
+   (get_random_number)
 )
