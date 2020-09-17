@@ -83,7 +83,6 @@ namespace graphene
                 auto now = d.head_block_time();
                 FC_ASSERT(now >= HARDFORK_NFT_TIME, "Not allowed until NFT HF");
                 const auto &offer = op.offer_id(d);
-                op.bidder(d);
                 for (const auto &item : offer.item_ids)
                 {
                     const auto &nft_obj = item(d);

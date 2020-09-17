@@ -36,7 +36,6 @@
 
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
 
 #include <boost/polymorphic_cast.hpp>
@@ -520,7 +519,8 @@ asset bookie_plugin::get_total_matched_bet_amount_for_betting_market_group(betti
 }
 std::vector<event_object> bookie_plugin::get_events_containing_sub_string(const std::string& sub_string, const std::string& language)
 {
-    ilog("bookie plugin: get_events_containing_sub_string(${sub_string}, ${language})", (sub_string)(language));
+    ilog("bookie plugin: get_events_containing_sub_string(${sub_string}, ${language})",
+         ("sub_string", sub_string)("language", language));
     return my->get_events_containing_sub_string(sub_string, language);
 }
 

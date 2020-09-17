@@ -26,8 +26,10 @@
 #include <graphene/app/application.hpp>
 #include <graphene/app/plugin.hpp>
 
-#include <graphene/chain/protocol/fee_schedule.hpp>
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/db_with.hpp>
+#include <graphene/chain/genesis_state.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
+#include <graphene/protocol/types.hpp>
 
 #include <graphene/egenesis/egenesis.hpp>
 
@@ -36,8 +38,6 @@
 
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/chain/worker_evaluator.hpp>
-
-#include <fc/smart_ref_impl.hpp>
 
 #include <fc/io/fstream.hpp>
 #include <fc/rpc/api_connection.hpp>
@@ -80,7 +80,7 @@ namespace detail {
       auto nathan_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("nathan")));
       dlog("Allocating all stake to ${key}", ("key", utilities::key_to_wif(nathan_key)));
       genesis_state_type initial_state;
-      initial_state.initial_parameters.current_fees = fee_schedule::get_default();//->set_all_fees(GRAPHENE_BLOCKCHAIN_PRECISION);
+      initial_state.initial_parameters.current_fees = std::make_shared<fee_schedule>(fee_schedule::get_default());
       initial_state.initial_active_witnesses = GRAPHENE_DEFAULT_MIN_WITNESS_COUNT;
       initial_state.initial_timestamp = time_point_sec(time_point::now().sec_since_epoch() /
             initial_state.initial_parameters.block_interval *
@@ -226,7 +226,7 @@ namespace detail {
 
       void new_connection( const fc::http::websocket_connection_ptr& c )
       {
-         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c, GRAPHENE_MAX_NESTED_OBJECTS);
+         auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c, GRAPHENE_MAX_NESTED_OBJECTS);
          auto login = std::make_shared<graphene::app::login_api>( std::ref(*_self) );
          login->enable_api("database_api");
 
@@ -380,7 +380,6 @@ namespace detail {
             _chain_db->enable_standby_votes_tracking( _options->at("enable-standby-votes-tracking").as<bool>() );
          }
          
-         bool replay = false;
          std::string replay_reason = "reason not provided";
 
          if( _options->count("replay-blockchain") )
@@ -554,7 +553,7 @@ namespace detail {
          _chain_db->push_transaction( transaction_message.trx );
       } FC_CAPTURE_AND_RETHROW( (transaction_message) ) }
 
-      virtual void handle_message(const message& message_to_process) override
+      virtual void handle_message(const message&) override
       {
          // not a transaction, not a block
          FC_THROW( "Invalid Message Type" );

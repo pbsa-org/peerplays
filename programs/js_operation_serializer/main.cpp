@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <graphene/chain/protocol/protocol.hpp>
-#include <graphene/chain/protocol/fee_schedule.hpp>
+
+#include <graphene/protocol/block.hpp>
+#include <graphene/protocol/fee_schedule.hpp>
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/asset_object.hpp>
@@ -48,7 +49,6 @@
 #include <graphene/chain/offer_object.hpp>
 #include <graphene/chain/nft_object.hpp>
 
-#include <fc/smart_ref_impl.hpp>
 #include <iostream>
 
 using namespace graphene::chain;
@@ -114,14 +114,14 @@ bool register_serializer( const string& name, std::function<void()> sr )
 template<typename T> struct js_name { static std::string name(){ return  remove_namespace(fc::get_typename<T>::name()); }; };
 
 template<typename T, size_t N>
-struct js_name<fc::array<T,N>>
+struct js_name<std::array<T,N>>
 {
-   static std::string name(){ return  "fixed_array "+ fc::to_string(N) + ", "  + remove_namespace(fc::get_typename<T>::name()); };
+   static std::string name(){ return  "fixed_array "+ fc::to_string(N) + ", " 
+                                      + remove_namespace(fc::get_typename<T>::name()); };
 };
-template<size_t N>   struct js_name<fc::array<char,N>>    { static std::string name(){ return  "bytes "+ fc::to_string(N); }; };
-template<size_t N>   struct js_name<fc::array<uint8_t,N>> { static std::string name(){ return  "bytes "+ fc::to_string(N); }; };
+template<size_t N>   struct js_name<std::array<char,N>>   { static std::string name(){ return  "bytes "+ fc::to_string(N); }; };
+template<size_t N>   struct js_name<std::array<uint8_t,N>>{ static std::string name(){ return  "bytes "+ fc::to_string(N); }; };
 template<typename T> struct js_name< fc::optional<T> >    { static std::string name(){ return "optional " + js_name<T>::name(); } };
-template<typename T> struct js_name< fc::smart_ref<T> >   { static std::string name(){ return js_name<T>::name(); } };
 template<>           struct js_name< object_id_type >     { static std::string name(){ return "object_id_type"; } };
 template<typename T> struct js_name< fc::flat_set<T> >    { static std::string name(){ return "set " + js_name<T>::name(); } };
 template<typename T> struct js_name< std::vector<T> >     { static std::string name(){ return "array " + js_name<T>::name(); } };
@@ -133,15 +133,15 @@ template<> struct js_name<fc::uint160>         { static std::string name(){ retu
 template<> struct js_name<fc::sha224>          { static std::string name(){ return "bytes 28";   } };
 template<> struct js_name<fc::sha256>          { static std::string name(){ return "bytes 32";   } };
 template<> struct js_name<fc::unsigned_int>    { static std::string name(){ return "varuint32";  } };
-template<> struct js_name<fc::signed_int>      { static std::string name(){ return "varint32";   } };
 template<> struct js_name< vote_id_type >      { static std::string name(){ return "vote_id";    } };
 template<> struct js_name< time_point_sec >    { static std::string name(){ return "time_point_sec"; } };
 
-template<uint8_t S, uint8_t T, typename O>
-struct js_name<graphene::db::object_id<S,T,O> >
+template<uint8_t S, uint8_t T>
+struct js_name<graphene::protocol::object_id<S,T> >
 {
    static std::string name(){
-      return "protocol_id_type \"" + remove_namespace(fc::get_typename<O>::name()) + "\"";
+      return "protocol_id_type(\"" +
+             remove_namespace(fc::get_typename<object_downcast_t<object_id<S,T>>>::name()) + "\")";
    };
 };
 
@@ -237,7 +237,7 @@ struct serializer<T,false>
 };
 
 template<typename T, size_t N>
-struct serializer<fc::array<T,N>,false>
+struct serializer<std::array<T,N>,false>
 {
    static void init() { serializer<T>::init(); }
    static void generate() {}
@@ -246,14 +246,6 @@ template<typename T>
 struct serializer<std::vector<T>,false>
 {
    static void init() { serializer<T>::init(); }
-   static void generate() {}
-};
-
-template<typename T>
-struct serializer<fc::smart_ref<T>,false>
-{
-   static void init() { 
-      serializer<T>::init(); }
    static void generate() {}
 };
 
@@ -292,8 +284,8 @@ struct serializer<fc::optional<T>,false>
    static void generate(){}
 };
 
-template<uint8_t SpaceID, uint8_t TypeID, typename T>
-struct serializer< graphene::db::object_id<SpaceID,TypeID,T> ,true>
+template<uint8_t SpaceID, uint8_t TypeID>
+struct serializer< graphene::db::object_id<SpaceID,TypeID> ,true>
 {
    static void init() {}
    static void generate() {}
@@ -354,14 +346,15 @@ class register_member_visitor
       }
 };
 
-template <typename T, typename IsEnum = fc::false_type>
+template <typename T, bool IsEnum = std::is_enum<T>()>
 struct serializer_init_helper {
   static void init()
   {
     auto name = js_name<T>::name();
     if( st.find(name) == st.end() )
     {
-       fc::reflector<T>::visit( register_member_visitor() );
+       register_member_visitor visitor;
+       fc::reflector<T>::visit( visitor );
        register_serializer( name, [=](){ generate(); } );
     }
   }
@@ -373,14 +366,15 @@ struct serializer_init_helper {
                << " = new Serializer( \n"
                << "    \"" + name + "\"\n";
 
-     fc::reflector<T>::visit( serialize_member_visitor() );
+     serialize_member_visitor visitor;
+     fc::reflector<T>::visit( visitor );
 
      std::cout <<")\n\n";
   }
 };
 
 template <typename T>
-struct serializer_init_helper<T, fc::true_type> {
+struct serializer_init_helper<T, true> {
   static void init()
   {
   }
@@ -393,7 +387,7 @@ struct serializer
 
    static void init()
    {
-     serializer_init_helper< T, typename fc::reflector<T>::is_enum >::init();
+     serializer_init_helper< T >::init();
    }
 };
 

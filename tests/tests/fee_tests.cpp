@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include <fc/smart_ref_impl.hpp>
 #include <fc/uint128.hpp>
 
 #include <graphene/chain/hardfork.hpp>
@@ -34,6 +33,8 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/exceptions.hpp>
+
+#include <fc/uint128.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -245,7 +246,7 @@ uint64_t pct( uint64_t percentage, uint64_t val )
    fc::uint128_t x = percentage;
    x *= val;
    x /= GRAPHENE_100_PERCENT;
-   return x.to_uint64();
+   return static_cast<uint64_t>(x);
 }
 
 uint64_t pct( uint64_t percentage0, uint64_t percentage1, uint64_t val )
@@ -334,7 +335,7 @@ BOOST_AUTO_TEST_CASE( cashback_test )
    upgrade_to_lifetime_member(rog_id);
 
    BOOST_TEST_MESSAGE("Enable fees");
-   const auto& fees = db.get_global_properties().parameters.current_fees;
+   const auto& fees = *db.get_global_properties().parameters.current_fees;
 
 #define CustomRegisterActor(actor_name, registrar_name, referrer_name, referrer_rate) \
    { \
@@ -346,7 +347,7 @@ BOOST_AUTO_TEST_CASE( cashback_test )
       op.options.memo_key = actor_name ## _private_key.get_public_key(); \
       op.active = authority(1, public_key_type(actor_name ## _private_key.get_public_key()), 1); \
       op.owner = op.active; \
-      op.fee = fees->calculate_fee(op); \
+      op.fee = fees.calculate_fee(op); \
       trx.operations = {op}; \
       sign( trx,  registrar_name ## _private_key ); \
       actor_name ## _id = PUSH_TX( db, trx ).operation_results.front().get<object_id_type>(); \
@@ -372,10 +373,10 @@ BOOST_AUTO_TEST_CASE( cashback_test )
       CustomAuditActor( pleb );                      \
    }
 
-   int64_t reg_fee    = fees->get< account_create_operation >().premium_fee;
-   int64_t xfer_fee   = fees->get< transfer_operation >().fee;
-   int64_t upg_an_fee = fees->get< account_upgrade_operation >().membership_annual_fee;
-   int64_t upg_lt_fee = fees->get< account_upgrade_operation >().membership_lifetime_fee;
+   int64_t reg_fee    = fees.get< account_create_operation >().premium_fee;
+   int64_t xfer_fee   = fees.get< transfer_operation >().fee;
+   int64_t upg_an_fee = fees.get< account_upgrade_operation >().membership_annual_fee;
+   int64_t upg_lt_fee = fees.get< account_upgrade_operation >().membership_lifetime_fee;
    // all percentages here are cut from whole pie!
    uint64_t network_pct = 20 * P1;
    uint64_t lt_pct = 375 * P100 / 1000;
@@ -582,7 +583,7 @@ BOOST_AUTO_TEST_CASE( account_create_fee_scaling )
    auto accounts_per_scale = db.get_global_properties().parameters.accounts_per_fee_scale;
    db.modify(global_property_id_type()(db), [](global_property_object& gpo)
    {
-      gpo.parameters.current_fees = fee_schedule::get_default();
+      gpo.parameters.current_fees = std::make_shared<fee_schedule>(fee_schedule::get_default());
       gpo.parameters.current_fees->get<account_create_operation>().basic_fee = 1;
    });
 
@@ -1004,7 +1005,8 @@ BOOST_AUTO_TEST_CASE( issue_429_test )
       // make sure the database requires our fee to be nonzero
       enable_fees();
 
-      auto fees_to_pay = db.get_global_properties().parameters.current_fees->get<asset_create_operation>();
+      const auto& fees = *db.get_global_properties().parameters.current_fees;
+      auto fees_to_pay = fees.get<asset_create_operation>();
 
       {
          signed_transaction tx;

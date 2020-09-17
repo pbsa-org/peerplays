@@ -6,7 +6,6 @@ set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain
 add_dependencies( build_hardfork_hpp cat-parts )
 
 file(GLOB HEADERS "include/graphene/chain/*.hpp")
-file(GLOB PROTOCOL_HEADERS "include/graphene/chain/protocol/*.hpp")
 
 if( GRAPHENE_DISABLE_UNITY_BUILD )
    set( GRAPHENE_DB_FILES
@@ -36,39 +35,9 @@ add_library( graphene_chain
              ${GRAPHENE_DB_FILES}
              fork_database.cpp
 
-             protocol/types.cpp
-             protocol/address.cpp
-             protocol/authority.cpp
-             protocol/asset.cpp
-             protocol/assert.cpp
-             protocol/account.cpp
-             protocol/transfer.cpp
-             protocol/committee_member.cpp
-             protocol/witness.cpp
-             protocol/market.cpp
-             protocol/proposal.cpp
-             protocol/withdraw_permission.cpp
-             protocol/asset_ops.cpp
-             protocol/lottery_ops.cpp
-             protocol/memo.cpp
-             protocol/worker.cpp
-             protocol/custom.cpp
-             protocol/operations.cpp
-             protocol/transaction.cpp
-             protocol/block.cpp
-             protocol/fee_schedule.cpp
-             protocol/confidential.cpp
-             protocol/vote.cpp
-             protocol/tournament.cpp
-             protocol/small_ops.cpp
-             protocol/custom_permission.cpp
-             protocol/custom_account_authority.cpp
-             protocol/offer.cpp
-
              genesis_state.cpp
              get_config.cpp
-
-             pts_address.cpp
+             exceptions.cpp
 
              evaluator.cpp
              balance_evaluator.cpp
@@ -89,7 +58,7 @@ add_library( graphene_chain
              withdraw_permission_evaluator.cpp
              worker_evaluator.cpp
              confidential_evaluator.cpp
-             special_authority.cpp
+             special_authority_evaluation.cpp
              buyback.cpp
 
              account_object.cpp
@@ -103,15 +72,11 @@ add_library( graphene_chain
 
              is_authorized_asset.cpp
 
-             protocol/sport.cpp
              sport_evaluator.cpp
-             protocol/event_group.cpp
              event_group_evaluator.cpp
              event_group_object.cpp
-             protocol/event.cpp
              event_evaluator.cpp
              event_object.cpp
-             protocol/betting_market.cpp
              betting_market_evaluator.cpp
              betting_market_object.cpp
              betting_market_group_object.cpp
@@ -123,15 +88,13 @@ add_library( graphene_chain
              offer_object.cpp
              offer_evaluator.cpp
              nft_evaluator.cpp
-             protocol/nft.cpp
 
              ${HEADERS}
-             ${PROTOCOL_HEADERS}
              "${CMAKE_CURRENT_BINARY_DIR}/include/graphene/chain/hardfork.hpp"
            )
 
 add_dependencies( graphene_chain build_hardfork_hpp )
-target_link_libraries( graphene_chain fc graphene_db )
+target_link_libraries( graphene_chain fc graphene_db graphene_protocol )
 target_include_directories( graphene_chain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
@@ -147,4 +110,3 @@ INSTALL( TARGETS
    ARCHIVE DESTINATION lib
 )
 INSTALL( FILES ${HEADERS} DESTINATION "include/graphene/chain" )
-INSTALL( FILES ${PROTOCOL_HEADERS} DESTINATION "include/graphene/chain/protocol" )

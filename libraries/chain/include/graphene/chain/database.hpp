@@ -22,6 +22,9 @@
  * THE SOFTWARE.
  */
 #pragma once
+
+#include <graphene/protocol/fee_schedule.hpp>
+
 #include <graphene/chain/global_property_object.hpp>
 #include <graphene/chain/node_property_object.hpp>
 #include <graphene/chain/account_object.hpp>
@@ -30,6 +33,7 @@
 #include <graphene/chain/block_database.hpp>
 #include <graphene/chain/genesis_state.hpp>
 #include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/betting_market_object.hpp>
 
 #include <graphene/db/object_database.hpp>
 #include <graphene/db/object.hpp>
@@ -38,7 +42,7 @@
 
 #include <fc/crypto/hash_ctr_rng.hpp>
 
-#include <graphene/chain/protocol/protocol.hpp>
+#include <graphene/protocol/protocol.hpp>
 
 #include <fc/log/logger.hpp>
 
@@ -49,6 +53,14 @@ namespace graphene { namespace chain {
    using graphene::db::object;
    class op_evaluator;
    class transaction_evaluation_state;
+   class proposal_object;
+   class operation_history_object;
+   class chain_property_object;
+   class witness_schedule_object;
+   class witness_object;
+   class force_settlement_object;
+   class limit_order_object;
+   class call_order_object;
 
    struct budget_record;
 

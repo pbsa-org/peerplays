@@ -48,7 +48,6 @@
 #include <graphene/utilities/tempdir.hpp>
 
 #include <fc/crypto/digest.hpp>
-#include <fc/smart_ref_impl.hpp>
 
 #include <iomanip>
 
@@ -670,7 +669,7 @@ void database_fixture::issue_uia( account_id_type recipient_id, asset amount )
 }
 
 void database_fixture::change_fees(
-   const flat_set< fee_parameters >& new_params,
+   const fee_parameters::flat_set_type& new_params,
    uint32_t new_scale /* = 0 */
    )
 {
@@ -692,7 +691,7 @@ void database_fixture::change_fees(
       new_fees.scale = new_scale;
 
    chain_parameters new_chain_params = current_chain_params;
-   new_chain_params.current_fees = new_fees;
+   new_chain_params.current_fees = std::make_shared<fee_schedule>(new_fees);
 
    db.modify(db.get_global_properties(), [&](global_property_object& p) {
       p.parameters = new_chain_params;
@@ -1019,7 +1018,7 @@ void database_fixture::enable_fees()
 {
    db.modify(global_property_id_type()(db), [](global_property_object& gpo)
    {
-      gpo.parameters.current_fees = fee_schedule::get_default();
+      gpo.parameters.current_fees = std::make_shared<fee_schedule>(fee_schedule::get_default());
    });
 }
 
