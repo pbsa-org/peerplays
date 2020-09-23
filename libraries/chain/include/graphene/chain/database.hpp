@@ -266,6 +266,7 @@ namespace graphene { namespace chain {
       
          void check_lottery_end_by_participants( asset_id_type asset_id );
          void check_ending_lotteries();
+         void check_ending_nft_lotteries();
 
          //////////////////// db_getter.cpp ////////////////////
 
@@ -278,8 +279,8 @@ namespace graphene { namespace chain {
          const node_property_object&            get_node_properties()const;
          const fee_schedule&                    current_fee_schedule()const;
          const account_statistics_object&       get_account_stats_by_owner( account_id_type owner )const;
-         const std::vector<uint32_t>            get_winner_numbers( asset_id_type for_asset, uint32_t count_members, uint8_t count_winners ) const;
-         std::vector<uint32_t>                  get_seeds( asset_id_type for_asset, uint8_t count_winners )const;
+         const std::vector<uint32_t>            get_winner_numbers( uint32_t instance_value, uint32_t count_members, uint8_t count_winners ) const;
+         std::vector<uint32_t>                  get_seeds( uint32_t instance_value, uint8_t count_winners )const;
          uint64_t                               get_random_bits( uint64_t bound );
          const witness_schedule_object&         get_witness_schedule_object()const;
          bool                                   item_locked(const nft_id_type& item)const;

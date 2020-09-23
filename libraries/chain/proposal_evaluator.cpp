@@ -208,6 +208,17 @@ struct proposal_operation_hardfork_visitor
        FC_ASSERT( block_time >= HARDFORK_NFT_TIME, "account_role_delete_operation not allowed yet!" );
    }
 
+   void operator()(const nft_lottery_token_purchase_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_NFT_TIME, "nft_lottery_token_purchase_operation not allowed yet!" );
+   }
+
+   void operator()(const nft_lottery_reward_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_NFT_TIME, "nft_lottery_reward_operation not allowed yet!" );
+   }
+
+   void operator()(const nft_lottery_end_operation &v) const {
+       FC_ASSERT( block_time >= HARDFORK_NFT_TIME, "nft_lottery_end_operation not allowed yet!" );
+   }
 
    // loop and self visit in proposals
    void operator()(const proposal_create_operation &v) const {

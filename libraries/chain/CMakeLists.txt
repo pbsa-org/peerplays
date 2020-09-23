@@ -126,6 +126,9 @@ add_library( graphene_chain
              protocol/nft.cpp
              protocol/account_role.cpp
              account_role_evaluator.cpp
+             protocol/nft_lottery.cpp
+             nft_lottery_evaluator.cpp
+             nft_lottery_object.cpp
 
              ${HEADERS}
              ${PROTOCOL_HEADERS}

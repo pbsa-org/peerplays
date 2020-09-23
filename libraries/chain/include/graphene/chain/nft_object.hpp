@@ -6,6 +6,16 @@
 namespace graphene { namespace chain {
    using namespace graphene::db;
 
+   struct nft_lottery_data
+   {
+      nft_lottery_data() {}
+      nft_lottery_data(const nft_lottery_options &options)
+          : lottery_options(options), jackpot(asset(0, options.ticket_price.asset_id)) {}
+      nft_lottery_options lottery_options;
+      asset jackpot;
+      share_type sweeps_tickets_sold;
+   };
+
    class nft_metadata_object : public abstract_object<nft_metadata_object>
    {
       public:
@@ -21,6 +31,21 @@ namespace graphene { namespace chain {
          bool            is_transferable = false;
          bool            is_sellable = true;
          optional<account_role_id_type> account_role;
+         share_type max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
+         optional<nft_lottery_data> lottery_data;
+
+         nft_metadata_id_type get_id() const { return id; }
+         bool is_lottery() const { return lottery_data.valid(); }
+         uint32_t get_owner_num() const { return owner.instance.value; }
+         time_point_sec get_lottery_expiration() const;
+         asset get_lottery_jackpot() const;
+         share_type get_token_current_supply(database &db) const;
+         vector<account_id_type> get_holders(database &db) const;
+         vector<uint64_t> get_ticket_ids(database &db) const;
+         void distribute_benefactors_part(database &db);
+         map<account_id_type, vector<uint16_t>> distribute_winners_part(database &db);
+         void distribute_sweeps_holders_part(database &db);
+         void end_lottery(database &db);
    };
 
    class nft_object : public abstract_object<nft_object>
@@ -36,8 +61,23 @@ namespace graphene { namespace chain {
          std::string             token_uri;
    };
 
+   struct nft_lottery_comparer
+   {
+      bool operator()(const nft_metadata_object& lhs, const nft_metadata_object& rhs) const
+      {
+         if ( !lhs.is_lottery() ) return false;
+         if ( !lhs.lottery_data->lottery_options.is_active && !rhs.is_lottery()) return true; // not active lotteries first, just assets then
+         if ( !lhs.lottery_data->lottery_options.is_active ) return false;
+         if ( lhs.lottery_data->lottery_options.is_active && ( !rhs.is_lottery() || !rhs.lottery_data->lottery_options.is_active ) ) return true;
+         return lhs.get_lottery_expiration() > rhs.get_lottery_expiration();
+      }
+   };
+
    struct by_name;
    struct by_symbol;
+   struct active_nft_lotteries;
+   struct by_nft_lottery;
+   struct by_nft_lottery_owner;
    using nft_metadata_multi_index_type = multi_index_container<
       nft_metadata_object,
       indexed_by<
@@ -49,6 +89,34 @@ namespace graphene { namespace chain {
          >,
          ordered_unique< tag<by_symbol>,
             member<nft_metadata_object, std::string, &nft_metadata_object::symbol>
+         >,
+         ordered_non_unique< tag<active_nft_lotteries>,
+            identity< nft_metadata_object >,
+            nft_lottery_comparer
+         >,
+         ordered_unique< tag<by_nft_lottery>,
+            composite_key<
+               nft_metadata_object,
+               const_mem_fun<nft_metadata_object, bool, &nft_metadata_object::is_lottery>,
+               member<object, object_id_type, &object::id>
+            >,
+            composite_key_compare<
+               std::greater< bool >,
+               std::greater< object_id_type >
+            >
+         >,
+         ordered_unique< tag<by_nft_lottery_owner>,
+            composite_key<
+               nft_metadata_object,
+               const_mem_fun<nft_metadata_object, bool, &nft_metadata_object::is_lottery>,
+               const_mem_fun<nft_metadata_object, uint32_t, &nft_metadata_object::get_owner_num>,
+               member<object, object_id_type, &object::id>
+            >,
+            composite_key_compare<
+               std::greater< bool >,
+               std::greater< uint32_t >,
+               std::greater< object_id_type >
+            >
          >
       >
    >;
@@ -88,6 +156,8 @@ namespace graphene { namespace chain {
 
 } } // graphene::chain
 
+FC_REFLECT( graphene::chain::nft_lottery_data, (lottery_options)(jackpot)(sweeps_tickets_sold) )
+
 FC_REFLECT_DERIVED( graphene::chain::nft_metadata_object, (graphene::db::object),
                     (owner)
                     (name)
@@ -97,7 +167,9 @@ FC_REFLECT_DERIVED( graphene::chain::nft_metadata_object, (graphene::db::object)
                     (revenue_split)
                     (is_transferable)
                     (is_sellable)
-                    (account_role) )
+                    (account_role)
+                    (max_supply)
+                    (lottery_data) )
 
 FC_REFLECT_DERIVED( graphene::chain::nft_object, (graphene::db::object),
                     (nft_metadata_id)

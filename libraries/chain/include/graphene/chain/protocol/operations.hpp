@@ -50,6 +50,7 @@
 #include <graphene/chain/protocol/offer.hpp>
 #include <graphene/chain/protocol/nft_ops.hpp>
 #include <graphene/chain/protocol/account_role.hpp>
+#include <graphene/chain/protocol/nft_lottery.hpp>
 
 namespace graphene { namespace chain {
 
@@ -159,7 +160,10 @@ namespace graphene { namespace chain {
             nft_set_approval_for_all_operation,
             account_role_create_operation,
             account_role_update_operation,
-            account_role_delete_operation
+            account_role_delete_operation,
+            nft_lottery_token_purchase_operation,
+            nft_lottery_reward_operation,
+            nft_lottery_end_operation
          > operation;
 
    /// @} // operations group

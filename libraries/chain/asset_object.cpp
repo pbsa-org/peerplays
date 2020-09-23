@@ -252,7 +252,7 @@ map< account_id_type, vector< uint16_t > > asset_object::distribute_winners_part
          structurized_participants.emplace( holder, vector< uint16_t >() );
    }
    uint64_t jackpot = get_id()( db ).dynamic_data( db ).current_supply.value * lottery_options->ticket_price.amount.value;
-   auto winner_numbers = db.get_winner_numbers( get_id(), holders.size(), lottery_options->winning_tickets.size() );
+   auto winner_numbers = db.get_winner_numbers( get_id().instance.value, holders.size(), lottery_options->winning_tickets.size() );
    
    auto& tickets( lottery_options->winning_tickets );
    

@@ -353,6 +353,13 @@ struct get_impacted_account_visitor
    void operator()( const account_role_delete_operation& op ){
       _impacted.insert( op.owner );
    }
+   void operator()( const nft_lottery_token_purchase_operation& op ){
+      _impacted.insert( op.buyer );
+   }
+   void operator()( const nft_lottery_reward_operation& op ) {
+      _impacted.insert( op.winner );
+   }
+   void operator()( const nft_lottery_end_operation& op ) {}
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
