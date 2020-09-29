@@ -109,17 +109,17 @@ uint32_t database::last_non_undoable_block_num() const
    return head_block_num() - _undo_db.size();
 }
 
-std::vector<uint32_t> database::get_seeds( uint32_t instance_value, uint8_t count_winners ) const
+std::vector<uint32_t> database::get_seeds( asset_id_type for_asset, uint8_t count_winners ) const
 {
    FC_ASSERT( count_winners <= 64 );
-   std::string salted_string = std::string(_random_number_generator._seed) + std::to_string(instance_value);
+   std::string salted_string = std::string(_random_number_generator._seed) + std::to_string(for_asset.instance.value);
    uint32_t* seeds = (uint32_t*)(fc::sha256::hash(salted_string)._hash);
 
    std::vector<uint32_t> result;
    result.reserve(64);
 
    for( int s = 0; s < 8; ++s ) {
-      uint32_t* sub_seeds = ( uint32_t* ) fc::sha256::hash( std::to_string( seeds[s] ) + std::to_string( instance_value ) )._hash;
+      uint32_t* sub_seeds = ( uint32_t* ) fc::sha256::hash( std::to_string( seeds[s] ) + std::to_string( for_asset.instance.value ) )._hash;
       for( int ss = 0; ss < 8; ++ss ) {
          result.push_back(sub_seeds[ss]);
       }
@@ -127,14 +127,14 @@ std::vector<uint32_t> database::get_seeds( uint32_t instance_value, uint8_t coun
    return result;
 }
 
-const std::vector<uint32_t> database::get_winner_numbers( uint32_t instance_value, uint32_t count_members, uint8_t count_winners ) const
+const std::vector<uint32_t> database::get_winner_numbers( asset_id_type for_asset, uint32_t count_members, uint8_t count_winners ) const
 {
    std::vector<uint32_t> result;
    if( count_members < count_winners ) count_winners = count_members;
    if( count_winners == 0 ) return result;
    result.reserve(count_winners);
 
-   auto seeds = get_seeds(instance_value, count_winners);
+   auto seeds = get_seeds(for_asset, count_winners);
 
    for (auto current_seed = seeds.begin(); current_seed != seeds.end(); ++current_seed) {
       uint8_t winner_num = *current_seed % count_members;
