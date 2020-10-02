@@ -53,8 +53,8 @@ namespace graphene
                     nft_id = db().apply_operation(nft_mint_context, mint_op).get<object_id_type>();
                 }
                 db().adjust_balance(op.buyer, -op.amount);
-                db().modify(lottery_md_obj, [&](nft_metadata_object &obj) {
-                    obj.lottery_data->jackpot += op.amount;
+                db().modify(lottery_md_obj.lottery_data->lottery_balance_id(db()), [&](nft_lottery_balance_object &obj) {
+                    obj.jackpot += op.amount;
                 });
                 return nft_id;
             }
@@ -75,7 +75,7 @@ namespace graphene
 
                 const auto &lottery_options = lottery_md_obj.lottery_data->lottery_options;
                 FC_ASSERT(lottery_options.is_active);
-                FC_ASSERT(lottery_md_obj.get_lottery_jackpot() >= op.amount);
+                FC_ASSERT(lottery_md_obj.get_lottery_jackpot(d) >= op.amount);
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
@@ -87,8 +87,8 @@ namespace graphene
             {
                 const auto &lottery_md_obj = op.lottery_id(db());
                 db().adjust_balance(op.winner, op.amount);
-                db().modify(lottery_md_obj, [&](nft_metadata_object &obj) {
-                    obj.lottery_data->jackpot -= op.amount;
+                db().modify(lottery_md_obj.lottery_data->lottery_balance_id(db()), [&](nft_lottery_balance_object &obj) {
+                    obj.jackpot -= op.amount;
                 });
                 return void_result();
             }
@@ -107,7 +107,7 @@ namespace graphene
 
                 const auto &lottery_options = lottery_md_obj.lottery_data->lottery_options;
                 FC_ASSERT(lottery_options.is_active);
-                FC_ASSERT(lottery_md_obj.get_lottery_jackpot().amount == 0);
+                FC_ASSERT(lottery_md_obj.get_lottery_jackpot(d).amount == 0);
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
@@ -119,8 +119,10 @@ namespace graphene
             {
                 const auto &lottery_md_obj = op.lottery_id(db());
                 db().modify(lottery_md_obj, [&](nft_metadata_object &obj) {
-                    obj.lottery_data->sweeps_tickets_sold = obj.get_token_current_supply(db());
                     obj.lottery_data->lottery_options.is_active = false;
+                });
+                db().modify(lottery_md_obj.lottery_data->lottery_balance_id(db()), [&](nft_lottery_balance_object &obj) {
+                    obj.sweeps_tickets_sold = lottery_md_obj.get_token_current_supply(db());
                 });
                 return void_result();
             }

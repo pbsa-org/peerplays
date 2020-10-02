@@ -12,14 +12,14 @@ namespace graphene
             return time_point_sec();
         }
 
-        asset nft_metadata_object::get_lottery_jackpot() const
+        asset nft_metadata_object::get_lottery_jackpot(const database &db) const
         {
             if (lottery_data)
-                return lottery_data->jackpot;
+                return lottery_data->lottery_balance_id(db).jackpot;
             return asset();
         }
 
-        share_type nft_metadata_object::get_token_current_supply(database &db) const
+        share_type nft_metadata_object::get_token_current_supply(const database &db) const
         {
             share_type current_supply;
             const auto &idx_lottery_by_md = db.get_index_type<nft_index>().indices().get<by_metadata>();
@@ -28,7 +28,7 @@ namespace graphene
             return current_supply;
         }
 
-        vector<account_id_type> nft_metadata_object::get_holders(database &db) const
+        vector<account_id_type> nft_metadata_object::get_holders(const database &db) const
         {
             const auto &idx_lottery_by_md = db.get_index_type<nft_index>().indices().get<by_metadata>();
             auto lottery_range = idx_lottery_by_md.equal_range(id);
@@ -41,7 +41,7 @@ namespace graphene
             return holders;
         }
 
-        vector<uint64_t> nft_metadata_object::get_ticket_ids(database &db) const
+        vector<uint64_t> nft_metadata_object::get_ticket_ids(const database &db) const
         {
             const auto &idx_lottery_by_md = db.get_index_type<nft_index>().indices().get<by_metadata>();
             auto lottery_range = idx_lottery_by_md.equal_range(id);
@@ -58,7 +58,7 @@ namespace graphene
         {
             transaction_evaluation_state eval(&db);
             const auto &lottery_options = lottery_data->lottery_options;
-            share_type jackpot = lottery_options.ticket_price.amount * get_token_current_supply(db).value;
+            share_type jackpot = lottery_options.ticket_price.amount * get_token_current_supply(db) + lottery_data->lottery_balance_id(db).total_progressive_jackpot.amount;
 
             for (auto benefactor : lottery_options.benefactors)
             {
@@ -81,14 +81,14 @@ namespace graphene
             auto holders = get_holders(db);
             vector<uint64_t> ticket_ids = get_ticket_ids(db);
             FC_ASSERT(current_supply.value == (int64_t)holders.size());
-            FC_ASSERT(lottery_data->jackpot.amount.value == current_supply.value * lottery_options.ticket_price.amount.value);
+            FC_ASSERT(get_lottery_jackpot(db).amount.value == current_supply.value * lottery_options.ticket_price.amount.value);
             map<account_id_type, vector<uint16_t>> structurized_participants;
             for (account_id_type holder : holders)
             {
                 if (!structurized_participants.count(holder))
                     structurized_participants.emplace(holder, vector<uint16_t>());
             }
-            uint64_t jackpot = lottery_data->jackpot.amount.value;
+            uint64_t jackpot = get_lottery_jackpot(db).amount.value;
             auto winner_numbers = db.get_winner_numbers(id, holders.size(), lottery_options.winning_tickets.size());
 
             auto &tickets(lottery_options.winning_tickets);
@@ -132,7 +132,7 @@ namespace graphene
             auto sweeps_params = db.get_global_properties().parameters;
             uint64_t distribution_asset_supply = sweeps_params.sweeps_distribution_asset()(db).dynamic_data(db).current_supply.value;
             const auto range = asset_bal_idx.equal_range(boost::make_tuple(sweeps_params.sweeps_distribution_asset()));
-            asset remaining_jackpot = get_id()(db).lottery_data->jackpot;
+            asset remaining_jackpot = get_lottery_jackpot(db);
             uint64_t holders_sum = 0;
             for (const account_balance_object &holder_balance : boost::make_iterator_range(range.first, range.second))
             {
@@ -142,8 +142,8 @@ namespace graphene
             }
             uint64_t balance_rest = remaining_jackpot.amount.value * SWEEPS_VESTING_BALANCE_MULTIPLIER - holders_sum;
             db.adjust_sweeps_vesting_balance(sweeps_params.sweeps_vesting_accumulator_account(), balance_rest);
-            db.modify(get_id()(db), [&](nft_metadata_object &obj) {
-                obj.lottery_data->jackpot -= remaining_jackpot;
+            db.modify(lottery_data->lottery_balance_id(db), [&](nft_lottery_balance_object &obj) {
+                obj.jackpot -= remaining_jackpot;
             });
         }
 

@@ -1951,6 +1951,8 @@ class wallet_api
                                     bool is_transferable,
                                     bool is_sellable,
                                     optional<account_role_id_type> role_id,
+                                    optional<share_type> max_supply,
+                                    optional<nft_lottery_options> lottery_options,
                                     bool broadcast);
 
       /**
@@ -2088,6 +2090,7 @@ class wallet_api
        * @return Returns vector of NFT objects, empty vector if none
        */
       vector<nft_object> nft_get_all_tokens() const;
+      signed_transaction nft_lottery_buy_ticket( nft_metadata_id_type lottery, account_id_type buyer, uint64_t tickets_to_buy, bool broadcast );
 
       signed_transaction create_offer(set<nft_id_type> item_ids,
                                       string issuer_accound_id_or_name,
@@ -2399,6 +2402,7 @@ FC_API( graphene::wallet::wallet_api,
         (nft_get_approved)
         (nft_is_approved_for_all)
         (nft_get_all_tokens)
+        (nft_lottery_buy_ticket)
         (create_offer)
         (create_bid)
         (cancel_offer)

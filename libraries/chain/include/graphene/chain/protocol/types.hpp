@@ -206,7 +206,8 @@ namespace graphene { namespace chain {
       impl_global_betting_statistics_object_type,
       impl_lottery_balance_object_type,
       impl_sweeps_vesting_balance_object_type,
-      impl_offer_history_object_type
+      impl_offer_history_object_type,
+      impl_nft_lottery_balance_object_type
    };
 
    //typedef fc::unsigned_int            object_id_type;
@@ -299,6 +300,7 @@ namespace graphene { namespace chain {
    class lottery_balance_object;
    class sweeps_vesting_balance_object;
    class offer_history_object;
+   class nft_lottery_balance_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,            global_property_object>          global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,    dynamic_global_property_object>  dynamic_global_property_id_type;
@@ -328,6 +330,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_lottery_balance_object_type, lottery_balance_object >                    lottery_balance_id_type;
    typedef object_id< implementation_ids, impl_sweeps_vesting_balance_object_type, sweeps_vesting_balance_object>       sweeps_vesting_balance_id_type;
    typedef object_id< implementation_ids, impl_offer_history_object_type, offer_history_object>                         offer_history_id_type;
+   typedef object_id< implementation_ids, impl_nft_lottery_balance_object_type, nft_lottery_balance_object>             nft_lottery_balance_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -491,6 +494,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_lottery_balance_object_type)
                  (impl_sweeps_vesting_balance_object_type)
                  (impl_offer_history_object_type)
+                 (impl_nft_lottery_balance_object_type)
                )
 
 FC_REFLECT_TYPENAME( graphene::chain::share_type )
@@ -540,6 +544,7 @@ FC_REFLECT_TYPENAME( graphene::chain::offer_history_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::nft_metadata_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::nft_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_role_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::nft_lottery_balance_id_type )
 
 FC_REFLECT( graphene::chain::void_t, )
 

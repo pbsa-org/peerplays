@@ -328,7 +328,7 @@ void database_fixture::verify_asset_supplies( const database& db )
    {
       if (o.lottery_data)
       {
-         total_balances[o.lottery_data->jackpot.asset_id] += o.lottery_data->jackpot.amount;
+         total_balances[o.get_lottery_jackpot(db).asset_id] += o.get_lottery_jackpot(db).amount;
       }
    }
 

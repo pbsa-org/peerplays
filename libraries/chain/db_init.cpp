@@ -192,6 +192,9 @@ const uint8_t offer_history_object::type_id;
 const uint8_t account_role_object::space_id;
 const uint8_t account_role_object::type_id;
 
+const uint8_t nft_lottery_balance_object::space_id;
+const uint8_t nft_lottery_balance_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -366,7 +369,7 @@ void database::initialize_indexes()
    add_index< primary_index<lottery_balance_index                         > >();
    add_index< primary_index<sweeps_vesting_balance_index                  > >();
    add_index< primary_index<offer_history_index                           > >();
-
+   add_index< primary_index<nft_lottery_balance_index                     > >();
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)

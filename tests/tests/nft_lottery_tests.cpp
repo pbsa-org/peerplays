@@ -85,8 +85,8 @@ BOOST_AUTO_TEST_CASE(create_lottery_nft_md_test)
         BOOST_CHECK(obj.max_supply == share_type(200));
         BOOST_CHECK(obj.is_lottery());
         BOOST_CHECK(obj.get_token_current_supply(db) == share_type(0));
-        BOOST_CHECK(obj.get_lottery_jackpot() == asset());
-        BOOST_CHECK(obj.lottery_data->sweeps_tickets_sold == share_type(0));
+        BOOST_CHECK(obj.get_lottery_jackpot(db) == asset());
+        BOOST_CHECK(obj.lottery_data->lottery_balance_id(db).sweeps_tickets_sold == share_type(0));
     }
     catch (fc::exception &e)
     {
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(lottery_end_by_stage_test)
 
         test_nft_md_obj = test_nft_md_id(db);
         uint64_t benefactor_balance_before_end = db.get_balance(account_id_type(), asset_id_type()).amount.value;
-        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot().amount.value;
+        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot(db).amount.value;
         uint16_t winners_part = 0;
         for (uint16_t win : test_nft_md_obj.lottery_data->lottery_options.winning_tickets)
             winners_part += win;
@@ -238,13 +238,13 @@ BOOST_AUTO_TEST_CASE(lottery_end_by_stage_test)
 
         test_nft_md_obj = test_nft_md_id(db);
         BOOST_CHECK(participants_percents_sum == winners_part);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value == (jackpot * (GRAPHENE_100_PERCENT - winners_part) / (double)GRAPHENE_100_PERCENT) + jackpot * winners_part * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT / (double)GRAPHENE_100_PERCENT);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value == (jackpot * (GRAPHENE_100_PERCENT - winners_part) / (double)GRAPHENE_100_PERCENT) + jackpot * winners_part * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT / (double)GRAPHENE_100_PERCENT);
         test_nft_md_obj.distribute_benefactors_part(db);
         test_nft_md_obj = test_nft_md_id(db);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value == jackpot * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT * winners_part / (double)GRAPHENE_100_PERCENT);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value == jackpot * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT * winners_part / (double)GRAPHENE_100_PERCENT);
         test_nft_md_obj.distribute_sweeps_holders_part(db);
         test_nft_md_obj = test_nft_md_id(db);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value == 0);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value == 0);
 
         uint64_t benefactor_recieved = db.get_balance(account_id_type(), asset_id_type()).amount.value - benefactor_balance_before_end;
         BOOST_CHECK(jackpot * test_nft_md_obj.lottery_data->lottery_options.benefactors[0].share / GRAPHENE_100_PERCENT == benefactor_recieved);
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(lottery_end_by_stage_with_fractional_test)
         }
         test_nft_md_obj = test_nft_md_id(db);
         uint64_t benefactor_balance_before_end = db.get_balance(account_id_type(), asset_id_type()).amount.value;
-        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot().amount.value;
+        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot(db).amount.value;
         uint16_t winners_part = 0;
         for (uint16_t win : test_nft_md_obj.lottery_data->lottery_options.winning_tickets)
             winners_part += win;
@@ -302,14 +302,14 @@ BOOST_AUTO_TEST_CASE(lottery_end_by_stage_with_fractional_test)
         BOOST_CHECK(participants_percents_sum == winners_part);
         // balance should be bigger than expected because of rouning during distribution
         test_nft_md_obj = test_nft_md_id(db);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value > (jackpot * (GRAPHENE_100_PERCENT - winners_part) / (double)GRAPHENE_100_PERCENT) + jackpot * winners_part * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT / (double)GRAPHENE_100_PERCENT);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value > (jackpot * (GRAPHENE_100_PERCENT - winners_part) / (double)GRAPHENE_100_PERCENT) + jackpot * winners_part * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT / (double)GRAPHENE_100_PERCENT);
         test_nft_md_obj.distribute_benefactors_part(db);
         test_nft_md_obj = test_nft_md_id(db);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value > jackpot * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT * winners_part / (double)GRAPHENE_100_PERCENT);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value > jackpot * SWEEPS_DEFAULT_DISTRIBUTION_PERCENTAGE / (double)GRAPHENE_100_PERCENT * winners_part / (double)GRAPHENE_100_PERCENT);
         test_nft_md_obj.distribute_sweeps_holders_part(db);
         test_nft_md_obj = test_nft_md_id(db);
         // but at the end is always equals 0
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value == 0);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value == 0);
 
         uint64_t benefactor_recieved = db.get_balance(account_id_type(), asset_id_type()).amount.value - benefactor_balance_before_end;
         test_nft_md_obj = test_nft_md_id(db);
@@ -349,7 +349,7 @@ BOOST_AUTO_TEST_CASE(lottery_end_test)
         generate_block();
         test_nft_md_obj = test_nft_md_id(db);
         uint64_t creator_balance_before_end = db.get_balance(account_id_type(), asset_id_type()).amount.value;
-        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot().amount.value;
+        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot(db).amount.value;
         uint16_t winners_part = 0;
         for (uint8_t win : test_nft_md_obj.lottery_data->lottery_options.winning_tickets)
             winners_part += win;
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(lottery_end_test)
         while (db.head_block_time() < (test_nft_md_obj.lottery_data->lottery_options.end_date + fc::seconds(30)))
             generate_block();
         test_nft_md_obj = test_nft_md_id(db);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value == 0);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value == 0);
         uint64_t creator_recieved = db.get_balance(account_id_type(), asset_id_type()).amount.value - creator_balance_before_end;
         BOOST_CHECK(jackpot * test_nft_md_obj.lottery_data->lottery_options.benefactors[0].share / GRAPHENE_100_PERCENT == creator_recieved);
     }
@@ -480,11 +480,11 @@ BOOST_AUTO_TEST_CASE(ending_by_date_test)
         generate_block();
         test_nft_md_obj = test_nft_md_id(db);
         auto holders = test_nft_md_obj.get_holders(db);
-        idump((test_nft_md_obj.get_lottery_jackpot()));
+        idump((test_nft_md_obj.get_lottery_jackpot(db)));
         while (db.head_block_time() < (test_nft_md_obj.lottery_data->lottery_options.end_date + fc::seconds(30)))
             generate_block();
         test_nft_md_obj = test_nft_md_id(db);
-        idump((test_nft_md_obj.get_lottery_jackpot()));
+        idump((test_nft_md_obj.get_lottery_jackpot(db)));
         vector<account_id_type> participants = {account_id_type(1), account_id_type(2), account_id_type(3)};
         for (auto p : participants)
         {
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(lottery_winner_ticket_id_test)
         generate_block();
         test_nft_md_obj = test_nft_md_id(db);
         uint64_t creator_balance_before_end = db.get_balance(account_id_type(), asset_id_type()).amount.value;
-        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot().amount.value;
+        uint64_t jackpot = test_nft_md_obj.get_lottery_jackpot(db).amount.value;
         uint16_t winners_part = 0;
         for (uint8_t win : test_nft_md_obj.lottery_data->lottery_options.winning_tickets)
             winners_part += win;
@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE(lottery_winner_ticket_id_test)
             idump((h));
         }
         test_nft_md_obj = test_nft_md_id(db);
-        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot().amount.value == 0);
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db).amount.value == 0);
         uint64_t creator_recieved = db.get_balance(account_id_type(), asset_id_type()).amount.value - creator_balance_before_end;
         BOOST_CHECK(jackpot * test_nft_md_obj.lottery_data->lottery_options.benefactors[0].share / GRAPHENE_100_PERCENT == creator_recieved);
     }

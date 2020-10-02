@@ -6376,6 +6376,8 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
                                                    bool is_transferable,
                                                    bool is_sellable,
                                                    optional<account_role_id_type> role_id,
+                                                   optional<share_type> max_supply,
+                                                   optional<nft_lottery_options> lottery_options,
                                                    bool broadcast)
 {
    account_object owner_account = my->get_account(owner_account_id_or_name);
@@ -6399,6 +6401,8 @@ signed_transaction wallet_api::nft_metadata_create(string owner_account_id_or_na
    op.is_transferable = is_transferable;
    op.is_sellable = is_sellable;
    op.account_role = role_id;
+   op.max_supply = max_supply;
+   op.lottery_options = lottery_options;
 
    signed_transaction trx;
    trx.operations.push_back(op);
@@ -6580,6 +6584,21 @@ bool wallet_api::nft_is_approved_for_all(string owner_account_id_or_name, string
 vector<nft_object> wallet_api::nft_get_all_tokens() const
 {
    return my->_remote_db->nft_get_all_tokens();
+}
+
+signed_transaction wallet_api::nft_lottery_buy_ticket( nft_metadata_id_type lottery, account_id_type buyer, uint64_t tickets_to_buy, bool broadcast )
+{
+   nft_lottery_token_purchase_operation op;
+   op.lottery_id = lottery;
+   op.buyer = buyer;
+   op.tickets_to_buy = tickets_to_buy;
+
+   signed_transaction trx;
+   trx.operations.push_back(op);
+   my->set_operation_fees( trx, my->_remote_db->get_global_properties().parameters.current_fees );
+   trx.validate();
+
+   return my->sign_transaction( trx, broadcast );
 }
 
 signed_transaction wallet_api::create_offer(set<nft_id_type> item_ids,

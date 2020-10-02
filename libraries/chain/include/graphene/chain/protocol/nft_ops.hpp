@@ -21,6 +21,8 @@ namespace graphene { namespace chain {
       time_point_sec          end_date;
       bool                    ending_on_soldout;
       bool                    is_active;
+      bool                    delete_tickets_after_draw = false;
+      std::vector<nft_metadata_id_type> progressive_jackpots;
 
       void validate() const;
    };
@@ -159,7 +161,7 @@ namespace graphene { namespace chain {
 } } // graphene::chain
 
 FC_REFLECT( graphene::chain::nft_lottery_benefactor, (id)(share) )
-FC_REFLECT( graphene::chain::nft_lottery_options, (benefactors)(winning_tickets)(ticket_price)(end_date)(ending_on_soldout)(is_active) )
+FC_REFLECT( graphene::chain::nft_lottery_options, (benefactors)(winning_tickets)(ticket_price)(end_date)(ending_on_soldout)(is_active)(delete_tickets_after_draw)(progressive_jackpots) )
 
 FC_REFLECT( graphene::chain::nft_metadata_create_operation::fee_parameters_type, (fee) (price_per_kbyte) )
 FC_REFLECT( graphene::chain::nft_metadata_update_operation::fee_parameters_type, (fee) )

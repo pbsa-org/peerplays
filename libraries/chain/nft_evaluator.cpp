@@ -33,6 +33,17 @@ void_result nft_metadata_create_evaluator::do_evaluate( const nft_metadata_creat
    if (op.max_supply) {
       FC_ASSERT(*op.max_supply >= 5);
    }
+
+   for(auto lottery_id: (*op.lottery_options).progressive_jackpots) {
+      const auto& lottery_obj = lottery_id(db());
+      FC_ASSERT(lottery_obj.owner == op.owner, "Only the Owner can attach progressive jackpots");
+      FC_ASSERT(lottery_obj.is_lottery(), "Only lottery objects can be attached as progressive jackpots");
+      FC_ASSERT(lottery_obj.lottery_data->lottery_options.is_active == false, "Lottery should not be active");
+      FC_ASSERT(lottery_obj.lottery_data->lottery_options.ticket_price.asset_id == (*op.lottery_options).ticket_price.asset_id, "Lottery asset type should be same");
+      const auto& lottery_balance_obj = lottery_obj.lottery_data->lottery_balance_id(db());
+      FC_ASSERT(lottery_balance_obj.jackpot.amount > 0, "Non zero progressive jackpot not allowed");
+   }
+
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -52,7 +63,21 @@ object_id_type nft_metadata_create_evaluator::do_apply( const nft_metadata_creat
          obj.max_supply = *op.max_supply;
       }
       if (op.lottery_options) {
-         obj.lottery_data = nft_lottery_data(*op.lottery_options);
+         asset jackpot_sum(0,(*op.lottery_options).ticket_price.asset_id);
+         for(auto lottery_id: (*op.lottery_options).progressive_jackpots) {
+            const auto& lottery_obj = lottery_id(db());
+            const auto& lottery_balance_obj = lottery_obj.lottery_data->lottery_balance_id(db());
+            FC_ASSERT(lottery_balance_obj.jackpot.amount > 0, "Non zero progressive jackpot not allowed");
+            db().modify(lottery_balance_obj, [&] ( nft_lottery_balance_object& nlbo ) {
+               jackpot_sum += nlbo.jackpot;
+               nlbo.jackpot -= nlbo.jackpot;
+            });
+         }
+         const auto& new_lottery_balance_obj = db().create<nft_lottery_balance_object>([&](nft_lottery_balance_object& nlbo) {
+            nlbo.total_progressive_jackpot = jackpot_sum;
+            nlbo.jackpot = jackpot_sum;
+         });
+         obj.lottery_data = nft_lottery_data(*op.lottery_options, new_lottery_balance_obj.id);
       }
    });
    return new_nft_metadata_object.id;
