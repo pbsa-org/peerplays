@@ -124,6 +124,19 @@ namespace graphene
                 db().modify(lottery_md_obj.lottery_data->lottery_balance_id(db()), [&](nft_lottery_balance_object &obj) {
                     obj.sweeps_tickets_sold = lottery_md_obj.get_token_current_supply(db());
                 });
+
+                if (lottery_md_obj.lottery_data->lottery_options.delete_tickets_after_draw)
+                {
+                    const auto &nft_index_by_md = db().get_index_type<nft_index>().indices().get<by_metadata>();
+                    auto delete_nft_itr = nft_index_by_md.lower_bound(op.lottery_id);
+                    while (delete_nft_itr != nft_index_by_md.end() && delete_nft_itr->nft_metadata_id == op.lottery_id)
+                    {
+                        const nft_object &nft_obj = *delete_nft_itr;
+                        ++delete_nft_itr;
+                        db().remove(nft_obj);
+                    }
+                }
+
                 return void_result();
             }
             FC_CAPTURE_AND_RETHROW((op))
