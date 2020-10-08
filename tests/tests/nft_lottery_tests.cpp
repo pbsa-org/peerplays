@@ -721,4 +721,122 @@ BOOST_AUTO_TEST_CASE(create_lottery_nft_md_delete_tickets_on_draw_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(create_lottery_nft_with_permission_test)
+{
+    try
+    {
+        generate_blocks(HARDFORK_NFT_TIME);
+        generate_block();
+        generate_block();
+        set_expiration(db, trx);
+        // Lottery Options
+        nft_metadata_id_type test_nft_md_id = db.get_index<nft_metadata_object>().get_next_id();
+        nft_lottery_options lottery_options;
+        lottery_options.benefactors.push_back(nft_lottery_benefactor(account_id_type(), 25 * GRAPHENE_1_PERCENT));
+        lottery_options.end_date = db.head_block_time() + fc::minutes(5);
+        lottery_options.ticket_price = asset(100);
+        lottery_options.winning_tickets = {5 * GRAPHENE_1_PERCENT, 5 * GRAPHENE_1_PERCENT, 5 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT, 10 * GRAPHENE_1_PERCENT};
+        //lottery_options.winning_tickets = { 75 * GRAPHENE_1_PERCENT };
+        lottery_options.is_active = test_nft_md_id.instance.value % 2 ? false : true;
+        lottery_options.ending_on_soldout = true;
+        lottery_options.delete_tickets_after_draw = true;
+
+        account_id_type buyer1(3);
+        account_id_type buyer2(6);
+        generate_block();
+        transfer(account_id_type(), buyer1, asset(1000000));
+        transfer(account_id_type(), buyer2, asset(1000000));
+        generate_block();
+
+        {
+            BOOST_TEST_MESSAGE("Send account_role_create_operation");
+
+            account_role_create_operation op;
+            op.owner = account_id_type();
+            op.name = "Test Account Role";
+            op.metadata = "{\"country\": \"earth\", \"race\": \"human\" }";
+
+            int ops[] = {operation::tag<nft_lottery_token_purchase_operation>::value};
+            op.allowed_operations.insert(ops, ops + 1);
+            op.whitelisted_accounts.emplace(buyer1);
+            op.valid_to = db.head_block_time() + 1000;
+
+            trx.operations.push_back(op);
+            PUSH_TX(db, trx, ~0);
+            trx.operations.clear();
+        }
+
+        {
+            BOOST_TEST_MESSAGE("Send nft_metadata_create_operation");
+            nft_metadata_create_operation op;
+            op.owner = account_id_type();
+            op.symbol = "NFTLOTTERY" + std::to_string(test_nft_md_id.instance.value);
+            op.base_uri = "http://nft.example.com";
+            op.is_transferable = true;
+            op.name = "NFTLOTTERY" + std::to_string(test_nft_md_id.instance.value);
+            op.max_supply = 200;
+            op.lottery_options = lottery_options;
+            op.account_role = account_role_id_type(0);
+
+            trx.operations.push_back(std::move(op));
+            PUSH_TX(db, trx, ~0);
+            trx.operations.clear();
+        }
+        generate_block();
+
+        BOOST_TEST_MESSAGE("Check nft_metadata_create_operation results");
+
+        auto test_nft_md_obj = test_nft_md_id(db);
+        BOOST_CHECK(test_nft_md_obj.owner == account_id_type());
+        BOOST_CHECK(test_nft_md_obj.name == "NFTLOTTERY" + std::to_string(test_nft_md_id.instance.value));
+        BOOST_CHECK(test_nft_md_obj.symbol == "NFTLOTTERY" + std::to_string(test_nft_md_id.instance.value));
+        BOOST_CHECK(test_nft_md_obj.base_uri == "http://nft.example.com");
+        BOOST_CHECK(test_nft_md_obj.max_supply == share_type(200));
+        BOOST_CHECK(test_nft_md_obj.is_lottery());
+        BOOST_CHECK(test_nft_md_obj.get_token_current_supply(db) == share_type(0));
+        BOOST_CHECK(test_nft_md_obj.get_lottery_jackpot(db) == asset());
+        BOOST_CHECK(test_nft_md_obj.lottery_data->lottery_balance_id(db).sweeps_tickets_sold == share_type(0));
+        BOOST_CHECK(test_nft_md_obj.account_role == account_role_id_type(0));
+
+        BOOST_CHECK(test_nft_md_obj.lottery_data->lottery_options.is_active);
+        
+        {
+            nft_lottery_token_purchase_operation tpo;
+            tpo.fee = asset();
+            tpo.buyer = buyer1;
+            tpo.lottery_id = test_nft_md_obj.id;
+            tpo.tickets_to_buy = 199;
+            tpo.amount = asset(199 * 100);
+            trx.operations.push_back(tpo);
+            set_expiration(db, trx);
+            PUSH_TX(db, trx, ~0);
+            trx.operations.clear();
+        }
+        generate_block();
+        test_nft_md_obj = test_nft_md_id(db);
+        BOOST_CHECK(test_nft_md_obj.lottery_data->lottery_options.is_active);
+        BOOST_CHECK(test_nft_md_obj.get_token_current_supply(db) == 199);
+        {
+            nft_lottery_token_purchase_operation tpo;
+            tpo.fee = asset();
+            tpo.buyer = buyer2;
+            tpo.lottery_id = test_nft_md_obj.id;
+            tpo.tickets_to_buy = 1;
+            tpo.amount = asset(1 * 100);
+            trx.operations.push_back(tpo);
+            set_expiration(db, trx);
+            BOOST_CHECK_THROW(PUSH_TX(db, trx, ~0), fc::exception);
+            trx.operations.clear();
+        }
+        generate_block();
+        test_nft_md_obj = test_nft_md_id(db);
+        BOOST_CHECK(test_nft_md_obj.get_token_current_supply(db) == 199);
+    }
+    catch (fc::exception &e)
+    {
+        edump((e.to_detail_string()));
+        throw;
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
