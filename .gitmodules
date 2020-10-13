@@ -7,3 +7,8 @@
     url = https://github.com/peerplays-network/peerplays-fc.git
     branch = latest-fc
     ignore = dirty
+[submodule "vendor/editline"]
+    path = vendor/editline
+    url = https://github.com/troglobit/editline.git
+
+	

@@ -1,3 +1,4 @@
+cmake_minimum_required( VERSION 2.8.12 )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/libraries/fc/GitVersionGen" )
 include( GetGitRevisionDescription )
 get_git_head_revision(GIT_REFSPEC GRAPHENE_GIT_REVISION_SHA)
