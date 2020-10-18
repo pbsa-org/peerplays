@@ -17,24 +17,15 @@ build:
     - git submodule update --init --recursive
     - rm -rf build
     - mkdir build
-    - mkdir build/debug
-    - mkdir build/release
-    - cd build/debug
-    - cmake -DCMAKE_BUILD_TYPE=Debug ../..
-    - make -j$(nproc)
-    - cd ../..
-    - cd build/release
-    - cmake -DCMAKE_BUILD_TYPE=Release ../..
+    - cd build
+    - cmake ..
     - make -j$(nproc)
   artifacts:
     untracked: true
     paths:
-      - build/debug/libraries/
-      - build/debug/programs/
-      - build/debug/tests/
-      - build/release/libraries/
-      - build/release/programs/
-      - build/release/tests/
+      - build/libraries/
+      - build/programs/
+      - build/tests/
   tags:
     - builder
 
@@ -43,11 +34,8 @@ test:
   dependencies:
     - build
   script:
-    - ./build/debug/tests/betting_test --log_level=message
-    - ./build/debug/tests/chain_test --log_level=message
-    - ./build/debug/tests/cli_test --log_level=message
-    - ./build/release/tests/betting_test --log_level=message
-    - ./build/release/tests/chain_test --log_level=message
-    - ./build/release/tests/cli_test --log_level=message
+    - ./build/tests/betting_test --log_level=message
+    - ./build/tests/chain_test --log_level=message
+    - ./build/tests/cli_test --log_level=message
   tags:
     - builder
