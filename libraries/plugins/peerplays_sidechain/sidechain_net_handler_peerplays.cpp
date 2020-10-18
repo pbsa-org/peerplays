@@ -13,6 +13,7 @@
 #include <fc/network/ip.hpp>
 
 #include <graphene/chain/account_object.hpp>
+#include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
@@ -149,7 +150,7 @@ void sidechain_net_handler_peerplays::process_sidechain_addresses() {
                               if (plugin.app().p2p_node())
                                  plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                               return true;
-                           } catch (fc::exception e) {
+                           } catch (fc::exception &e) {
                               elog("Sending transaction for update deposit address operation failed with exception ${e}", ("e", e.what()));
                               return false;
                            }
@@ -203,7 +204,7 @@ bool sidechain_net_handler_peerplays::process_deposit(const son_wallet_deposit_o
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
          return true;
-      } catch (fc::exception e) {
+      } catch (fc::exception &e) {
          elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
          return false;
       }
@@ -254,7 +255,7 @@ std::string sidechain_net_handler_peerplays::send_sidechain_transaction(const si
       if (plugin.app().p2p_node())
          plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       return trx.id().str();
-   } catch (fc::exception e) {
+   } catch (fc::exception &e) {
       elog("Sidechain transaction failed with exception ${e}", ("e", e.what()));
       return "";
    }
