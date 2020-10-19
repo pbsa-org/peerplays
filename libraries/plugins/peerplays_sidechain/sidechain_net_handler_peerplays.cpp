@@ -11,6 +11,7 @@
 #include <fc/crypto/hex.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
+#include <fc/smart_ref_impl.hpp>
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
