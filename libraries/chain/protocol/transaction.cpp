@@ -445,7 +445,7 @@ void signed_transaction::verify_authority(
    bool ignore_custom_operation_required_auths,
    uint32_t max_recursion )const
 { try {
-   graphene::chain::verify_authority( operations, get_signature_keys( chain_id ), get_active, get_owner, get_custom, max_recursion );
+   graphene::chain::verify_authority( operations, get_signature_keys( chain_id ), get_active, get_owner, get_custom, ignore_custom_operation_required_auths, max_recursion );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // graphene::chain
