@@ -2,3 +2,4 @@
 #ifndef HARDFORK_SON_TIME
 #include <ctime>
 #define HARDFORK_SON_TIME (fc::time_point_sec( 1603152000 ))
+#endif
