@@ -73,6 +73,10 @@ namespace graphene { namespace chain {
    struct chain_parameters
    {
       chain_parameters();
+      chain_parameters(const chain_parameters& other);
+      chain_parameters(chain_parameters&& other);
+      chain_parameters& operator=(const chain_parameters& other);
+      chain_parameters& operator=(chain_parameters&& other);
       /** using a smart ref breaks the circular dependency created between operations and the fee schedule */
       std::shared_ptr<fee_schedule> current_fees;                       ///< current schedule of fees
       uint8_t                 block_interval                      = GRAPHENE_DEFAULT_BLOCK_INTERVAL; ///< interval in seconds between blocks
@@ -208,6 +212,8 @@ namespace graphene { namespace chain {
       inline uint16_t maximum_son_count()const {
          return extensions.value.maximum_son_count.valid() ? *extensions.value.maximum_son_count : GRAPHENE_DEFAULT_MAX_SONS;
       }
+      private:
+      static void safe_copy(chain_parameters& to, const chain_parameters& from);
    };
 
 } }  // graphene::chain
