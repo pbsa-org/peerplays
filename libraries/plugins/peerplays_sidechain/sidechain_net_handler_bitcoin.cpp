@@ -874,7 +874,7 @@ std::vector<zmq::message_t> zmq_listener::receive_multipart() {
    size_t more_size = sizeof(more);
    while (true) {
       zmq::message_t msg;
-      socket.recv(msg);
+      socket.recv(&msg, 0);
       socket.getsockopt(ZMQ_RCVMORE, &more, &more_size);
 
       if (!more)
