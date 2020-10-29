@@ -1190,7 +1190,7 @@ uint32_t database::get_gpos_current_subperiod()
    const auto period_start = fc::time_point_sec(gpo.parameters.gpos_period_start());
 
    //  variables needed
-   const fc::time_point_sec period_end = period_start + vesting_period;
+   //const fc::time_point_sec period_end = period_start + vesting_period;
    const auto number_of_subperiods = vesting_period / vesting_subperiod;
    const auto now = this->head_block_time();
    auto seconds_since_period_start = now.sec_since_epoch() - period_start.sec_since_epoch();
@@ -1867,7 +1867,7 @@ void process_dividend_assets(database& db)
                   {
                      // if there was a previous payout, make our next payment one interval
                      uint32_t current_time_sec = current_head_block_time.sec_since_epoch();
-                     fc::time_point_sec reference_time = *dividend_data_obj.last_scheduled_payout_time;
+                     //fc::time_point_sec reference_time = *dividend_data_obj.last_scheduled_payout_time;
                      uint32_t next_possible_time_sec = dividend_data_obj.last_scheduled_payout_time->sec_since_epoch();
                      do
                         next_possible_time_sec += *dividend_data_obj.options.payout_interval;
