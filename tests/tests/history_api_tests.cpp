@@ -413,8 +413,8 @@ BOOST_AUTO_TEST_CASE(track_account) {
       // account_id_type() is not tracked
 
       // account_id_type() creates alice(not tracked account)
-      const account_object& alice = create_account("alice");
-      auto alice_id = alice.id;
+      //const account_object& alice = create_account("alice");
+      //auto alice_id = alice.id;
 
       //account_id_type() creates some ops
       create_bitasset("CNY", account_id_type());
@@ -501,8 +501,8 @@ BOOST_AUTO_TEST_CASE(track_account2) {
       create_bitasset("EUR", alice_id);
 
       // account_id_type() creates dan(account not tracked)
-      const account_object& dan = create_account("dan");
-      auto dan_id = dan.id;
+      //const account_object& dan = create_account("dan");
+      //auto dan_id = dan.id;
 
       generate_block();
 
