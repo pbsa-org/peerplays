@@ -183,6 +183,7 @@ namespace graphene { namespace chain {
       son_wallet_withdraw_object_type,
       sidechain_address_object_type,
       sidechain_transaction_object_type,
+      random_number_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -259,6 +260,7 @@ namespace graphene { namespace chain {
    class son_wallet_withdraw_object;
    class sidechain_address_object;
    class sidechain_transaction_object;
+   class random_number_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -298,6 +300,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, son_wallet_withdraw_object_type, son_wallet_withdraw_object>  son_wallet_withdraw_id_type;
    typedef object_id< protocol_ids, sidechain_address_object_type,  sidechain_address_object>     sidechain_address_id_type;
    typedef object_id< protocol_ids, sidechain_transaction_object_type,sidechain_transaction_object> sidechain_transaction_id_type;
+   typedef object_id< protocol_ids, random_number_object_type,      random_number_object>         random_number_id_type;
 
    // implementation types
    class global_property_object;
@@ -499,6 +502,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (son_wallet_withdraw_object_type)
                  (sidechain_address_object_type)
                  (sidechain_transaction_object_type)
+                 (random_number_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,
@@ -587,7 +591,7 @@ FC_REFLECT_TYPENAME( graphene::chain::son_wallet_deposit_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::son_wallet_withdraw_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::sidechain_address_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::sidechain_transaction_id_type )
-
+FC_REFLECT_TYPENAME( graphene::chain::random_number_id_type )
 
 FC_REFLECT( graphene::chain::void_t, )
 

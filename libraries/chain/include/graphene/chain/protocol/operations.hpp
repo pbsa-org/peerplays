@@ -57,6 +57,7 @@
 #include <graphene/chain/protocol/son_wallet_deposit.hpp>
 #include <graphene/chain/protocol/son_wallet_withdraw.hpp>
 #include <graphene/chain/protocol/sidechain_transaction.hpp>
+#include <graphene/chain/protocol/random_number.hpp>
 
 namespace graphene { namespace chain {
 
@@ -188,7 +189,8 @@ namespace graphene { namespace chain {
             sidechain_transaction_settle_operation,
             nft_lottery_token_purchase_operation,
             nft_lottery_reward_operation,
-            nft_lottery_end_operation
+            nft_lottery_end_operation,
+            random_number_store_operation
          > operation;
 
    /// @} // operations group

@@ -234,7 +234,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<offer_history_object> get_offer_history_by_item(const offer_history_id_type lower_id, const nft_id_type item, uint32_t limit) const;
       vector<offer_history_object> get_offer_history_by_bidder(const offer_history_id_type lower_id, const account_id_type bidder_account_id, uint32_t limit) const;
 
-
       uint32_t api_limit_get_lower_bound_symbol = 100;
       uint32_t api_limit_get_limit_orders = 300;
       uint32_t api_limit_get_limit_orders_by_account = 101;
@@ -248,6 +247,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       
       // Account Role
       vector<account_role_object> get_account_roles_by_owner(account_id_type owner) const;
+      // rng
+      vector<uint64_t> get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const;
+      uint64_t get_random_number(uint64_t bound) const;
 
    //private:
       const account_object* get_account_from_string( const std::string& name_or_id,
@@ -3185,6 +3187,59 @@ vector<account_role_object> database_api_impl::get_account_roles_by_owner(accoun
    }
    return result;
 }
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Random numbers                                                   //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+vector<uint64_t> database_api::get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const
+{
+   return my->get_random_number_ex(minimum, maximum, selections, duplicates);
+}
+
+vector<uint64_t> database_api_impl::get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const
+{
+   FC_ASSERT( selections <= 100000 );
+   if (duplicates == false) {
+      FC_ASSERT( maximum - minimum >= selections );
+   }
+
+   vector<uint64_t> v;
+   v.reserve(selections);
+
+   if (duplicates) {
+      for (uint64_t i = 0; i < selections; i++) {
+         int64_t rnd = _db.get_random_bits(maximum - minimum) + minimum;
+         v.push_back(rnd);
+      }
+   } else {
+      vector<uint64_t> tmpv;
+      tmpv.reserve(selections);
+      for (uint64_t i = minimum; i < maximum; i++) {
+         tmpv.push_back(i);
+      }
+
+      for (uint64_t i = 0; (i < selections) && (tmpv.size() > 0); i++) {
+         uint64_t idx = _db.get_random_bits(tmpv.size());
+         v.push_back(tmpv.at(idx));
+         tmpv.erase(tmpv.begin() + idx);
+      }
+   }
+
+   return v;
+}
+
+uint64_t database_api::get_random_number(uint64_t bound) const
+{
+   return my->get_random_number(bound);
+}
+
+uint64_t database_api_impl::get_random_number(uint64_t bound) const {
+    vector<uint64_t> v = get_random_number_ex(0, bound, 1, false);
+    return v.at(0);
+}
+
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
 // Private methods                                                  //

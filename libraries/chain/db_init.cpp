@@ -53,6 +53,7 @@
 #include <graphene/chain/custom_account_authority_object.hpp>
 #include <graphene/chain/offer_object.hpp>
 #include <graphene/chain/account_role_object.hpp>
+#include <graphene/chain/random_number_object.hpp>
 
 #include <graphene/chain/nft_object.hpp>
 
@@ -101,6 +102,7 @@
 #include <graphene/chain/son_wallet_withdraw_evaluator.hpp>
 #include <graphene/chain/sidechain_address_evaluator.hpp>
 #include <graphene/chain/sidechain_transaction_evaluator.hpp>
+#include <graphene/chain/random_number_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -206,6 +208,9 @@ const uint8_t account_role_object::type_id;
 
 const uint8_t nft_lottery_balance_object::space_id;
 const uint8_t nft_lottery_balance_object::type_id;
+
+const uint8_t random_number_object::space_id;
+const uint8_t random_number_object::type_id;
 
 void database::initialize_evaluators()
 {
@@ -321,6 +326,7 @@ void database::initialize_evaluators()
    register_evaluator<sidechain_transaction_sign_evaluator>();
    register_evaluator<sidechain_transaction_send_evaluator>();
    register_evaluator<sidechain_transaction_settle_evaluator>();
+   register_evaluator<random_number_store_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -412,6 +418,7 @@ void database::initialize_indexes()
    add_index< primary_index<offer_history_index                           > >();
    add_index< primary_index<nft_lottery_balance_index                     > >();
    add_index< primary_index<son_stats_index                               > >();
+   add_index< primary_index<random_number_index                           > >();
 
 }
 

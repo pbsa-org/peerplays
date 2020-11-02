@@ -423,6 +423,9 @@ struct get_impacted_account_visitor
    void operator()( const sidechain_transaction_settle_operation& op ) {
       _impacted.insert( op.payer );
    }
+   void operator()( const random_number_store_operation& op ) {
+      _impacted.insert( op.account );
+   }
 };
 
 void graphene::chain::operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result, bool ignore_custom_operation_required_auths ) {
