@@ -3200,34 +3200,7 @@ vector<uint64_t> database_api::get_random_number_ex(uint64_t minimum, uint64_t m
 
 vector<uint64_t> database_api_impl::get_random_number_ex(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates) const
 {
-   FC_ASSERT( selections <= 100000 );
-   if (duplicates == false) {
-      FC_ASSERT( maximum - minimum >= selections );
-   }
-
-   vector<uint64_t> v;
-   v.reserve(selections);
-
-   if (duplicates) {
-      for (uint64_t i = 0; i < selections; i++) {
-         int64_t rnd = _db.get_random_bits(maximum - minimum) + minimum;
-         v.push_back(rnd);
-      }
-   } else {
-      vector<uint64_t> tmpv;
-      tmpv.reserve(selections);
-      for (uint64_t i = minimum; i < maximum; i++) {
-         tmpv.push_back(i);
-      }
-
-      for (uint64_t i = 0; (i < selections) && (tmpv.size() > 0); i++) {
-         uint64_t idx = _db.get_random_bits(tmpv.size());
-         v.push_back(tmpv.at(idx));
-         tmpv.erase(tmpv.begin() + idx);
-      }
-   }
-
-   return v;
+   return _db.get_random_numbers(minimum, maximum, selections, duplicates);
 }
 
 uint64_t database_api::get_random_number(uint64_t bound) const

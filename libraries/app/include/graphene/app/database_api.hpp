@@ -934,7 +934,7 @@ class database_api
       // ACCOUNT ROLE //
       //////////////////
       vector<account_role_object> get_account_roles_by_owner(account_id_type owner) const;
-private:
+
       /////////////////////////////
       // Random number generator //
       /////////////////////////////

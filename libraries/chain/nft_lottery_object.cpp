@@ -89,7 +89,8 @@ namespace graphene
                     structurized_participants.emplace(holder, vector<uint16_t>());
             }
             uint64_t jackpot = get_lottery_jackpot(db).amount.value;
-            auto winner_numbers = db.get_winner_numbers(id, holders.size(), lottery_options.winning_tickets.size());
+            auto selections = lottery_options.winning_tickets.size() <= holders.size() ? lottery_options.winning_tickets.size() : holders.size();
+            auto winner_numbers = db.get_random_numbers(0, holders.size(), selections, false);
 
             auto &tickets(lottery_options.winning_tickets);
 
