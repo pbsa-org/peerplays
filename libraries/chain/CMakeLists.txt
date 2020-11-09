@@ -11,15 +11,15 @@ file(GLOB PROTOCOL_HEADERS "include/graphene/chain/protocol/*.hpp")
 file(GLOB CPP_FILES "*.cpp")
 file(GLOB PROTOCOL_CPP_FILES "protocol/*.cpp")
 
-if( GRAPHENE_DISABLE_UNITY_BUILD )
+#if( GRAPHENE_DISABLE_UNITY_BUILD )
    list(FILTER CPP_FILES EXCLUDE REGEX "[/]database[.]cpp$")
    #message ("--- ${CPP_FILES}")
    message( STATUS "Graphene database unity build disabled" )
-else( GRAPHENE_DISABLE_UNITY_BUILD )
-   list(FILTER CPP_FILES EXCLUDE REGEX ".*db_.*[.]cpp$")
-   #message ("--- ${CPP_FILES}")
-   message( STATUS "Graphene database unity build enabled" )
-endif( GRAPHENE_DISABLE_UNITY_BUILD )
+#else( GRAPHENE_DISABLE_UNITY_BUILD )
+#   list(FILTER CPP_FILES EXCLUDE REGEX ".*db_.*[.]cpp$")
+#   #message ("--- ${CPP_FILES}")
+#   message( STATUS "Graphene database unity build enabled" )
+#endif( GRAPHENE_DISABLE_UNITY_BUILD )
 
 add_library( graphene_chain
              ${CPP_FILES}

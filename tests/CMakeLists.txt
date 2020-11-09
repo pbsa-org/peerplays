@@ -26,7 +26,7 @@ target_link_libraries( chain_bench PRIVATE graphene_tests_common ${PLATFORM_SPEC
 
 file(GLOB APP_SOURCES "app/*.cpp")
 add_executable( app_test ${APP_SOURCES} )
-target_link_libraries( app_test PRIVATE graphene_tests_common ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( app_test PRIVATE graphene_tests_common graphene_witness ${PLATFORM_SPECIFIC_LIBS} )
 
 file(GLOB INTENSE_SOURCES "intense/*.cpp")
 add_executable( intense_test ${INTENSE_SOURCES} )
@@ -38,7 +38,7 @@ target_link_libraries( betting_test PRIVATE graphene_tests_common ${PLATFORM_SPE
 
 file(GLOB PEERPLAYS_SIDECHAIN_TESTS "peerplays_sidechain/*.cpp")
 add_executable( peerplays_sidechain_test ${PEERPLAYS_SIDECHAIN_TESTS} )
-target_link_libraries( peerplays_sidechain_test PRIVATE graphene_tests_common ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( peerplays_sidechain_test PRIVATE graphene_tests_common peerplays_sidechain ${PLATFORM_SPECIFIC_LIBS} )
 
 file(GLOB TOURNAMENT_TESTS "tournament/*.cpp")
 add_executable( tournament_test ${TOURNAMENT_TESTS} )
@@ -53,7 +53,7 @@ add_executable( cli_test ${CLI_SOURCES} )
 if(WIN32)
     list(APPEND PLATFORM_SPECIFIC_LIBS ws2_32)
 endif()
-target_link_libraries( cli_test PRIVATE graphene_wallet graphene_tests_common ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( cli_test PRIVATE graphene_wallet graphene_tests_common graphene_witness ${PLATFORM_SPECIFIC_LIBS} )
 if(MSVC)
     set_source_files_properties( cli/main.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
 endif(MSVC)

@@ -10,7 +10,7 @@ if( GPERFTOOLS_FOUND )
 endif()
 
 target_link_libraries( delayed_node
-                       PRIVATE graphene_app graphene_egenesis_full ${PLATFORM_SPECIFIC_LIBS} )
+                       PRIVATE graphene_app graphene_egenesis_full graphene_delayed_node ${PLATFORM_SPECIFIC_LIBS} )
 
 install( TARGETS
    delayed_node
