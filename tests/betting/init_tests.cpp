@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Cryptonomex, Inc., and contributors.
+ * Copyright (c) 2019 PBSA, and contributors.
  *
  * The MIT License
  *
@@ -21,12 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdlib>
-#include <iostream>
-#include <boost/test/unit_test.hpp>
 
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]) {
-   std::srand(time(NULL));
-   std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
-   return nullptr;
-}
+#define BOOST_TEST_MODULE "Betting Tests"
+#include <boost/test/unit_test.hpp>

@@ -62,4 +62,10 @@ file(GLOB ES_SOURCES "elasticsearch/*.cpp")
 add_executable( es_test ${ES_SOURCES} )
 target_link_libraries( es_test PRIVATE graphene_tests_common )
 
+list(FILTER UNIT_TESTS EXCLUDE REGEX "[/]init_tests[.]cpp$")
+list(FILTER BETTING_TESTS EXCLUDE REGEX "[/]init_tests[.]cpp$")
+list(FILTER CLI_SOURCES EXCLUDE REGEX "[/]init_tests[.]cpp$")
+add_executable( all_graphene_tests ./all_graphene_tests/init_tests.cpp ${UNIT_TESTS} ${BETTING_TESTS} ${CLI_SOURCES} )
+target_link_libraries( all_graphene_tests PRIVATE graphene_wallet graphene_witness graphene_tests_common ${PLATFORM_SPECIFIC_LIBS} )
+
 add_subdirectory( generate_empty_blocks )

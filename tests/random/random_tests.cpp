@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_SUITE_END()
 //#define BOOST_TEST_MODULE "C++ Unit Tests for Graphene Blockchain Database"
 #include <cstdlib>
 #include <iostream>
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]) {
     for (int i=1; i<argc; i++)

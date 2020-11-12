@@ -147,10 +147,10 @@ else( WIN32 ) # Apple AND Linux
 
 endif( WIN32 )
 
-set(ENABLE_COVERAGE_TESTING FALSE CACHE BOOL "Build Peerplays for code coverage analysis")
+#set(ENABLE_COVERAGE_TESTING FALSE CACHE BOOL "Build Peerplays for code coverage analysis")
 
 if(ENABLE_COVERAGE_TESTING)
-    SET(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -O0")
 endif()
 
 add_subdirectory( libraries )

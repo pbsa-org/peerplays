@@ -5,7 +5,7 @@
 BOOST_AUTO_TEST_CASE(peerplays_sidechain) {
 }
 
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 #include <cstdlib>
 #include <iostream>
 

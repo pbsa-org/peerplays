@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Cryptonomex, Inc., and contributors.
+ * Copyright (c) 2019 PBSA, and contributors.
  *
  * The MIT License
  *
@@ -21,20 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdlib>
-#include <iostream>
-#include <boost/test/included/unit_test.hpp>
 
-extern uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP;
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]) {
-   std::srand(time(NULL));
-   std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
-   const char* genesis_timestamp_str = getenv("GRAPHENE_TESTING_GENESIS_TIMESTAMP");
-   if( genesis_timestamp_str != nullptr )
-   {
-      GRAPHENE_TESTING_GENESIS_TIMESTAMP = std::stoul( genesis_timestamp_str );
-   }
-   std::cout << "GRAPHENE_TESTING_GENESIS_TIMESTAMP is " << GRAPHENE_TESTING_GENESIS_TIMESTAMP << std::endl;
-   return nullptr;
-}
+#define BOOST_TEST_MODULE CLI Tests
+#include <boost/test/unit_test.hpp>

@@ -32,7 +32,7 @@
 #include "../common/database_fixture.hpp"
 
 #define BOOST_TEST_MODULE Elastic Search Database Tests
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 using namespace graphene::chain;
 using namespace graphene::chain::test;

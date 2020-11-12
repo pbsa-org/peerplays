@@ -18,7 +18,7 @@ build:
     - rm -rf build
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release ..
+    - cmake -DENABLE_COVERAGE_TESTING=true ..
     - make -j$(nproc)
   artifacts:
     untracked: true
@@ -34,8 +34,13 @@ test:
   dependencies:
     - build
   script:
-    - ./build/tests/betting_test --log_level=message
-    - ./build/tests/chain_test --log_level=message
-    - ./build/tests/cli_test --log_level=message
+    - ./build/tests/all_graphene_tests --log_level=message
+    - lcov --capture --directory ./build/ --output-file ./build/coverage.info
+    - genhtml --output-directory ./build/coverage ./build/coverage.info
+  artifacts:
+    untracked: true
+    paths:
+      - build/coverage
+      - build/coverage.info
   tags:
     - builder
