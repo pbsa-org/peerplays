@@ -20,12 +20,6 @@ build:
     - cd build
     - cmake -DENABLE_COVERAGE_TESTING=true ..
     - make -j$(nproc)
-  artifacts:
-    untracked: true
-    paths:
-      - build/libraries/
-      - build/programs/
-      - build/tests/
   tags:
     - builder
 
