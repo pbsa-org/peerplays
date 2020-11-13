@@ -174,7 +174,7 @@ struct database_fixture {
    bool skip_key_index_test = false;
    uint32_t anon_acct_count;
 
-   database_fixture();
+   database_fixture(uint32_t GrapheneTestingGenesisTimestamp = GRAPHENE_TESTING_GENESIS_TIMESTAMP);
    ~database_fixture();
 
    static fc::ecc::private_key generate_private_key(string seed);
