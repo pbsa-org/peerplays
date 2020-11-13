@@ -38,7 +38,7 @@ test:
   artifacts:
     untracked: true
     paths:
-      - build/coverage
+      - build/coverage/
       - build/coverage.info
   tags:
     - builder
