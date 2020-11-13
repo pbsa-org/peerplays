@@ -242,81 +242,81 @@ using namespace graphene::chain::keywords;
 
 BOOST_FIXTURE_TEST_SUITE( betting_tests, database_fixture )
 
-BOOST_AUTO_TEST_CASE(try_create_sport)
-{
-   try
-   {
-      sport_create_operation sport_create_op;
-      sport_create_op.name = {{"en", "Ice Hockey"}, {"zh_Hans", "冰球"}, {"ja", "アイスホッケー"}};
+//BOOST_AUTO_TEST_CASE(try_create_sport)
+//{
+//   try
+//   {
+//      sport_create_operation sport_create_op;
+//      sport_create_op.name = {{"en", "Ice Hockey"}, {"zh_Hans", "冰球"}, {"ja", "アイスホッケー"}};
+//
+//      proposal_id_type proposal_id = propose_operation(sport_create_op);
+//
+//      const auto& active_witnesses = db.get_global_properties().active_witnesses;
+//      int voting_count = active_witnesses.size() / 2;
+//
+//      // 5 for
+//      std::vector<witness_id_type> witnesses;
+//      for (const witness_id_type& witness_id : active_witnesses)
+//      {
+//         witnesses.push_back(witness_id);
+//         if (--voting_count == 0)
+//            break;
+//      }
+//      process_proposal_by_witnesses(witnesses, proposal_id);
+//
+//      // 1st out
+//      witnesses.clear();
+//      auto itr = active_witnesses.begin();
+//      witnesses.push_back(*itr);
+//      process_proposal_by_witnesses(witnesses, proposal_id, true);
+//
+//      const auto& sport_index = db.get_index_type<sport_object_index>().indices().get<by_id>();
+//      // not yet approved
+//      BOOST_REQUIRE(sport_index.rbegin() == sport_index.rend());
+//
+//      // 6th for
+//      witnesses.clear();
+//      itr += 5;
+//      witnesses.push_back(*itr);
+//      process_proposal_by_witnesses(witnesses, proposal_id);
+//
+//      // not yet approved
+//      BOOST_REQUIRE(sport_index.rbegin() == sport_index.rend());
+//
+//      // 7th for
+//      witnesses.clear();
+//      ++itr;
+//      witnesses.push_back(*itr);
+//      process_proposal_by_witnesses(witnesses, proposal_id);
+//
+//      // done
+//      BOOST_REQUIRE(sport_index.rbegin() != sport_index.rend());
+//      sport_id_type sport_id = (*sport_index.rbegin()).id;
+//      BOOST_REQUIRE(sport_id == sport_id_type());
+//
+//   } FC_LOG_AND_RETHROW()
+//}
 
-      proposal_id_type proposal_id = propose_operation(sport_create_op);
-
-      const auto& active_witnesses = db.get_global_properties().active_witnesses;
-      int voting_count = active_witnesses.size() / 2;
-
-      // 5 for
-      std::vector<witness_id_type> witnesses;
-      for (const witness_id_type& witness_id : active_witnesses)
-      {
-         witnesses.push_back(witness_id);
-         if (--voting_count == 0)
-            break;
-      }
-      process_proposal_by_witnesses(witnesses, proposal_id);
-
-      // 1st out
-      witnesses.clear();
-      auto itr = active_witnesses.begin();
-      witnesses.push_back(*itr);
-      process_proposal_by_witnesses(witnesses, proposal_id, true);
-
-      const auto& sport_index = db.get_index_type<sport_object_index>().indices().get<by_id>();
-      // not yet approved
-      BOOST_REQUIRE(sport_index.rbegin() == sport_index.rend());
-
-      // 6th for
-      witnesses.clear();
-      itr += 5;
-      witnesses.push_back(*itr);
-      process_proposal_by_witnesses(witnesses, proposal_id);
-
-      // not yet approved
-      BOOST_REQUIRE(sport_index.rbegin() == sport_index.rend());
-
-      // 7th for
-      witnesses.clear();
-      ++itr;
-      witnesses.push_back(*itr);
-      process_proposal_by_witnesses(witnesses, proposal_id);
-
-      // done
-      BOOST_REQUIRE(sport_index.rbegin() != sport_index.rend());
-      sport_id_type sport_id = (*sport_index.rbegin()).id;
-      BOOST_REQUIRE(sport_id == sport_id_type());
-
-   } FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE(simple_bet_win)
-{
-   try
-   {
-      ACTORS( (alice)(bob) );
-      CREATE_ICE_HOCKEY_BETTING_MARKET(false, 0);
-
-      // give alice and bob 10k each
-      transfer(account_id_type(), alice_id, asset(10000));
-      transfer(account_id_type(), bob_id, asset(10000));
-
-      // place bets at 10:1
-      place_bet(bob_id, capitals_win_market.id, bet_type::lay, asset(100, asset_id_type()), 11 * GRAPHENE_BETTING_ODDS_PRECISION);
-      place_bet(alice_id, capitals_win_market.id, bet_type::back, asset(1000, asset_id_type()), 11 * GRAPHENE_BETTING_ODDS_PRECISION);
-
-      // reverse positions at 1:1
-      place_bet(bob_id, capitals_win_market.id, bet_type::back, asset(1100, asset_id_type()), 2 * GRAPHENE_BETTING_ODDS_PRECISION);
-      place_bet(alice_id, capitals_win_market.id, bet_type::lay, asset(1100, asset_id_type()), 2 * GRAPHENE_BETTING_ODDS_PRECISION);
-   } FC_LOG_AND_RETHROW()
-}
+//BOOST_AUTO_TEST_CASE(simple_bet_win)
+//{
+//   try
+//   {
+//      ACTORS( (alice)(bob) );
+//      CREATE_ICE_HOCKEY_BETTING_MARKET(false, 0);
+//
+//      // give alice and bob 10k each
+//      transfer(account_id_type(), alice_id, asset(10000));
+//      transfer(account_id_type(), bob_id, asset(10000));
+//
+//      // place bets at 10:1
+//      place_bet(bob_id, capitals_win_market.id, bet_type::lay, asset(100, asset_id_type()), 11 * GRAPHENE_BETTING_ODDS_PRECISION);
+//      place_bet(alice_id, capitals_win_market.id, bet_type::back, asset(1000, asset_id_type()), 11 * GRAPHENE_BETTING_ODDS_PRECISION);
+//
+//      // reverse positions at 1:1
+//      place_bet(bob_id, capitals_win_market.id, bet_type::back, asset(1100, asset_id_type()), 2 * GRAPHENE_BETTING_ODDS_PRECISION);
+//      place_bet(alice_id, capitals_win_market.id, bet_type::lay, asset(1100, asset_id_type()), 2 * GRAPHENE_BETTING_ODDS_PRECISION);
+//   } FC_LOG_AND_RETHROW()
+//}
 
 BOOST_AUTO_TEST_CASE(binned_order_books)
 {
