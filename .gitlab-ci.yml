@@ -33,12 +33,14 @@ test:
     - build
   script:
     - ./build/tests/all_graphene_tests --log_level=message
-    - lcov --capture --directory ./build/ --output-file ./build/coverage.info
+    - lcov --capture --directory ./build/ --output-file ./build/coverage.tmp.info
+    - lcov --remove ./build/coverage.tmp.info "/usr/*" --output-file ./build/coverage.info
     - genhtml --output-directory ./build/coverage ./build/coverage.info
   artifacts:
     untracked: true
     paths:
       - build/coverage/
       - build/coverage.info
+      - build/coverage.tmp.info
   tags:
     - builder
