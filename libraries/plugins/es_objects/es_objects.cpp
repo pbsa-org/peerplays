@@ -42,6 +42,7 @@
 #include <graphene/chain/son_wallet_object.hpp>
 #include <graphene/chain/son_wallet_deposit_object.hpp>
 #include <graphene/chain/son_wallet_withdraw_object.hpp>
+#include <graphene/chain/transaction_object.hpp>
 #include <graphene/chain/vesting_balance_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/worker_object.hpp>
@@ -81,6 +82,7 @@ class es_objects_plugin_impl
       bool _es_objects_committee_member = true;
       bool _es_objects_nft = true;
       bool _es_objects_son = true;
+      bool _es_objects_transaction = true;
       bool _es_objects_vesting_balance = true;
       bool _es_objects_witness = true;
       bool _es_objects_worker = true;
@@ -229,6 +231,14 @@ bool es_objects_plugin_impl::genesis()
          auto obj = db.find_object(o.id);
          auto b = static_cast<const son_wallet_withdraw_object *>(obj);
          prepareTemplate<son_wallet_withdraw_object>(*b, "son_wallet_withdraw");
+      });
+   }
+   if (_es_objects_transaction) {
+      auto &idx = db.get_index_type<graphene::chain::transaction_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const transaction_object *>(obj);
+         prepareTemplate<transaction_object>(*b, "transaction");
       });
    }
    if (_es_objects_vesting_balance) {
@@ -449,6 +459,15 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<son_wallet_withdraw_object>(*ba, "son_wallet_withdraw");
             }
+         } else if (value.is<transaction_object>() && _es_objects_transaction) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const transaction_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "transaction");
+               else
+                  prepareTemplate<transaction_object>(*ba, "transaction");
+            }
          } else if (value.is<vesting_balance_object>() && _es_objects_vesting_balance) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const vesting_balance_object *>(obj);
@@ -592,7 +611,8 @@ void es_objects_plugin::plugin_set_program_options(
          ("es-objects-committee-member", boost::program_options::value<bool>(), "Store committee member objects(true)")
          ("es-objects-nft", boost::program_options::value<bool>(), "Store nft objects (true)")
          ("es-objects-son", boost::program_options::value<bool>(), "Store son objects (true)")
-         ("es-objects-vesting_balance", boost::program_options::value<bool>(), "Store vesting balance objects (true)")
+         ("es-objects-transaction", boost::program_options::value<bool>(), "Store transaction objects (true)")
+         ("es-objects-vesting-balance", boost::program_options::value<bool>(), "Store vesting balance objects (true)")
          ("es-objects-witness", boost::program_options::value<bool>(), "Store witness objects (true)")
          ("es-objects-worker", boost::program_options::value<bool>(), "Store worker objects (true)")
          ("es-objects-index-prefix", boost::program_options::value<std::string>(),
@@ -636,6 +656,30 @@ void es_objects_plugin::plugin_initialize(const boost::program_options::variable
    }
    if (options.count("es-objects-asset-bitasset")) {
       my->_es_objects_asset_bitasset = options["es-objects-asset-bitasset"].as<bool>();
+   }
+   if (options.count("es-objects-account-role")) {
+      my->_es_objects_balances = options["es-objects-account-role"].as<bool>();
+   }
+   if (options.count("es-objects-committee-member")) {
+      my->_es_objects_balances = options["es-objects-committee-member"].as<bool>();
+   }
+   if (options.count("es-objects-nft")) {
+      my->_es_objects_balances = options["es-objects-nft"].as<bool>();
+   }
+   if (options.count("es-objects-son")) {
+      my->_es_objects_balances = options["es-objects-son"].as<bool>();
+   }
+   if (options.count("es-objects-transaction")) {
+      my->_es_objects_balances = options["es-objects-transaction"].as<bool>();
+   }
+   if (options.count("es-objects-vesting-balance")) {
+      my->_es_objects_balances = options["es-objects-vesting-balance"].as<bool>();
+   }
+   if (options.count("es-objects-witness")) {
+      my->_es_objects_balances = options["es-objects-witness"].as<bool>();
+   }
+   if (options.count("es-objects-worker")) {
+      my->_es_objects_balances = options["es-objects-worker"].as<bool>();
    }
    if (options.count("es-objects-index-prefix")) {
       my->_es_objects_index_prefix = options["es-objects-index-prefix"].as<std::string>();
