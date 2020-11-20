@@ -80,15 +80,7 @@ class es_objects_plugin_impl
       bool _es_objects_account_role = true;
       bool _es_objects_committee_member = true;
       bool _es_objects_nft = true;
-      bool _es_objects_nft_metadata = true;
-      bool _es_objects_offer = true;
-      bool _es_objects_sidechain_address = true;
-      bool _es_objects_sidechain_transaction = true;
       bool _es_objects_son = true;
-      bool _es_objects_son_proposal = true;
-      bool _es_objects_son_wallet = true;
-      bool _es_objects_son_wallet_deposit = true;
-      bool _es_objects_son_wallet_withdraw = true;
       bool _es_objects_vesting_balance = true;
       bool _es_objects_witness = true;
       bool _es_objects_worker = true;
@@ -167,7 +159,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<nft_object>(*b, "nft");
       });
    }
-   if (_es_objects_nft_metadata) {
+   if (_es_objects_nft) {
       auto &idx = db.get_index_type<graphene::chain::nft_metadata_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -175,7 +167,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<nft_metadata_object>(*b, "nft_metadata");
       });
    }
-   if (_es_objects_offer) {
+   if (_es_objects_nft) {
       auto &idx = db.get_index_type<graphene::chain::offer_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -183,7 +175,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<offer_object>(*b, "offer");
       });
    }
-   if (_es_objects_sidechain_address) {
+   if (_es_objects_son) {
       auto &idx = db.get_index_type<graphene::chain::sidechain_address_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -191,7 +183,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<sidechain_address_object>(*b, "sidechain_address");
       });
    }
-   if (_es_objects_sidechain_transaction) {
+   if (_es_objects_son) {
       auto &idx = db.get_index_type<graphene::chain::sidechain_transaction_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -207,7 +199,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<son_object>(*b, "son");
       });
    }
-   if (_es_objects_son_proposal) {
+   if (_es_objects_son) {
       auto &idx = db.get_index_type<graphene::chain::son_proposal_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -215,7 +207,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<son_proposal_object>(*b, "son_proposal");
       });
    }
-   if (_es_objects_son_wallet) {
+   if (_es_objects_son) {
       auto &idx = db.get_index_type<graphene::chain::son_wallet_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -223,7 +215,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<son_wallet_object>(*b, "son_wallet");
       });
    }
-   if (_es_objects_son_wallet_deposit) {
+   if (_es_objects_son) {
       auto &idx = db.get_index_type<graphene::chain::son_wallet_deposit_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -231,7 +223,7 @@ bool es_objects_plugin_impl::genesis()
          prepareTemplate<son_wallet_deposit_object>(*b, "son_wallet_deposit");
       });
    }
-   if (_es_objects_son_wallet_withdraw) {
+   if (_es_objects_son) {
       auto &idx = db.get_index_type<graphene::chain::son_wallet_withdraw_index>();
       idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
          auto obj = db.find_object(o.id);
@@ -376,7 +368,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<nft_object>(*ba, "nft");
             }
-         } else if (value.is<nft_metadata_object>() && _es_objects_nft_metadata) {
+         } else if (value.is<nft_metadata_object>() && _es_objects_nft) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const nft_metadata_object *>(obj);
             if (ba != nullptr) {
@@ -385,7 +377,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<nft_metadata_object>(*ba, "nft_metadata");
             }
-         } else if (value.is<offer_object>() && _es_objects_offer) {
+         } else if (value.is<offer_object>() && _es_objects_nft) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const offer_object *>(obj);
             if (ba != nullptr) {
@@ -394,7 +386,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<offer_object>(*ba, "offer");
             }
-         } else if (value.is<sidechain_address_object>() && _es_objects_sidechain_address) {
+         } else if (value.is<sidechain_address_object>() && _es_objects_son) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const sidechain_address_object *>(obj);
             if (ba != nullptr) {
@@ -403,7 +395,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<sidechain_address_object>(*ba, "sidechain_address");
             }
-         } else if (value.is<sidechain_transaction_object>() && _es_objects_sidechain_transaction) {
+         } else if (value.is<sidechain_transaction_object>() && _es_objects_son) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const sidechain_transaction_object *>(obj);
             if (ba != nullptr) {
@@ -421,7 +413,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<son_object>(*ba, "son");
             }
-         } else if (value.is<son_proposal_object>() && _es_objects_son_proposal) {
+         } else if (value.is<son_proposal_object>() && _es_objects_son) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const son_proposal_object *>(obj);
             if (ba != nullptr) {
@@ -430,7 +422,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<son_proposal_object>(*ba, "son_proposal");
             }
-         } else if (value.is<son_wallet_object>() && _es_objects_son_wallet) {
+         } else if (value.is<son_wallet_object>() && _es_objects_son) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const son_wallet_object *>(obj);
             if (ba != nullptr) {
@@ -439,7 +431,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<son_wallet_object>(*ba, "son_wallet");
             }
-         } else if (value.is<son_wallet_deposit_object>() && _es_objects_son_wallet_deposit) {
+         } else if (value.is<son_wallet_deposit_object>() && _es_objects_son) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const son_wallet_deposit_object *>(obj);
             if (ba != nullptr) {
@@ -448,7 +440,7 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                else
                   prepareTemplate<son_wallet_deposit_object>(*ba, "son_wallet_deposit");
             }
-         } else if (value.is<son_wallet_withdraw_object>() && _es_objects_son_wallet_withdraw) {
+         } else if (value.is<son_wallet_withdraw_object>() && _es_objects_son) {
             auto obj = db.find_object(value);
             auto ba = static_cast<const son_wallet_withdraw_object *>(obj);
             if (ba != nullptr) {
@@ -595,7 +587,14 @@ void es_objects_plugin::plugin_set_program_options(
          ("es-objects-assets", boost::program_options::value<bool>(), "Store asset objects(true)")
          ("es-objects-balances", boost::program_options::value<bool>(), "Store balances objects(true)")
          ("es-objects-limit-orders", boost::program_options::value<bool>(), "Store limit order objects(false)")
-         ("es-objects-asset-bitasset", boost::program_options::value<bool>(), "Store feed data(true)")
+         ("es-objects-bitasset", boost::program_options::value<bool>(), "Store feed data(true)")
+         ("es-objects-account-role", boost::program_options::value<bool>(), "Store account role objects (true)")
+         ("es-objects-committee-member", boost::program_options::value<bool>(), "Store committee member objects(true)")
+         ("es-objects-nft", boost::program_options::value<bool>(), "Store nft objects (true)")
+         ("es-objects-son", boost::program_options::value<bool>(), "Store son objects (true)")
+         ("es-objects-vesting_balance", boost::program_options::value<bool>(), "Store vesting balance objects (true)")
+         ("es-objects-witness", boost::program_options::value<bool>(), "Store witness objects (true)")
+         ("es-objects-worker", boost::program_options::value<bool>(), "Store worker objects (true)")
          ("es-objects-index-prefix", boost::program_options::value<std::string>(),
                "Add a prefix to the index(ppobjects-)")
          ("es-objects-keep-only-current", boost::program_options::value<bool>(),
