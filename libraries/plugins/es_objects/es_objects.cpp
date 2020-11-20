@@ -31,6 +31,21 @@
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/account_object.hpp>
 
+#include <graphene/chain/account_role_object.hpp>
+#include <graphene/chain/committee_member_object.hpp>
+#include <graphene/chain/nft_object.hpp>
+#include <graphene/chain/offer_object.hpp>
+#include <graphene/chain/sidechain_address_object.hpp>
+#include <graphene/chain/sidechain_transaction_object.hpp>
+#include <graphene/chain/son_object.hpp>
+#include <graphene/chain/son_proposal_object.hpp>
+#include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/chain/son_wallet_deposit_object.hpp>
+#include <graphene/chain/son_wallet_withdraw_object.hpp>
+#include <graphene/chain/vesting_balance_object.hpp>
+#include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/worker_object.hpp>
+
 #include <graphene/utilities/elasticsearch.hpp>
 
 namespace graphene { namespace es_objects {
@@ -61,6 +76,23 @@ class es_objects_plugin_impl
       bool _es_objects_balances = true;
       bool _es_objects_limit_orders = true;
       bool _es_objects_asset_bitasset = true;
+
+      bool _es_objects_account_role = true;
+      bool _es_objects_committee_member = true;
+      bool _es_objects_nft = true;
+      bool _es_objects_nft_metadata = true;
+      bool _es_objects_offer = true;
+      bool _es_objects_sidechain_address = true;
+      bool _es_objects_sidechain_transaction = true;
+      bool _es_objects_son = true;
+      bool _es_objects_son_proposal = true;
+      bool _es_objects_son_wallet = true;
+      bool _es_objects_son_wallet_deposit = true;
+      bool _es_objects_son_wallet_withdraw = true;
+      bool _es_objects_vesting_balance = true;
+      bool _es_objects_witness = true;
+      bool _es_objects_worker = true;
+
       std::string _es_objects_index_prefix = "ppobjects-";
       uint32_t _es_objects_start_es_after_block = 0;
       CURL *curl; // curl handler
@@ -108,6 +140,127 @@ bool es_objects_plugin_impl::genesis()
          auto obj = db.find_object(o.id);
          auto b = static_cast<const account_balance_object *>(obj);
          prepareTemplate<account_balance_object>(*b, "balance");
+      });
+   }
+
+   if (_es_objects_account_role) {
+      auto &idx = db.get_index_type<graphene::chain::account_role_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const account_role_object *>(obj);
+         prepareTemplate<account_role_object>(*b, "account_role");
+      });
+   }
+   if (_es_objects_committee_member) {
+      auto &idx = db.get_index_type<graphene::chain::committee_member_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const committee_member_object *>(obj);
+         prepareTemplate<committee_member_object>(*b, "committee_member");
+      });
+   }
+   if (_es_objects_nft) {
+      auto &idx = db.get_index_type<graphene::chain::nft_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const nft_object *>(obj);
+         prepareTemplate<nft_object>(*b, "nft");
+      });
+   }
+   if (_es_objects_nft_metadata) {
+      auto &idx = db.get_index_type<graphene::chain::nft_metadata_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const nft_metadata_object *>(obj);
+         prepareTemplate<nft_metadata_object>(*b, "nft_metadata");
+      });
+   }
+   if (_es_objects_offer) {
+      auto &idx = db.get_index_type<graphene::chain::offer_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const offer_object *>(obj);
+         prepareTemplate<offer_object>(*b, "offer");
+      });
+   }
+   if (_es_objects_sidechain_address) {
+      auto &idx = db.get_index_type<graphene::chain::sidechain_address_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const sidechain_address_object *>(obj);
+         prepareTemplate<sidechain_address_object>(*b, "sidechain_address");
+      });
+   }
+   if (_es_objects_sidechain_transaction) {
+      auto &idx = db.get_index_type<graphene::chain::sidechain_transaction_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const sidechain_transaction_object *>(obj);
+         prepareTemplate<sidechain_transaction_object>(*b, "sidechain_transaction");
+      });
+   }
+   if (_es_objects_son) {
+      auto &idx = db.get_index_type<graphene::chain::son_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const son_object *>(obj);
+         prepareTemplate<son_object>(*b, "son");
+      });
+   }
+   if (_es_objects_son_proposal) {
+      auto &idx = db.get_index_type<graphene::chain::son_proposal_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const son_proposal_object *>(obj);
+         prepareTemplate<son_proposal_object>(*b, "son_proposal");
+      });
+   }
+   if (_es_objects_son_wallet) {
+      auto &idx = db.get_index_type<graphene::chain::son_wallet_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const son_wallet_object *>(obj);
+         prepareTemplate<son_wallet_object>(*b, "son_wallet");
+      });
+   }
+   if (_es_objects_son_wallet_deposit) {
+      auto &idx = db.get_index_type<graphene::chain::son_wallet_deposit_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const son_wallet_deposit_object *>(obj);
+         prepareTemplate<son_wallet_deposit_object>(*b, "son_wallet_deposit");
+      });
+   }
+   if (_es_objects_son_wallet_withdraw) {
+      auto &idx = db.get_index_type<graphene::chain::son_wallet_withdraw_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const son_wallet_withdraw_object *>(obj);
+         prepareTemplate<son_wallet_withdraw_object>(*b, "son_wallet_withdraw");
+      });
+   }
+   if (_es_objects_vesting_balance) {
+      auto &idx = db.get_index_type<graphene::chain::vesting_balance_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const vesting_balance_object *>(obj);
+         prepareTemplate<vesting_balance_object>(*b, "vesting_balance");
+      });
+   }
+   if (_es_objects_witness) {
+      auto &idx = db.get_index_type<graphene::chain::witness_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const witness_object *>(obj);
+         prepareTemplate<witness_object>(*b, "witness");
+      });
+   }
+   if (_es_objects_worker) {
+      auto &idx = db.get_index_type<graphene::chain::worker_index>();
+      idx.inspect_all_objects([this, &db](const graphene::db::object &o) {
+         auto obj = db.find_object(o.id);
+         auto b = static_cast<const worker_object *>(obj);
+         prepareTemplate<worker_object>(*b, "worker");
       });
    }
 
@@ -195,6 +348,141 @@ bool es_objects_plugin_impl::index_database(const vector<object_id_type>& ids, s
                   remove_from_database(ba->id, "bitasset");
                else
                   prepareTemplate<asset_bitasset_data_object>(*ba, "bitasset");
+            }
+         } else if (value.is<account_role_object>() && _es_objects_account_role) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const account_role_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "account_role");
+               else
+                  prepareTemplate<account_role_object>(*ba, "account_role");
+            }
+         } else if (value.is<committee_member_object>() && _es_objects_committee_member) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const committee_member_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "committee_member");
+               else
+                  prepareTemplate<committee_member_object>(*ba, "committee_member");
+            }
+         } else if (value.is<nft_object>() && _es_objects_nft) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const nft_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "nft");
+               else
+                  prepareTemplate<nft_object>(*ba, "nft");
+            }
+         } else if (value.is<nft_metadata_object>() && _es_objects_nft_metadata) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const nft_metadata_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "nft_metadata");
+               else
+                  prepareTemplate<nft_metadata_object>(*ba, "nft_metadata");
+            }
+         } else if (value.is<offer_object>() && _es_objects_offer) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const offer_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "offer");
+               else
+                  prepareTemplate<offer_object>(*ba, "offer");
+            }
+         } else if (value.is<sidechain_address_object>() && _es_objects_sidechain_address) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const sidechain_address_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "sidechain_address");
+               else
+                  prepareTemplate<sidechain_address_object>(*ba, "sidechain_address");
+            }
+         } else if (value.is<sidechain_transaction_object>() && _es_objects_sidechain_transaction) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const sidechain_transaction_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "sidechain_transaction");
+               else
+                  prepareTemplate<sidechain_transaction_object>(*ba, "sidechain_transaction");
+            }
+         } else if (value.is<son_object>() && _es_objects_son) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const son_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "son");
+               else
+                  prepareTemplate<son_object>(*ba, "son");
+            }
+         } else if (value.is<son_proposal_object>() && _es_objects_son_proposal) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const son_proposal_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "son_proposal");
+               else
+                  prepareTemplate<son_proposal_object>(*ba, "son_proposal");
+            }
+         } else if (value.is<son_wallet_object>() && _es_objects_son_wallet) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const son_wallet_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "son_wallet");
+               else
+                  prepareTemplate<son_wallet_object>(*ba, "son_wallet");
+            }
+         } else if (value.is<son_wallet_deposit_object>() && _es_objects_son_wallet_deposit) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const son_wallet_deposit_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "son_wallet_deposit");
+               else
+                  prepareTemplate<son_wallet_deposit_object>(*ba, "son_wallet_deposit");
+            }
+         } else if (value.is<son_wallet_withdraw_object>() && _es_objects_son_wallet_withdraw) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const son_wallet_withdraw_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "son_wallet_withdraw");
+               else
+                  prepareTemplate<son_wallet_withdraw_object>(*ba, "son_wallet_withdraw");
+            }
+         } else if (value.is<vesting_balance_object>() && _es_objects_vesting_balance) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const vesting_balance_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "vesting_balance");
+               else
+                  prepareTemplate<vesting_balance_object>(*ba, "vesting_balance");
+            }
+         } else if (value.is<witness_object>() && _es_objects_witness) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const witness_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "witness");
+               else
+                  prepareTemplate<witness_object>(*ba, "witness");
+            }
+         } else if (value.is<worker_object>() && _es_objects_worker) {
+            auto obj = db.find_object(value);
+            auto ba = static_cast<const worker_object *>(obj);
+            if (ba != nullptr) {
+               if (action == "delete")
+                  remove_from_database(ba->id, "worker");
+               else
+                  prepareTemplate<worker_object>(*ba, "worker");
             }
          }
       }
