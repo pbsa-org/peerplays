@@ -160,10 +160,13 @@ namespace detail {
          {
             // t.me/peerplays #seednodes
             vector<string> seeds = {
-               "ppy-beatrice-seed.blckchnd.com:6666",
-               "159.69.223.206:7777",
-               "51.38.237.243:9666",
-               "pbsa-beatrice.blockchainprojectsbv.com:9195"
+               "173.249.23.108:9777",
+               "node.peerblock.trade:9777",
+               "peerplays.blockoperations.com:9777",
+               "pms.blockveritas.co:7777",
+               "seed.ppy.alex-pu.info:8888",
+               "seed.ppy.blckchnd.com:6116",
+               "seed01.eifos.org:7777"
             };
 
             for( const string& endpoint_string : seeds )
