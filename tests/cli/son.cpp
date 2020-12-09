@@ -27,6 +27,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <graphene/chain/config.hpp>
+
 class son_test_helper
 {
     cli_fixture& fixture_;
@@ -169,10 +171,11 @@ BOOST_AUTO_TEST_CASE( cli_update_son )
 
       // update SON signing key
       sidechain_public_keys.clear();
-      con.wallet_api_ptr->update_son("sonmember", "http://sonmember_updated2", "TEST6Yaq5ZNTTkMM2kBBzV5jktr8ETsniCC3bnVD7eFmegRrLXfGGG", sidechain_public_keys, true);
+      std::string new_key = GRAPHENE_ADDRESS_PREFIX + std::string("6Yaq5ZNTTkMM2kBBzV5jktr8ETsniCC3bnVD7eFmegRrLXfGGG");
+      con.wallet_api_ptr->update_son("sonmember", "http://sonmember_updated2", new_key, sidechain_public_keys, true);
       son_data = con.wallet_api_ptr->get_son("sonmember");
       BOOST_CHECK(son_data.url == "http://sonmember_updated2");
-      BOOST_CHECK(std::string(son_data.signing_key) == "TEST6Yaq5ZNTTkMM2kBBzV5jktr8ETsniCC3bnVD7eFmegRrLXfGGG");
+      BOOST_CHECK(std::string(son_data.signing_key) == new_key);
 
    } catch( fc::exception& e ) {
       edump((e.to_detail_string()));
