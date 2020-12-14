@@ -1,5 +1,4 @@
-// GPOS HARDFORK 2020-12-19 00:00:00 GMT
+// GPOS HARDFORK 2020-12-21 00:00:00 GMT
 #ifndef HARDFORK_SON_TIME
-#include <ctime>
-#define HARDFORK_SON_TIME (fc::time_point_sec( 1608336000 ))
+#define HARDFORK_SON_TIME (fc::time_point_sec( 1608508800 ))
 #endif
