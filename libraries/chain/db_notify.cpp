@@ -601,7 +601,7 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
              case impl_fba_accumulator_object_type:
               break;
              case impl_nft_lottery_balance_object_type:
-              break
+              break;
             default:
               break;
       }

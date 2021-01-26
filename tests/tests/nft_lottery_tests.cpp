@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(create_lottery_nft_with_permission_test)
         BOOST_CHECK(test_nft_md_obj.account_role == account_role_id_type(0));
 
         BOOST_CHECK(test_nft_md_obj.lottery_data->lottery_options.is_active);
-        
+
         {
             nft_lottery_token_purchase_operation tpo;
             tpo.fee = asset();
