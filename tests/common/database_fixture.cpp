@@ -58,7 +58,9 @@
 
 using namespace graphene::chain::test;
 
+//redefining parameters here to as per updated TESTNET parameters to verify unit test cases
 uint32_t GRAPHENE_TESTING_GENESIS_TIMESTAMP = 1431700002;
+
 
 namespace graphene { namespace chain {
 
@@ -202,20 +204,28 @@ database_fixture::database_fixture()
 }
 
 database_fixture::~database_fixture()
-{ try {
-   // If we're unwinding due to an exception, don't do any more checks.
-   // This way, boost test's last checkpoint tells us approximately where the error was.
-   if( !std::uncaught_exception() )
-   {
-      verify_asset_supplies(db);
-      verify_account_history_plugin_index();
-      BOOST_CHECK( db.get_node_properties().skip_flags == database::skip_nothing );
-   }
+{
+   try {
+      // If we're unwinding due to an exception, don't do any more checks.
+      // This way, boost test's last checkpoint tells us approximately where the error was.
+      if( !std::uncaught_exception() )
+      {
+         verify_asset_supplies(db);
+         verify_account_history_plugin_index();
+         BOOST_CHECK( db.get_node_properties().skip_flags == database::skip_nothing );
+      }
 
-   if( data_dir )
-      db.close();
-   return;
-} FC_CAPTURE_AND_RETHROW() }
+      if( data_dir )
+         db.close();
+      return;
+   } catch (fc::exception& ex) {
+      BOOST_FAIL( std::string("fc::exception in ~database_fixture: ") + ex.to_detail_string() );
+   } catch (std::exception& e) {
+      BOOST_FAIL( std::string("std::exception in ~database_fixture:") + e.what() );
+   } catch (...) {
+      BOOST_FAIL( "Uncaught exception in ~database_fixture" );
+   }
+}
 
 fc::ecc::private_key database_fixture::generate_private_key(string seed)
 {
@@ -235,8 +245,9 @@ string database_fixture::generate_anon_acct_name()
 void database_fixture::verify_asset_supplies( const database& db )
 {
    //wlog("*** Begin asset supply verification ***");
-   const asset_dynamic_data_object& core_asset_data = db.get_core_asset().dynamic_asset_data_id(db);
-   BOOST_CHECK(core_asset_data.fee_pool == 0);
+   // It seems peerplays by default DO have core fee pool in genesis so commenting this out
+   //const asset_dynamic_data_object& core_asset_data = db.get_core_asset().dynamic_asset_data_id(db);
+   //BOOST_CHECK(core_asset_data.fee_pool == 0);
 
    const auto& statistics_index = db.get_index_type<account_stats_index>().indices();
    const auto& balance_index = db.get_index_type<account_balance_index>().indices();

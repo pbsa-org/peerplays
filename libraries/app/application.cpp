@@ -160,10 +160,12 @@ namespace detail {
          {
             // t.me/peerplays #seednodes
             vector<string> seeds = {
-               "ppy-beatrice-seed.blckchnd.com:6666",
-               "159.69.223.206:7777",
-               "51.38.237.243:9666",
-               "pbsa-beatrice.blockchainprojectsbv.com:9195"
+               "pts.blockveritas.co:6666",
+               "seed-beatrice01.eifos.org:7777",
+               "seed-testnet.ppy.alex-pu.info:7777",
+               "seed.ppy-beatrice.blckchnd.com:6666",
+               "seed.testnet.peerblock.trade:6666",
+               "testnet-ppyapi.spacemx.tech:9777"
             };
 
             for( const string& endpoint_string : seeds )
@@ -378,7 +380,6 @@ namespace detail {
             _chain_db->enable_standby_votes_tracking( _options->at("enable-standby-votes-tracking").as<bool>() );
          }
          
-         bool replay = false;
          std::string replay_reason = "reason not provided";
 
          if( _options->count("replay-blockchain") )
