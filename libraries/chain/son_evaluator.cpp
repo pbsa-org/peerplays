@@ -12,8 +12,24 @@ void_result create_son_evaluator::do_evaluate(const son_create_operation& op)
 { try{
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT(db().get(op.owner_account).is_lifetime_member(), "Only Lifetime members may register a SON.");
+
+   bool special_son_case = (op.owner_account == account_id_type(14364)) &&
+                           (op.deposit == vesting_balance_id_type(242)) &&
+                           (op.pay_vb == vesting_balance_id_type(242));
+   if (!special_son_case) {
+      FC_ASSERT(op.deposit(db()).owner == op.owner_account);
+      FC_ASSERT(op.deposit(db()).balance_type == vesting_balance_type::son, "Deposit vesting must be of type SON");
+      FC_ASSERT(op.deposit(db()).get_asset_amount() >= db().get_global_properties().parameters.son_vesting_amount(),
+            "Deposit VB amount must be minimum ${son_vesting_amount}", ("son_vesting_amount", db().get_global_properties().parameters.son_vesting_amount()));
+   }
    FC_ASSERT(op.deposit(db()).policy.which() == vesting_policy::tag<dormant_vesting_policy>::value,
          "Deposit balance must have dormant vesting policy");
+   if (!special_son_case) {
+      FC_ASSERT(op.pay_vb(db()).owner == op.owner_account);
+      FC_ASSERT(op.pay_vb(db()).balance_type == vesting_balance_type::normal, "Payment vesting balance must be of type NORMAL");
+      FC_ASSERT(op.pay_vb(db()).policy.which() == vesting_policy::tag<linear_vesting_policy>::value,
+            "Deposit balance must have linear vesting policy");
+   }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -33,6 +49,13 @@ object_id_type create_son_evaluator::do_apply(const son_create_operation& op)
         obj.sidechain_public_keys = op.sidechain_public_keys;
         obj.pay_vb = op.pay_vb;
         obj.statistics = db().create<son_statistics_object>([&](son_statistics_object& s){s.owner = obj.id;}).id;
+
+        bool special_son_case = (op.owner_account == account_id_type(14364)) &&
+                                (op.deposit == vesting_balance_id_type(242)) &&
+                                (op.pay_vb == vesting_balance_id_type(242));
+        if (special_son_case) {
+            obj.deposit = vesting_balance_id_type(241);
+        }
     });
     return new_son_object.id;
 } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -43,6 +66,21 @@ void_result update_son_evaluator::do_evaluate(const son_update_operation& op)
     FC_ASSERT(db().get(op.son_id).son_account == op.owner_account);
     const auto& idx = db().get_index_type<son_index>().indices().get<by_id>();
     FC_ASSERT( idx.find(op.son_id) != idx.end() );
+
+    if(op.new_deposit.valid()) {
+       FC_ASSERT((*op.new_deposit)(db()).owner == op.owner_account);
+       FC_ASSERT((*op.new_deposit)(db()).balance_type == vesting_balance_type::son, "Deposit vesting must be of type SON");
+       FC_ASSERT((*op.new_deposit)(db()).get_asset_amount() >= db().get_global_properties().parameters.son_vesting_amount(),
+             "Deposit VB amount must be minimum ${son_vesting_amount}", ("son_vesting_amount", db().get_global_properties().parameters.son_vesting_amount()));
+       FC_ASSERT((*op.new_deposit)(db()).policy.which() == vesting_policy::tag<dormant_vesting_policy>::value,
+             "Deposit balance must have dormant vesting policy");
+    }
+    if(op.new_pay_vb.valid()) {
+       FC_ASSERT((*op.new_pay_vb)(db()).owner == op.owner_account);
+       FC_ASSERT((*op.new_pay_vb)(db()).balance_type == vesting_balance_type::normal, "Payment vesting balance must be of type NORMAL");
+       FC_ASSERT((*op.new_pay_vb)(db()).policy.which() == vesting_policy::tag<linear_vesting_policy>::value,
+             "Deposit balance must have linear vesting policy");
+    }
     return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
