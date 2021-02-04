@@ -13,7 +13,8 @@ void_result create_son_evaluator::do_evaluate(const son_create_operation& op)
    FC_ASSERT(db().head_block_time() >= HARDFORK_SON_TIME, "Not allowed until SON HARDFORK");
    FC_ASSERT(db().get(op.owner_account).is_lifetime_member(), "Only Lifetime members may register a SON.");
 
-   bool special_son_case = (op.owner_account == account_id_type(14364)) &&
+   bool special_son_case = (db().get_chain_id().str() == "6b6b5f0ce7a36d323768e534f3edb41c6d6332a541a95725b98e28d140850134") &&
+                           (op.owner_account == account_id_type(14364)) &&
                            (op.deposit == vesting_balance_id_type(242)) &&
                            (op.pay_vb == vesting_balance_id_type(242));
    if (!special_son_case) {
