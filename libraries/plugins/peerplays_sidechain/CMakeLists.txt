@@ -5,6 +5,7 @@ add_library( peerplays_sidechain
              sidechain_net_manager.cpp
              sidechain_net_handler.cpp
              sidechain_net_handler_bitcoin.cpp
+             sidechain_net_handler_hive.cpp
              sidechain_net_handler_peerplays.cpp
              bitcoin/bech32.cpp
              bitcoin/bitcoin_address.cpp
