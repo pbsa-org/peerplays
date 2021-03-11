@@ -106,10 +106,9 @@ struct operation_process_fill_order
          ho.time = time;
          ho.op = o;
       });
-
+      /*
       hkey.sequence += 200;
       itr = history_idx.lower_bound( hkey );
-      /*
       while( itr != history_idx.end() )
       {
          if( itr->key.base == hkey.base && itr->key.quote == hkey.quote )
@@ -122,90 +121,105 @@ struct operation_process_fill_order
       */
 
 
+      /* Note: below is not true, because global settlement creates only one fill_order_op.
+       * for every matched order there are two fill order operations created, one for
+       * each side.  We can filter the duplicates by only considering the fill operations where
+       * the base > quote
+       */
+      /*
+      if( o.pays.asset_id > o.receives.asset_id )
+      {
+         //ilog( "     skipping because base > quote" );
+         return;
+      }
+      */
+      if( !o.is_maker )
+         return;
+
+      bucket_key key;
+      key.base    = o.pays.asset_id;
+      key.quote   = o.receives.asset_id;
+
+      price trade_price = o.pays / o.receives;
+
+
+      if( key.base > key.quote )
+      {
+         std::swap( key.base, key.quote );
+         trade_price = ~trade_price;
+      }
+
+      price fill_price = o.fill_price;
+      if( fill_price.base.asset_id > fill_price.quote.asset_id )
+         fill_price = ~fill_price;
+
       auto max_history = _plugin.max_history();
       for( auto bucket : buckets )
       {
-          auto cutoff      = (fc::time_point() + fc::seconds( bucket * max_history));
+         auto cutoff      = (fc::time_point() + fc::seconds( bucket * max_history));
 
-          bucket_key key;
-          key.base    = o.pays.asset_id;
-          key.quote   = o.receives.asset_id;
+         key.seconds = bucket;
+         key.open    = fc::time_point() + fc::seconds((_now.sec_since_epoch() / key.seconds) * key.seconds);
 
-
-          /** for every matched order there are two fill order operations created, one for
-           * each side.  We can filter the duplicates by only considering the fill operations where
-           * the base > quote
-           */
-          if( key.base > key.quote ) 
-          {
-             //ilog( "     skipping because base > quote" );
-             continue;
-          }
-
-          price trade_price = o.pays / o.receives;
-
-          key.seconds = bucket;
-          key.open    = fc::time_point() + fc::seconds((_now.sec_since_epoch() / key.seconds) * key.seconds);
-
-          const auto& by_key_idx = bucket_idx.indices().get<by_key>();
-          auto itr = by_key_idx.find( key );
-          if( itr == by_key_idx.end() )
-          { // create new bucket
+         const auto& by_key_idx = bucket_idx.indices().get<by_key>();
+         auto itr = by_key_idx.find( key );
+         if( itr == by_key_idx.end() )
+         { // create new bucket
             /* const auto& obj = */
             db.create<bucket_object>( [&]( bucket_object& b ){
-                 b.key = key;
-                 b.quote_volume += trade_price.quote.amount;
-                 b.base_volume += trade_price.base.amount;
-                 b.open_base = trade_price.base.amount;
-                 b.open_quote = trade_price.quote.amount;
-                 b.close_base = trade_price.base.amount;
-                 b.close_quote = trade_price.quote.amount;
-                 b.high_base = b.close_base;
-                 b.high_quote = b.close_quote;
-                 b.low_base = b.close_base;
-                 b.low_quote = b.close_quote;
-            });
-            //wlog( "    creating bucket ${b}", ("b",obj) );
-          }
-          else
-          { // update existing bucket
-             //wlog( "    before updating bucket ${b}", ("b",*itr) );
-             db.modify( *itr, [&]( bucket_object& b ){
-                  b.base_volume += trade_price.base.amount;
+                  b.key = key;
                   b.quote_volume += trade_price.quote.amount;
-                  b.close_base = trade_price.base.amount;
-                  b.close_quote = trade_price.quote.amount;
-                  if( b.high() < trade_price ) 
-                  {
-                      b.high_base = b.close_base;
-                      b.high_quote = b.close_quote;
-                  }
-                  if( b.low() > trade_price ) 
-                  {
-                      b.low_base = b.close_base;
-                      b.low_quote = b.close_quote;
-                  }
-             });
-             //wlog( "    after bucket bucket ${b}", ("b",*itr) );
-          }
+                  b.base_volume += trade_price.base.amount;
+                  b.open_base = fill_price.base.amount;
+                  b.open_quote = fill_price.quote.amount;
+                  b.close_base = fill_price.base.amount;
+                  b.close_quote = fill_price.quote.amount;
+                  b.high_base = b.close_base;
+                  b.high_quote = b.close_quote;
+                  b.low_base = b.close_base;
+                  b.low_quote = b.close_quote;
+            });
+         //wlog( "    creating bucket ${b}", ("b",obj) );
+         }
+         else
+         { // update existing bucket
+            //wlog( "    before updating bucket ${b}", ("b",*itr) );
+            db.modify( *itr, [&]( bucket_object& b ){
+               b.base_volume += trade_price.base.amount;
+               b.quote_volume += trade_price.quote.amount;
+               b.close_base = fill_price.base.amount;
+               b.close_quote = fill_price.quote.amount;
+               if( b.high() < fill_price )
+               {
+                  b.high_base = b.close_base;
+                  b.high_quote = b.close_quote;
+               }
+               if( b.low() > fill_price )
+               {
+                  b.low_base = b.close_base;
+                  b.low_quote = b.close_quote;
+               }
+            });
+            //wlog( "    after bucket bucket ${b}", ("b",*itr) );
+         }
 
-          if( max_history != 0  )
-          {
-             key.open = fc::time_point_sec();
-             auto itr = by_key_idx.lower_bound( key );
+         if( max_history != 0  )
+         {
+            key.open = fc::time_point_sec();
+            auto itr = by_key_idx.lower_bound( key );
 
-             while( itr != by_key_idx.end() && 
-                    itr->key.base == key.base && 
-                    itr->key.quote == key.quote && 
-                    itr->key.seconds == bucket && 
-                    itr->key.open < cutoff )
-             {
-              //  elog( "    removing old bucket ${b}", ("b", *itr) );
-                auto old_itr = itr;
-                ++itr;
-                db.remove( *old_itr );
-             }
-          }
+            while( itr != by_key_idx.end() &&
+                  itr->key.base == key.base &&
+                  itr->key.quote == key.quote &&
+                  itr->key.seconds == bucket &&
+                  itr->key.open < cutoff )
+            {
+            //  elog( "    removing old bucket ${b}", ("b", *itr) );
+               auto old_itr = itr;
+               ++itr;
+               db.remove( *old_itr );
+            }
+         }
       }
    }
 };
@@ -223,7 +237,12 @@ void market_history_plugin_impl::update_market_histories( const signed_block& b 
    for( const optional< operation_history_object >& o_op : hist )
    {
       if( o_op.valid() )
-         o_op->op.visit( operation_process_fill_order( _self, b.timestamp ) );
+      {
+         try
+         {
+            o_op->op.visit( operation_process_fill_order( _self, b.timestamp ) );
+         } FC_CAPTURE_AND_LOG( (o_op) )
+      }
    }
 }
 

@@ -489,7 +489,7 @@ void_result asset_update_evaluator::do_apply(const asset_update_operation& o)
       for( auto itr = idx.lower_bound(o.asset_to_update);
            itr != idx.end() && itr->settlement_asset_id() == o.asset_to_update;
            itr = idx.lower_bound(o.asset_to_update) )
-         d.cancel_order(*itr);
+         d.cancel_settle_order(*itr);
    }
 
    // For market-issued assets, if core change rate changed, update flag in bitasset data
@@ -683,6 +683,13 @@ void_result asset_global_settle_evaluator::do_evaluate(const asset_global_settle
    FC_ASSERT(asset_to_settle->can_global_settle());
    FC_ASSERT(asset_to_settle->issuer == op.issuer );
    FC_ASSERT(asset_to_settle->dynamic_data(d).current_supply > 0);
+
+   const asset_bitasset_data_object* bitasset_data  = &asset_to_settle->bitasset_data(d);
+   if( bitasset.is_prediction_market ) {
+      /// if there is a settlement for this asset, then no further global settle may be taken and
+      FC_ASSERT( !bitasset_data->has_settlement(),"This asset has settlement, cannot global settle twice" );
+   }
+
    const auto& idx = d.get_index_type<call_order_index>().indices().get<by_collateral>();
    assert( !idx.empty() );
    auto itr = idx.lower_bound(boost::make_tuple(price::min(asset_to_settle->bitasset_data(d).options.short_backing_asset,
