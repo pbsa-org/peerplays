@@ -61,3 +61,5 @@ GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::limit_order_cr
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::limit_order_cancel_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::call_order_update_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::fill_order_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::bid_collateral_operation )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::execute_bid_operation )
