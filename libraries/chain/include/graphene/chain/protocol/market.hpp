@@ -186,7 +186,6 @@ FC_REFLECT( graphene::chain::fill_order_operation, (fee)(order_id)(account_id)(p
 
 FC_REFLECT( graphene::chain::call_order_update_operation::options_type, (target_collateral_ratio) )
 
-FC_REFLECT_TYPENAME( graphene::chain::call_order_update_operation::extensions_type
 
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_create_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_cancel_operation::fee_parameters_type )
