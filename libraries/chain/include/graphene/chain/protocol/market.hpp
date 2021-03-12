@@ -191,6 +191,7 @@ namespace graphene { namespace chain {
 
       account_id_type fee_payer()const { return bidder; }
       void            validate()const;
+      share_type calculate_fee(const fee_parameters_type& k)const { return k.fee; }
    };
 
    /**
@@ -241,6 +242,9 @@ FC_REFLECT( graphene::chain::call_order_update_operation::options_type, (target_
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_create_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_cancel_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::call_order_update_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::fill_order_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::bid_collateral_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::execute_bid_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_create_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_cancel_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::call_order_update_operation )
