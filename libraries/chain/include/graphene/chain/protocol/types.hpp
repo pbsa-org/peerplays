@@ -39,6 +39,8 @@
 #include <fc/uint128.hpp>
 #include <fc/static_variant.hpp>
 
+#include <boost/rational.hpp>
+
 #include <memory>
 #include <vector>
 #include <deque>
@@ -108,6 +110,7 @@ namespace graphene { namespace chain {
 
    typedef fc::ecc::private_key        private_key_type;
    typedef fc::sha256 chain_id_type;
+   using ratio_type = boost::rational<int32_t>;
 
    enum asset_issuer_permission_flags
    {

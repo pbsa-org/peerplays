@@ -398,7 +398,7 @@ void database::clear_expired_orders()
          }
 
          // Has this order not reached its settlement date?
-         if( order.settlement_date > head_time() )
+         if( order.settlement_date > head_time )
          {
             if( next_asset() )
             {
@@ -440,7 +440,7 @@ void database::clear_expired_orders()
             break;
          }
 
-         if( settlement_fill_price.base.asset_id != pays.asset_id )
+         if( settlement_fill_price.base.asset_id != current_asset )
             settlement_fill_price = mia.current_feed.settlement_price
                                     / ratio_type( GRAPHENE_100_PERCENT - mia.options.force_settlement_offset_percent,
                                                   GRAPHENE_100_PERCENT );

@@ -206,7 +206,7 @@ void database::cancel_settle_order(const force_settlement_object& order, bool cr
    remove(order);
 }
 
-void database::cancel_settle_order( const limit_order_object& order, bool create_virtual_op, bool skip_cancel_fee  )
+void database::cancel_limit_order( const limit_order_object& order, bool create_virtual_op, bool skip_cancel_fee  )
 {
    // if need to create a virtual op, try deduct a cancellation fee here.
    // there are two scenarios when order is cancelled and need to create a virtual op:
@@ -447,12 +447,6 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
             to_check_call_orders = true;
       }
    }
-
-   // this is the opposite side
-   auto max_price = ~new_order_object.sell_price;
-   limit_itr = limit_price_idx.lower_bound( max_price.max() );
-   auto limit_end = limit_price_idx.upper_bound( max_price );
-   bool to_check_limit_orders = (limit_itr != limit_end);
 
    bool finished = false; // whether the new order is gone
    if( to_check_call_orders )
@@ -920,8 +914,8 @@ bool database::fill_settle_order( const force_settlement_object& settle, const a
 bool database::check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order,
                                   const asset_bitasset_data_object* bitasset_ptr )
 { try {
-    auto head_time = head_block_time();
-    auto maint_time = get_dynamic_global_properties().next_maintenance_time;
+    const auto& dyn_prop = get_dynamic_global_properties();
+    auto maint_time = dyn_prop.next_maintenance_time;
     if( for_new_limit_order )
        FC_ASSERT( maint_time <= HARDFORK_CORE_625_TIME ); // `for_new_limit_order` is only true before HF 338 / 625
 
@@ -959,9 +953,13 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
     auto call_itr = call_price_index.lower_bound( call_min );
     auto call_end = call_price_index.upper_bound( call_max );
 
+    bool filled_limit = false;
+    bool margin_called = false;
+
     auto head_time = head_block_time();
     auto head_num = head_block_num();
 
+    bool before_hardfork_615 = ( head_time < HARDFORK_615_TIME );
     bool after_hardfork_436 = ( head_time > HARDFORK_436_TIME );
 
     bool before_core_hardfork_184 = ( maint_time <= HARDFORK_CORE_184_TIME ); // something-for-nothing
@@ -1001,7 +999,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
        if( usd_to_buy * match_price > call_itr->get_collateral() )
        {
           elog( "black swan detected on asset ${symbol} (${id}) at block ${b}",
-                ("id",mia.id)("symbol",mia.symbol)("b",head_block_num()) );
+                ("id",mia.id)("symbol",mia.symbol)("b",head_num) );
           edump((enable_black_swan));
           FC_ASSERT( enable_black_swan );
           globally_settle_asset(mia, bitasset.current_feed.settlement_price );
@@ -1009,7 +1007,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
        }
 
        if( !before_core_hardfork_834 )
-         usd_to_buy.amount = call_itr->get_max_debt_to_cover( match_price,
+          usd_to_buy.amount = call_itr->get_max_debt_to_cover( match_price,
                                                                bitasset.current_feed.settlement_price,
                                                                bitasset.current_feed.maintenance_collateral_ratio );
 
@@ -1028,9 +1026,9 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
           if( order_receives.amount == 0 ) // TODO this should not happen. remove the warning after confirmed
           {
              if( before_core_hardfork_184 )
-                wlog( "Something for nothing issue (#184, variant D-1) occurred at block #${block}", ("block",head_block_num()) );
+                wlog( "Something for nothing issue (#184, variant D-1) occurred at block #${block}", ("block",head_num) );
              else
-                wlog( "Something for nothing issue (#184, variant D-2) occurred at block #${block}", ("block",head_block_num()) );
+                wlog( "Something for nothing issue (#184, variant D-2) occurred at block #${block}", ("block",head_num) );
           }
 
           if( before_core_hardfork_342 )
@@ -1041,25 +1039,33 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
              // The order would receive 0 even at `match_price`, so it would receive 0 at its own price,
              //   so calling maybe_cull_small() will always cull it.
              call_receives = order_receives.multiply_and_round_up( match_price );
+
           filled_limit = true;
+
        } else { // fill call
           call_receives  = usd_to_buy;
+
           if( before_core_hardfork_342 )
           {
              order_receives = usd_to_buy * match_price; // round down, in favor of call order
 
              // Be here, the limit order would be paying something for nothing
              if( order_receives.amount == 0 ) // TODO remove warning after hard fork core-342
-                wlog( "Something for nothing issue (#184, variant D) occurred at block #${block}", ("block",head_block_num()) );
+                wlog( "Something for nothing issue (#184, variant D) occurred at block #${block}", ("block",head_num) );
           }
           else
              order_receives = usd_to_buy.multiply_and_round_up( match_price ); // round up, in favor of limit order
 
-          filled_call = true; // this is safe, since BSIP38 (hard fork core-834) depends on BSIP31 (hard fork core-343)
+          filled_call    = true; // this is safe, since BSIP38 (hard fork core-834) depends on BSIP31 (hard fork core-343)
+
           if( usd_to_buy == usd_for_sale )
              filled_limit = true;
           else if( filled_limit && maint_time <= HARDFORK_CORE_453_TIME ) // TODO remove warning after hard fork core-453
-             wlog( "Multiple limit match problem (issue 453) occurred at block #${block}", ("block",head_block_num()) );
+          {
+             wlog( "Multiple limit match problem (issue 453) occurred at block #${block}", ("block",head_num) );
+             if( before_hardfork_615 )
+                _issue_453_affected_assets.insert( bitasset.asset_id );
+          }
        }
 
        call_pays  = order_receives;
