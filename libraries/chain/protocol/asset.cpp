@@ -111,6 +111,93 @@ namespace graphene { namespace chain {
          return price{base,quote};
       } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
+      price operator *  ( const price& p, const ratio_type& r )
+      { try {
+         p.validate();
+
+         FC_ASSERT( r.numerator() > 0 && r.denominator() > 0 );
+
+         if( r.numerator() == r.denominator() ) return p;
+
+         boost::rational<int128_t> p128( p.base.amount.value, p.quote.amount.value );
+         boost::rational<int128_t> r128( r.numerator(), r.denominator() );
+         auto cp = p128 * r128;
+         auto ocp = cp;
+
+         bool shrinked = false;
+         bool using_max = false;
+         static const int128_t max( GRAPHENE_MAX_SHARE_SUPPLY );
+         while( cp.numerator() > max || cp.denominator() > max )
+         {
+            if( cp.numerator() == 1 )
+            {
+               cp = boost::rational<int128_t>( 1, max );
+               using_max = true;
+               break;
+            }
+            else if( cp.denominator() == 1 )
+            {
+               cp = boost::rational<int128_t>( max, 1 );
+               using_max = true;
+               break;
+            }
+            else
+            {
+               cp = boost::rational<int128_t>( cp.numerator() >> 1, cp.denominator() >> 1 );
+               shrinked = true;
+            }
+         }
+         if( shrinked ) // maybe not accurate enough due to rounding, do additional checks here
+         {
+            int128_t num = ocp.numerator();
+            int128_t den = ocp.denominator();
+            if( num > den )
+            {
+               num /= den;
+               if( num > max )
+                  num = max;
+               den = 1;
+            }
+            else
+            {
+               den /= num;
+               if( den > max )
+                  den = max;
+               num = 1;
+            }
+            boost::rational<int128_t> ncp( num, den );
+            if( num == max || den == max ) // it's on the edge, we know it's accurate enough
+               cp = ncp;
+            else
+            {
+               // from the accurate ocp, now we have ncp and cp. use the one which is closer to ocp.
+               // TODO improve performance
+               auto diff1 = abs( ncp - ocp );
+               auto diff2 = abs( cp - ocp );
+               if( diff1 < diff2 ) cp = ncp;
+            }
+         }
+
+         price np = asset( static_cast<int64_t>(cp.numerator()), p.base.asset_id )
+                  / asset( static_cast<int64_t>(cp.denominator()), p.quote.asset_id );
+
+         if( shrinked || using_max )
+         {
+            if( ( r.numerator() > r.denominator() && np < p )
+                  || ( r.numerator() < r.denominator() && np > p ) )
+               // even with an accurate result, if p is out of valid range, return it
+               np = p;
+         }
+
+         np.validate();
+         return np;
+      } FC_CAPTURE_AND_RETHROW( (p)(r.numerator())(r.denominator()) ) }
+
+      price operator /  ( const price& p, const ratio_type& r )
+      { try {
+         return p * ratio_type( r.denominator(), r.numerator() );
+      } FC_CAPTURE_AND_RETHROW( (p)(r.numerator())(r.denominator()) ) }
+
       price price::max( asset_id_type base, asset_id_type quote ) { return asset( share_type(GRAPHENE_MAX_SHARE_SUPPLY), base ) / asset( share_type(1), quote); }
       price price::min( asset_id_type base, asset_id_type quote ) { return asset( 1, base ) / asset( GRAPHENE_MAX_SHARE_SUPPLY, quote); }
 
