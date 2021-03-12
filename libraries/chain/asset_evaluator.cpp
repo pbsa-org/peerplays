@@ -685,7 +685,7 @@ void_result asset_global_settle_evaluator::do_evaluate(const asset_global_settle
    FC_ASSERT(asset_to_settle->dynamic_data(d).current_supply > 0);
 
    const asset_bitasset_data_object* bitasset_data  = &asset_to_settle->bitasset_data(d);
-   if( bitasset.is_prediction_market ) {
+   if( bitasset_data.is_prediction_market ) {
       /// if there is a settlement for this asset, then no further global settle may be taken and
       FC_ASSERT( !bitasset_data->has_settlement(),"This asset has settlement, cannot global settle twice" );
    }
