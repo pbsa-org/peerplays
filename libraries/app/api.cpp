@@ -539,6 +539,12 @@ namespace graphene { namespace app {
                   break;
                  case impl_global_betting_statistics_object_type:
                   break;
+                 case impl_collateral_bid_object_type:{
+                  const auto& aobj = dynamic_cast<const collateral_bid_object*>(obj);
+                  assert( aobj != nullptr );
+                  accounts.insert( aobj->bidder );
+                  break;
+           }
           }
        }
        return result;

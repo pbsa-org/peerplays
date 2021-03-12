@@ -216,7 +216,8 @@ namespace graphene { namespace chain {
       impl_offer_history_object_type,
       impl_son_statistics_object_type,
       impl_son_schedule_object_type,
-      impl_nft_lottery_balance_object_type
+      impl_nft_lottery_balance_object_type,
+      impl_collateral_bid_object_type
    };
 
    //typedef fc::unsigned_int            object_id_type;
@@ -328,6 +329,7 @@ namespace graphene { namespace chain {
    class nft_lottery_balance_object;
    class son_statistics_object;
    class son_schedule_object;
+   class collateral_bid_object;
 
    typedef object_id< implementation_ids, impl_global_property_object_type,            global_property_object>          global_property_id_type;
    typedef object_id< implementation_ids, impl_dynamic_global_property_object_type,    dynamic_global_property_object>  dynamic_global_property_id_type;
@@ -360,6 +362,7 @@ namespace graphene { namespace chain {
    typedef object_id< implementation_ids, impl_nft_lottery_balance_object_type, nft_lottery_balance_object>             nft_lottery_balance_id_type;
    typedef object_id< implementation_ids, impl_son_statistics_object_type, son_statistics_object >                      son_statistics_id_type;
    typedef object_id< implementation_ids, impl_son_schedule_object_type, son_schedule_object>                           son_schedule_id_type;
+   typedef object_id< implementation_ids, impl_collateral_bid_object_type, collateral_bid_object >                      collateral_bid_id_type;
 
    typedef fc::array<char, GRAPHENE_MAX_ASSET_SYMBOL_LENGTH>    symbol_type;
    typedef fc::ripemd160                                        block_id_type;
@@ -534,6 +537,7 @@ FC_REFLECT_ENUM( graphene::chain::impl_object_type,
                  (impl_son_statistics_object_type)
                  (impl_son_schedule_object_type)
                  (impl_nft_lottery_balance_object_type)
+                 (impl_collateral_bid_object_type)
                )
 
 FC_REFLECT_TYPENAME( graphene::chain::share_type )
@@ -592,6 +596,7 @@ FC_REFLECT_TYPENAME( graphene::chain::son_wallet_withdraw_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::sidechain_address_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::sidechain_transaction_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::random_number_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::collateral_bid_id_type )
 
 FC_REFLECT( graphene::chain::void_t, )
 

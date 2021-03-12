@@ -409,6 +409,9 @@ namespace graphene { namespace chain {
          void globally_settle_asset( const asset_object& bitasset, const price& settle_price );
          void cancel_settle_order(const force_settlement_object& order, bool create_virtual_op = true);
          void cancel_limit_order(const limit_order_object& order, bool create_virtual_op = true, bool skip_cancel_fee = false);
+         void revive_bitasset( const asset_object& bitasset );
+         void cancel_bid(const collateral_bid_object& bid, bool create_virtual_op = true);
+         void execute_bid( const collateral_bid_object& bid, share_type debt_covered, share_type collateral_from_fund, const price_feed& current_feed );
 
          /**
           * @brief Process a new limit order through the markets
@@ -527,6 +530,7 @@ namespace graphene { namespace chain {
       private:
          void                  _apply_block( const signed_block& next_block );
          processed_transaction _apply_transaction( const signed_transaction& trx );
+         void                  _cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad );
       
          ///Steps involved in applying a new block
          ///@{
@@ -579,6 +583,7 @@ namespace graphene { namespace chain {
          void update_son_statuses( const vector<son_info>& cur_active_sons, const vector<son_info>& new_active_sons );
          void update_son_wallet( const vector<son_info>& new_active_sons );
          void update_worker_votes();
+         void process_bids( const asset_bitasset_data_object& bad );
 
          public:
             double calculate_vesting_factor(const account_object& stake_account);

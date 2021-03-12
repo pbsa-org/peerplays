@@ -327,6 +327,7 @@ void database::initialize_evaluators()
    register_evaluator<sidechain_transaction_send_evaluator>();
    register_evaluator<sidechain_transaction_settle_evaluator>();
    register_evaluator<random_number_store_evaluator>();
+   register_evaluator<bid_collateral_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -419,6 +420,7 @@ void database::initialize_indexes()
    add_index< primary_index<nft_lottery_balance_index                     > >();
    add_index< primary_index<son_stats_index                               > >();
    add_index< primary_index<random_number_index                           > >();
+   add_index< primary_index<collateral_bid_index                          > >();
 
 }
 

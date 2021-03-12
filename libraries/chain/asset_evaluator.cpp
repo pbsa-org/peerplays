@@ -733,25 +733,49 @@ operation_result asset_settle_evaluator::do_apply(const asset_settle_evaluator::
    const auto& bitasset = asset_to_settle->bitasset_data(d);
    if( bitasset.has_settlement() )
    {
-      auto settled_amount = op.amount * bitasset.settlement_price;
-      FC_ASSERT( settled_amount.amount <= bitasset.settlement_fund );
-
-      d.modify( bitasset, [&]( asset_bitasset_data_object& obj ){
-                obj.settlement_fund -= settled_amount.amount;
-                });
-
-      d.adjust_balance(op.account, settled_amount);
-
       const auto& mia_dyn = asset_to_settle->dynamic_asset_data_id(d);
+      auto settled_amount = op.amount * bitasset.settlement_price;
+      if( op.amount.amount == mia_dyn.current_supply )
+         settled_amount.amount = bitasset.settlement_fund; // avoid rounding problems
+      else
+         FC_ASSERT( settled_amount.amount < bitasset.settlement_fund );
+      
+      if( settled_amount.amount == 0 && !bitasset.is_prediction_market )
+      {
+         if( d.get_dynamic_global_properties().next_maintenance_time > HARDFORK_CORE_184_TIME )
+            FC_THROW( "Settle amount is too small to receive anything due to rounding" );
+         else // TODO remove this warning after hard fork core-184
+            wlog( "Something for nothing issue (#184, variant F) occurred at block #${block}", ("block",d.head_block_num()) );
+      }
+
+      asset pays = op.amount;
+      if( op.amount.amount != mia_dyn.current_supply
+            && settled_amount.amount != 0
+            && d.get_dynamic_global_properties().next_maintenance_time > HARDFORK_CORE_342_TIME )
+      {
+         pays = settled_amount.multiply_and_round_up( bitasset.settlement_price );
+      }
+
+      d.adjust_balance( op.account, -pays );
+
+      if( settled_amount.amount > 0 )
+      {
+         d.modify( bitasset, [&]( asset_bitasset_data_object& obj ){
+            obj.settlement_fund -= settled_amount.amount;
+         });
+
+         d.adjust_balance( op.account, settled_amount );
+      }
 
       d.modify( mia_dyn, [&]( asset_dynamic_data_object& obj ){
-                obj.current_supply -= op.amount.amount;
-                });
+         obj.current_supply -= pays.amount;
+      });
 
       return settled_amount;
    }
    else
    {
+      d.adjust_balance( op.account, -op.amount );
       return d.create<force_settlement_object>([&](force_settlement_object& s) {
          s.owner = op.account;
          s.balance = op.amount;
@@ -769,7 +793,10 @@ void_result asset_publish_feeds_evaluator::do_evaluate(const asset_publish_feed_
    FC_ASSERT(base.is_market_issued());
 
    const asset_bitasset_data_object& bitasset = base.bitasset_data(d);
-   FC_ASSERT( !bitasset.has_settlement(), "No further feeds may be published after a settlement event" );
+   if( bitasset.is_prediction_market || d.head_block_time() <= HARDFORK_CORE_216_TIME )
+   {
+      FC_ASSERT( !bitasset.has_settlement(), "No further feeds may be published after a settlement event" );
+   }
 
    FC_ASSERT( o.feed.settlement_price.quote.asset_id == bitasset.options.short_backing_asset );
    if( d.head_block_time() > HARDFORK_480_TIME )
@@ -820,7 +847,19 @@ void_result asset_publish_feeds_evaluator::do_apply(const asset_publish_feed_ope
    });
 
    if( !(old_feed == bad.current_feed) )
+   {
+      if( bad.has_settlement() ) // implies head_block_time > HARDFORK_CORE_216_TIME
+      {
+         const auto& mia_dyn = base.dynamic_asset_data_id(d);
+         if( !bad.current_feed.settlement_price.is_null()
+             && ( mia_dyn.current_supply == 0
+                  || ~price::call_price(asset(mia_dyn.current_supply, o.asset_id),
+                                        asset(bad.settlement_fund, bad.options.short_backing_asset),
+                                        bad.current_feed.maintenance_collateral_ratio ) < bad.current_feed.settlement_price ) )
+            d.revive_bitasset(base);
+      }
       db().check_call_orders(base);
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW((o)) }

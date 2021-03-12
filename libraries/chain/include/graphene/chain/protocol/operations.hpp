@@ -190,7 +190,9 @@ namespace graphene { namespace chain {
             nft_lottery_token_purchase_operation,
             nft_lottery_reward_operation,
             nft_lottery_end_operation,
-            random_number_store_operation
+            random_number_store_operation,
+            bid_collateral_operation,
+            execute_bid_operation
          > operation;
 
    /// @} // operations group
