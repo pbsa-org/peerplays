@@ -229,6 +229,7 @@ FC_REFLECT( graphene::chain::bid_collateral_operation::fee_parameters_type, (fee
 /// THIS IS THE ONLY VIRTUAL OPERATION THUS FAR... 
 FC_REFLECT( graphene::chain::fill_order_operation::fee_parameters_type,  ) // VIRTUAL
 FC_REFLECT( graphene::chain::execute_bid_operation::fee_parameters_type,  ) // VIRTUAL
+FC_REFLECT( graphene::chain::call_order_update_operation::options_type, (target_collateral_ratio) )
 FC_REFLECT( graphene::chain::limit_order_create_operation,(fee)(seller)(amount_to_sell)(min_to_receive)(expiration)(fill_or_kill)(extensions))
 FC_REFLECT( graphene::chain::limit_order_cancel_operation,(fee)(fee_paying_account)(order)(extensions) )
 FC_REFLECT( graphene::chain::call_order_update_operation, (fee)(funding_account)(delta_collateral)(delta_debt)(extensions) )
@@ -236,15 +237,12 @@ FC_REFLECT( graphene::chain::fill_order_operation, (fee)(order_id)(account_id)(p
 FC_REFLECT( graphene::chain::bid_collateral_operation, (fee)(bidder)(additional_collateral)(debt_covered)(extensions) )
 FC_REFLECT( graphene::chain::execute_bid_operation, (fee)(bidder)(debt)(collateral) )
 
-FC_REFLECT( graphene::chain::call_order_update_operation::options_type, (target_collateral_ratio) )
 
 
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_create_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_cancel_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::call_order_update_operation::fee_parameters_type )
-GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::fill_order_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::bid_collateral_operation::fee_parameters_type )
-GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::execute_bid_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_create_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_cancel_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::call_order_update_operation )

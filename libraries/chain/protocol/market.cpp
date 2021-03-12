@@ -57,6 +57,7 @@ void bid_collateral_operation::validate()const
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::limit_order_create_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::limit_order_cancel_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::call_order_update_operation::fee_parameters_type )
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::bid_collateral_operation::fee_parameters_type )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::limit_order_create_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::limit_order_cancel_operation )
 GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::call_order_update_operation )
