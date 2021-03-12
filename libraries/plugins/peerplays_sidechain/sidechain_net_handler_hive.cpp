@@ -402,6 +402,79 @@ void sidechain_net_handler_hive::hive_listener_loop() {
 
 void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
    std::string block = rpc_client->block_api_get_block(std::atoll(event_data.c_str()));
+   if (block != "") {
+      std::stringstream ss(block);
+      boost::property_tree::ptree block_json;
+      boost::property_tree::read_json(ss, block_json);
+
+      for (const auto &tx_child : block_json.get_child("result.block.transactions")) {
+         const auto &tx = tx_child.second;
+
+         for (const auto &ops : tx.get_child("operations")) {
+            const auto &op = ops.second;
+
+            std::string operation_type = op.get<std::string>("type");
+            ilog("Transactions: ${operation_type}", ("operation_type", operation_type));
+
+            if (operation_type == "transfer_operation") {
+               const auto &op_value = op.get_child("value");
+
+               std::string from = op_value.get<std::string>("from");
+               std::string to = op_value.get<std::string>("to");
+
+               const auto &amount_child = op_value.get_child("amount");
+
+               uint64_t amount = amount_child.get<uint64_t>("amount");
+               uint64_t precision = amount_child.get<uint64_t>("precision");
+               std::string nai = amount_child.get<std::string>("nai");
+
+               ilog("Transfer from ${from} to ${to}, amount ${amount}, precision ${precision}, nai ${nai}",
+                    ("from", from)("to", to)("amount", amount)("precision", precision)("nai", nai));
+            }
+         }
+      }
+
+      boost::property_tree::ptree transactions_json = block_json.get_child("result.block.transactions");
+      ss.str("");
+      boost::property_tree::write_json(ss, transactions_json);
+      elog("Transactions: ${ss}", ("ss", ss.str()));
+
+      //{"jsonrpc":"2.0","result":{"block":{"previous":"00006dd6c2b98bc7d1214f61f1c797bb22edb4cd","timestamp":"2021-03-10T12:18:21","witness":"initminer","transaction_merkle_root":"55d89a7b615a4d25f32d9160ce6714a5de5f2b05","extensions":[],"witness_signature":"1f0e2115cb18d862a279de93f3d4d82df4210984e26231db206de8b37e26b2aa8048f21fc7447f842047fea7ffa2a481eede07d379bf9577ab09b5395434508d86","transactions":[{"ref_block_num":28118,"ref_block_prefix":3347823042,"expiration":"2021-03-10T12:18:48","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f55c34b9fab328de76d7c4afd30ca1b64742f46d2aee759b66fc9b0e9d90653a44dbad1ef583c9578666abc23db0ca540f32746d7ac4ff7a6394d28a2c9ef29f3"]}],"block_id":"00006dd7a264f6a8d833ad88a7eeb3abdd483af3","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["73eb9d7a19b9bcb941500f4a9924c13fe3b94c4a"]}},"id":"block_api.get_block"}
+      //{"jsonrpc":"2.0","result":{"block":{"previous":"00006de5714685397129f52693504ed3abde8e44","timestamp":"2021-03-10T12:19:06","witness":"initminer","transaction_merkle_root":"8b9bcb4b0aed33624a68abdf2860e76136ae9313","extensions":[],"witness_signature":"20f0743c1c3f63230f8af615e14ca0c5143ddfde0c5cee83c24486276223ceb21e7950f1b503750aad73f979bbdf6a298c9e22a079cc1397ed9d4a6eb8aeccea79","transactions":[{"ref_block_num":28133,"ref_block_prefix":965035633,"expiration":"2021-03-10T12:19:33","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f519b0e13ee672108670540f846ad7cef676c94e3169e2d4c3ff12b5dad6dc412154cb45677b2caa0f839b5e2826ae96d6bbf36987ab40a928c3e0081e10a082e"]}],"block_id":"00006de655bac50cb40e05fc02eaef112ccae454","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["28c09bb777827fbf41023c50600aef65e0c83a8b"]}},"id":"block_api.get_block"}
+      //{"jsonrpc":"2.0","result":{"block":{"previous":"00006dfe471f2224d4b6c3189c7a2a5ed261c277","timestamp":"2021-03-10T12:20:21","witness":"initminer","transaction_merkle_root":"e407272ab2e383e5fef487651d88e0c0c3617e29","extensions":[],"witness_signature":"1f48152244ad2036e3761248a93a9c38fb8c7ee8a0721f9f47ae267b63808e56c223ab15641ec2baad6be4a54db5df04ead9b7f1107dba267a89c02c49d8115fbf","transactions":[{"ref_block_num":28158,"ref_block_prefix":606216007,"expiration":"2021-03-10T12:20:48","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f5b4c7a8695b6c68b6ee96000367ffa96c23d9f4ed8ca36f639b38351b8198d18626f3b8277ca5c92bd537c68db5f9730f3f9df59a8ce631e9dcf7ce53032796b"]}],"block_id":"00006dff4bcd9a790193924fe44d0bdc3fde1c83","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["50b8f4b268a0fa3a34698dd6f8152117343e6c06"]}},"id":"block_api.get_block"}
+
+      //const auto &vins = extract_info_from_block(block);
+
+      const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
+
+      /*for (const auto &v : vins) {
+         // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT
+         const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, v.address, time_point_sec::maximum()));
+         if (addr_itr == sidechain_addresses_idx.end())
+            continue;
+
+         std::stringstream ss;
+         ss << "bitcoin"
+            << "-" << v.out.hash_tx << "-" << v.out.n_vout;
+         std::string sidechain_uid = ss.str();
+
+         sidechain_event_data sed;
+         sed.timestamp = database.head_block_time();
+         sed.block_num = database.head_block_num();
+         sed.sidechain = addr_itr->sidechain;
+         sed.sidechain_uid = sidechain_uid;
+         sed.sidechain_transaction_id = v.out.hash_tx;
+         sed.sidechain_from = "";
+         sed.sidechain_to = v.address;
+         sed.sidechain_currency = "BTC";
+         sed.sidechain_amount = v.out.amount;
+         sed.peerplays_from = addr_itr->sidechain_address_account;
+         sed.peerplays_to = database.get_global_properties().parameters.son_account();
+         price btc_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
+         sed.peerplays_asset = asset(sed.sidechain_amount * btc_price.base.amount / btc_price.quote.amount);
+         sidechain_event_data_received(sed);
+      }*/
+   }
 }
 
 void sidechain_net_handler_hive::on_applied_block(const signed_block &b) {
