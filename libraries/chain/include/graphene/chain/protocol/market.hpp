@@ -226,7 +226,6 @@ FC_REFLECT( graphene::chain::limit_order_cancel_operation::fee_parameters_type, 
 FC_REFLECT( graphene::chain::call_order_update_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::bid_collateral_operation::fee_parameters_type, (fee) )
 /// THIS IS THE ONLY VIRTUAL OPERATION THUS FAR... 
-FC_REFLECT( graphene::chain::fill_order_operation::fee_parameters_type,  )
 FC_REFLECT( graphene::chain::fill_order_operation::fee_parameters_type,  ) // VIRTUAL
 FC_REFLECT( graphene::chain::execute_bid_operation::fee_parameters_type,  ) // VIRTUAL
 FC_REFLECT( graphene::chain::limit_order_create_operation,(fee)(seller)(amount_to_sell)(min_to_receive)(expiration)(fill_or_kill)(extensions))

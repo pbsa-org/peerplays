@@ -275,4 +275,4 @@ FC_REFLECT_DERIVED( graphene::chain::collateral_bid_object, (graphene::db::objec
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::limit_order_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::call_order_object )
 GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::force_settlement_object )
-GRAPHENE_DECLARE_EXTERNAL_SERIALIZATION( graphene::chain::collateral_bid_object )
+GRAPHENE_EXTERNAL_SERIALIZATION( extern, graphene::chain::collateral_bid_object )
