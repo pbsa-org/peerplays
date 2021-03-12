@@ -259,3 +259,5 @@ share_type call_order_object::get_max_debt_to_cover( price match_price,
    }
 
 } FC_CAPTURE_AND_RETHROW( (*this)(feed_price)(match_price)(maintenance_collateral_ratio) ) }
+
+GRAPHENE_EXTERNAL_SERIALIZATION( /*not extern*/, graphene::chain::collateral_bid_object )
