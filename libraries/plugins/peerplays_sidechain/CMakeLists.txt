@@ -14,6 +14,7 @@ add_library( peerplays_sidechain
              bitcoin/segwit_addr.cpp
              bitcoin/utils.cpp
              bitcoin/sign_bitcoin_transaction.cpp
+             common/rpc_client.cpp
            )
 
 if (ENABLE_DEV_FEATURES)

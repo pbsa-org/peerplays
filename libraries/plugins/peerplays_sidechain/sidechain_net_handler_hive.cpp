@@ -1,6 +1,7 @@
 #include <graphene/peerplays_sidechain/sidechain_net_handler_hive.hpp>
 
 #include <algorithm>
+#include <iomanip>
 #include <thread>
 
 #include <boost/algorithm/hex.hpp>
@@ -22,93 +23,80 @@
 
 namespace graphene { namespace peerplays_sidechain {
 
-hive_rpc_client::hive_rpc_client(std::string _ip, uint32_t _rpc_port, std::string _user, std::string _password) :
-      ip(_ip),
-      rpc_port(_rpc_port),
-      user(_user),
-      password(_password) {
-   authorization.key = "Authorization";
-   authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
+hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
+      rpc_client(_ip, _port, _user, _password) {
 }
 
-std::string hive_rpc_client::block_api_get_block(uint32_t block_number) {
+std::string hive_node_rpc_client::block_api_get_block(uint32_t block_number) {
    std::string params = "{ \"block_num\": " + std::to_string(block_number) + " }";
-   return send_post_request("block_api.get_block", params, true);
+   return send_post_request("block_api.get_block", params, false);
 }
 
-std::string hive_rpc_client::database_api_get_dynamic_global_properties() {
+std::string hive_node_rpc_client::database_api_get_dynamic_global_properties() {
    return send_post_request("database_api.get_dynamic_global_properties", "", false);
 }
 
-std::string hive_rpc_client::send_post_request(std::string method, std::string params, bool show_log) {
-   std::stringstream body;
-
-   body << "{ \"jsonrpc\": \"2.0\", \"id\": \"" << method << "\", \"method\": \"" << method << "\"";
-
-   if (!params.empty()) {
-      body << ", \"params\": " << params << "}";
-   }
-
-   body << " }";
-
-   const auto reply = send_post_request(body.str(), show_log);
-
-   if (reply.body.empty()) {
-      wlog("Hive RPC call ${function} failed", ("function", __FUNCTION__));
-      return "";
-   }
-
-   std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-   boost::property_tree::ptree json;
-   boost::property_tree::read_json(ss, json);
-
-   if (reply.status == 200) {
-      return ss.str();
-   }
-
-   if (json.count("error") && !json.get_child("error").empty()) {
-      wlog("Hive RPC call ${function} with body ${body} failed with reply '${msg}'", ("function", __FUNCTION__)("body", body.str())("msg", ss.str()));
-   }
-   return "";
+hive_wallet_rpc_client::hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
+      rpc_client(_ip, _port, _user, _password) {
 }
 
-fc::http::reply hive_rpc_client::send_post_request(std::string body, bool show_log) {
-   fc::http::connection conn;
-   conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), rpc_port));
+std::string hive_wallet_rpc_client::get_account(std::string account) {
+   std::string params = "[\"" + account + "\"]";
+   return send_post_request("get_account", params, true);
+}
 
-   std::string url = "http://" + ip + ":" + std::to_string(rpc_port);
+std::string hive_wallet_rpc_client::lock() {
+   return send_post_request("lock", "", true);
+}
 
-   //if (wallet.length() > 0) {
-   //   url = url + "/wallet/" + wallet;
-   //}
+std::string hive_wallet_rpc_client::unlock(std::string password) {
+   std::string params = "[\"" + password + "\"]";
+   return send_post_request("unlock", params, true);
+}
 
-   fc::http::reply reply = conn.request("POST", url, body, fc::http::headers{authorization});
+std::string hive_wallet_rpc_client::update_account_auth_key(std::string account_name, std::string type, std::string public_key, std::string weight) {
+   std::string params = "[\"" + account_name + "\", \"" + type + "\", \"" + public_key + "\", " + weight + "]";
+   return send_post_request("update_account_auth_key", params, true);
+}
 
-   if (show_log) {
-      ilog("### Request URL:    ${url}", ("url", url));
-      ilog("### Request:        ${body}", ("body", body));
-      std::stringstream ss(std::string(reply.body.begin(), reply.body.end()));
-      ilog("### Response:       ${ss}", ("ss", ss.str()));
-   }
+std::string hive_wallet_rpc_client::update_account_auth_account(std::string account_name, std::string type, std::string auth_account, std::string weight) {
+   std::string params = "[\"" + account_name + "\", \"" + type + "\", \"" + auth_account + "\", " + weight + "]";
+   return send_post_request("update_account_auth_account", params, true);
+}
 
-   return reply;
+std::string hive_wallet_rpc_client::update_account_auth_threshold(std::string account_name, std::string type, std::string threshold) {
+   std::string params = "[\"" + account_name + "\", \"" + type + "\", " + threshold + "]";
+   return send_post_request("update_account_auth_account", params, true);
 }
 
 sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::hive;
 
-   ip = options.at("hive-node-ip").as<std::string>();
-   rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
+   node_ip = options.at("hive-node-ip").as<std::string>();
+   node_rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
    if (options.count("hive-node-rpc-user")) {
-      rpc_user = options.at("hive-node-rpc-user").as<std::string>();
+      node_rpc_user = options.at("hive-node-rpc-user").as<std::string>();
    } else {
-      rpc_user = "";
+      node_rpc_user = "";
    }
    if (options.count("hive-node-rpc-password")) {
-      rpc_password = options.at("hive-node-rpc-password").as<std::string>();
+      node_rpc_password = options.at("hive-node-rpc-password").as<std::string>();
    } else {
-      rpc_password = "";
+      node_rpc_password = "";
+   }
+
+   wallet_ip = options.at("hive-wallet-ip").as<std::string>();
+   wallet_rpc_port = options.at("hive-wallet-rpc-port").as<uint32_t>();
+   if (options.count("hive-wallet-rpc-user")) {
+      wallet_rpc_user = options.at("hive-wallet-rpc-user").as<std::string>();
+   } else {
+      wallet_rpc_user = "";
+   }
+   if (options.count("hive-wallet-rpc-password")) {
+      wallet_rpc_password = options.at("hive-wallet-rpc-password").as<std::string>();
+   } else {
+      wallet_rpc_password = "";
    }
 
    if (options.count("hive-private-key")) {
@@ -125,13 +113,21 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
 
    fc::http::connection conn;
    try {
-      conn.connect_to(fc::ip::endpoint(fc::ip::address(ip), rpc_port));
+      conn.connect_to(fc::ip::endpoint(fc::ip::address(node_ip), node_rpc_port));
    } catch (fc::exception &e) {
-      elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", ip)("port", rpc_port));
+      elog("No Hive node running at ${ip} or wrong rpc port: ${port}", ("ip", node_ip)("port", node_rpc_port));
+      FC_ASSERT(false);
+   }
+   try {
+      conn.connect_to(fc::ip::endpoint(fc::ip::address(wallet_ip), wallet_rpc_port));
+   } catch (fc::exception &e) {
+      elog("No Hive wallet running at ${ip} or wrong rpc port: ${port}", ("ip", wallet_ip)("port", wallet_rpc_port));
       FC_ASSERT(false);
    }
 
-   rpc_client = new hive_rpc_client(ip, rpc_port, rpc_user, rpc_password);
+   node_rpc_client = new hive_node_rpc_client(node_ip, node_rpc_port, node_rpc_user, node_rpc_password);
+
+   wallet_rpc_client = new hive_wallet_rpc_client(wallet_ip, wallet_rpc_port, wallet_rpc_user, wallet_rpc_password);
 
    last_block_received = 0;
    schedule_hive_listener();
@@ -215,11 +211,77 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
    //      elog("==================================================");
    //   }
 
+   should_approve = true;
+
    return should_approve;
 }
 
 void sidechain_net_handler_hive::process_primary_wallet() {
-   return;
+   const auto &swi = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+   const auto &active_sw = swi.rbegin();
+   if (active_sw != swi.rend()) {
+
+      if ((active_sw->addresses.find(sidechain) == active_sw->addresses.end()) ||
+          (active_sw->addresses.at(sidechain).empty())) {
+
+         if (proposal_exists(chain::operation::tag<chain::son_wallet_update_operation>::value, active_sw->id)) {
+            return;
+         }
+
+         const chain::global_property_object &gpo = database.get_global_properties();
+
+         //auto active_sons = gpo.active_sons;
+         //string reply_str = create_primary_wallet_address(active_sons);
+
+         //std::stringstream active_pw_ss(reply_str);
+         //boost::property_tree::ptree active_pw_pt;
+         //boost::property_tree::read_json(active_pw_ss, active_pw_pt);
+         //if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
+
+         proposal_create_operation proposal_op;
+         proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
+         uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+         proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
+
+         //std::stringstream res;
+         //boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
+
+         son_wallet_update_operation swu_op;
+         swu_op.payer = gpo.parameters.son_account();
+         swu_op.son_wallet_id = active_sw->id;
+         swu_op.sidechain = sidechain;
+         swu_op.address = "son-account";
+
+         proposal_op.proposed_ops.emplace_back(swu_op);
+
+         //const auto &prev_sw = std::next(active_sw);
+         //if (prev_sw != swi.rend()) {
+         //   std::string new_pw_address = active_pw_pt.get<std::string>("result.address");
+         //   std::string tx_str = create_primary_wallet_transaction(*prev_sw, new_pw_address);
+         //   if (!tx_str.empty()) {
+         //      sidechain_transaction_create_operation stc_op;
+         //      stc_op.payer = gpo.parameters.son_account();
+         //      stc_op.object_id = prev_sw->id;
+         //      stc_op.sidechain = sidechain;
+         //      stc_op.transaction = tx_str;
+         //      stc_op.signers = prev_sw->sons;
+         //      proposal_op.proposed_ops.emplace_back(stc_op);
+         //   }
+         //}
+
+         signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+         try {
+            trx.validate();
+            database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+            if (plugin.app().p2p_node())
+               plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+         } catch (fc::exception &e) {
+            elog("Sending proposal for son wallet update operation failed with exception ${e}", ("e", e.what()));
+            return;
+         }
+         //}
+      }
+   }
 }
 
 void sidechain_net_handler_hive::process_sidechain_addresses() {
@@ -383,7 +445,7 @@ void sidechain_net_handler_hive::schedule_hive_listener() {
 void sidechain_net_handler_hive::hive_listener_loop() {
    schedule_hive_listener();
 
-   std::string reply = rpc_client->database_api_get_dynamic_global_properties();
+   std::string reply = node_rpc_client->database_api_get_dynamic_global_properties();
 
    if (!reply.empty()) {
       std::stringstream ss(reply);
@@ -401,7 +463,7 @@ void sidechain_net_handler_hive::hive_listener_loop() {
 }
 
 void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
-   std::string block = rpc_client->block_api_get_block(std::atoll(event_data.c_str()));
+   std::string block = node_rpc_client->block_api_get_block(std::atoll(event_data.c_str()));
    if (block != "") {
       std::stringstream ss(block);
       boost::property_tree::ptree block_json;
@@ -434,10 +496,10 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
          }
       }
 
-      boost::property_tree::ptree transactions_json = block_json.get_child("result.block.transactions");
-      ss.str("");
-      boost::property_tree::write_json(ss, transactions_json);
-      elog("Transactions: ${ss}", ("ss", ss.str()));
+      //boost::property_tree::ptree transactions_json = block_json.get_child("result.block.transactions");
+      //ss.str("");
+      //boost::property_tree::write_json(ss, transactions_json);
+      //elog("Transactions: ${ss}", ("ss", ss.str()));
 
       //{"jsonrpc":"2.0","result":{"block":{"previous":"00006dd6c2b98bc7d1214f61f1c797bb22edb4cd","timestamp":"2021-03-10T12:18:21","witness":"initminer","transaction_merkle_root":"55d89a7b615a4d25f32d9160ce6714a5de5f2b05","extensions":[],"witness_signature":"1f0e2115cb18d862a279de93f3d4d82df4210984e26231db206de8b37e26b2aa8048f21fc7447f842047fea7ffa2a481eede07d379bf9577ab09b5395434508d86","transactions":[{"ref_block_num":28118,"ref_block_prefix":3347823042,"expiration":"2021-03-10T12:18:48","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f55c34b9fab328de76d7c4afd30ca1b64742f46d2aee759b66fc9b0e9d90653a44dbad1ef583c9578666abc23db0ca540f32746d7ac4ff7a6394d28a2c9ef29f3"]}],"block_id":"00006dd7a264f6a8d833ad88a7eeb3abdd483af3","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["73eb9d7a19b9bcb941500f4a9924c13fe3b94c4a"]}},"id":"block_api.get_block"}
       //{"jsonrpc":"2.0","result":{"block":{"previous":"00006de5714685397129f52693504ed3abde8e44","timestamp":"2021-03-10T12:19:06","witness":"initminer","transaction_merkle_root":"8b9bcb4b0aed33624a68abdf2860e76136ae9313","extensions":[],"witness_signature":"20f0743c1c3f63230f8af615e14ca0c5143ddfde0c5cee83c24486276223ceb21e7950f1b503750aad73f979bbdf6a298c9e22a079cc1397ed9d4a6eb8aeccea79","transactions":[{"ref_block_num":28133,"ref_block_prefix":965035633,"expiration":"2021-03-10T12:19:33","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f519b0e13ee672108670540f846ad7cef676c94e3169e2d4c3ff12b5dad6dc412154cb45677b2caa0f839b5e2826ae96d6bbf36987ab40a928c3e0081e10a082e"]}],"block_id":"00006de655bac50cb40e05fc02eaef112ccae454","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["28c09bb777827fbf41023c50600aef65e0c83a8b"]}},"id":"block_api.get_block"}
@@ -445,7 +507,7 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
 
       //const auto &vins = extract_info_from_block(block);
 
-      const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
+      //const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
 
       /*for (const auto &v : vins) {
          // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT

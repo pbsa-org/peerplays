@@ -148,10 +148,14 @@ void peerplays_sidechain_plugin_impl::plugin_set_program_options(
                      "Tuple of [Bitcoin public key, Bitcoin private key] (may specify multiple times)");
 
    cli.add_options()("hive-sidechain-enabled", bpo::value<bool>()->default_value(false), "Hive sidechain handler enabled");
-   cli.add_options()("hive-node-ip", bpo::value<string>()->default_value("127.0.0.1"), "IP address of Hive node");
-   cli.add_options()("hive-node-rpc-port", bpo::value<uint32_t>()->default_value(28090), "RPC port of Hive node");
-   cli.add_options()("hive-node-rpc-user", bpo::value<string>(), "Hive RPC user");
-   cli.add_options()("hive-node-rpc-password", bpo::value<string>(), "Hive RPC password");
+   cli.add_options()("hive-node-ip", bpo::value<string>()->default_value("127.0.0.1"), "Hive node IP address");
+   cli.add_options()("hive-node-rpc-port", bpo::value<uint32_t>()->default_value(28090), "Hive node RPC port");
+   cli.add_options()("hive-node-rpc-user", bpo::value<string>(), "Hive node RPC user");
+   cli.add_options()("hive-node-rpc-password", bpo::value<string>(), "Hive node RPC password");
+   cli.add_options()("hive-wallet-ip", bpo::value<string>()->default_value("127.0.0.1"), "Hive wallet IP address");
+   cli.add_options()("hive-wallet-rpc-port", bpo::value<uint32_t>()->default_value(28091), "Hive wallet RPC port ");
+   cli.add_options()("hive-wallet-rpc-user", bpo::value<string>(), "Hive wallet RPC user");
+   cli.add_options()("hive-wallet-rpc-password", bpo::value<string>(), "Hive wallet RPC password");
    cli.add_options()("hive-private-key", bpo::value<vector<string>>()->composing()->multitoken()->DEFAULT_VALUE_VECTOR(std::make_pair("TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4", "5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n")),
                      "Tuple of [Hive public key, Hive private key] (may specify multiple times)");
 
@@ -221,8 +225,10 @@ void peerplays_sidechain_plugin_impl::plugin_initialize(const boost::program_opt
    sidechain_enabled_hive = options.at("hive-sidechain-enabled").as<bool>();
    config_ready_hive = options.count("hive-node-ip") &&
                        options.count("hive-node-rpc-port") &&
-                       /*options.count("hive-node-rpc-user") && options.count("bitcoin-node-rpc-password") &&*/
-                       /*options.count("hive-wallet") && options.count("hive-wallet-password") &&*/
+                       /*options.count("hive-node-rpc-user") && options.count("hive-node-rpc-password") &&*/
+                       options.count("hive-wallet-ip") &&
+                       options.count("hive-wallet-rpc-port") &&
+                       /*options.count("hive-wallet-rpc-user") && options.count("hive-wallet-rpc-password") &&*/
                        options.count("hive-private-key");
    if (!config_ready_hive) {
       wlog("Haven't set up Hive sidechain parameters");

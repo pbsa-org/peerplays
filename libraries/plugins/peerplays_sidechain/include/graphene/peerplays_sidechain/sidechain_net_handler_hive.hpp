@@ -7,25 +7,28 @@
 #include <fc/network/http/connection.hpp>
 #include <fc/signals.hpp>
 
+#include <graphene/peerplays_sidechain/common/rpc_client.hpp>
+
 namespace graphene { namespace peerplays_sidechain {
 
-class hive_rpc_client {
+class hive_node_rpc_client : public rpc_client {
 public:
-   hive_rpc_client(std::string _ip, uint32_t _rpc_port, std::string _user, std::string _password);
+   hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
 
    std::string block_api_get_block(uint32_t block_number);
    std::string database_api_get_dynamic_global_properties();
+};
 
-private:
-   std::string send_post_request(std::string method, std::string params, bool show_log);
-   fc::http::reply send_post_request(std::string body, bool show_log);
+class hive_wallet_rpc_client : public rpc_client {
+public:
+   hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
 
-   std::string ip;
-   uint32_t rpc_port;
-   std::string user;
-   std::string password;
-
-   fc::http::header authorization;
+   std::string get_account(std::string account);
+   std::string lock();
+   std::string unlock(std::string password);
+   std::string update_account_auth_key(std::string account_name, std::string type, std::string public_key, std::string weight);
+   std::string update_account_auth_account(std::string account_name, std::string type, std::string auth_account, std::string weight);
+   std::string update_account_auth_threshold(std::string account_name, std::string type, std::string threshold);
 };
 
 class sidechain_net_handler_hive : public sidechain_net_handler {
@@ -43,12 +46,17 @@ public:
    int64_t settle_sidechain_transaction(const sidechain_transaction_object &sto);
 
 private:
-   std::string ip;
-   uint32_t rpc_port;
-   std::string rpc_user;
-   std::string rpc_password;
+   std::string node_ip;
+   uint32_t node_rpc_port;
+   std::string node_rpc_user;
+   std::string node_rpc_password;
+   hive_node_rpc_client *node_rpc_client;
 
-   hive_rpc_client *rpc_client;
+   std::string wallet_ip;
+   uint32_t wallet_rpc_port;
+   std::string wallet_rpc_user;
+   std::string wallet_rpc_password;
+   hive_wallet_rpc_client *wallet_rpc_client;
 
    uint64_t last_block_received;
    fc::future<void> _listener_task;
