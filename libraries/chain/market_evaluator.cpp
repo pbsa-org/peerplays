@@ -158,8 +158,10 @@ void_result call_order_update_evaluator::do_evaluate(const call_order_update_ope
 { try {
    database& d = db();
 
+   auto next_maintenance_time = d.get_dynamic_global_properties().next_maintenance_time;
+
    // TODO: remove this check and the assertion after hf_834
-   if( d.get_dynamic_global_properties().next_maintenance_time <= HARDFORK_CORE_834_TIME )
+   if( next_maintenance_time <= HARDFORK_CORE_834_TIME )
       FC_ASSERT( !o.extensions.value.target_collateral_ratio.valid(),
                  "Can not set target_collateral_ratio in call_order_update_operation before hardfork 834." );
 
@@ -167,6 +169,14 @@ void_result call_order_update_evaluator::do_evaluate(const call_order_update_ope
    _debt_asset     = &o.delta_debt.asset_id(d);
    FC_ASSERT( _debt_asset->is_market_issued(), "Unable to cover ${sym} as it is not a collateralized asset.",
               ("sym", _debt_asset->symbol) );
+
+   _dynamic_data_obj = &_debt_asset->dynamic_asset_data_id(d);
+   FC_ASSERT( next_maintenance_time <= HARDFORK_CORE_1465_TIME 
+         || _dynamic_data_obj->current_supply + o.delta_debt.amount <= _debt_asset->options.max_supply,
+      "Borrowing this quantity would exceed MAX_SUPPLY" );
+
+   FC_ASSERT( _dynamic_data_obj->current_supply + o.delta_debt.amount >= 0,
+         "This transaction would bring current supply below zero.");
 
    _bitasset_data  = &_debt_asset->bitasset_data(d);
 
@@ -208,7 +218,7 @@ void_result call_order_update_evaluator::do_apply(const call_order_update_operat
       d.adjust_balance( o.funding_account,  o.delta_debt        );
 
       // Deduct the debt paid from the total supply of the debt asset.
-      d.modify(_debt_asset->dynamic_asset_data_id(d), [&](asset_dynamic_data_object& dynamic_asset) {
+      d.modify(*_dynamic_data_obj, [&](asset_dynamic_data_object& dynamic_asset) {
          dynamic_asset.current_supply += o.delta_debt.amount;
          assert(dynamic_asset.current_supply >= 0);
       });
@@ -366,13 +376,6 @@ void_result bid_collateral_evaluator::do_evaluate(const bid_collateral_operation
 
    FC_ASSERT( !_bitasset_data->is_prediction_market, "Cannot bid on a prediction market!" );
 
-   if( o.additional_collateral.amount > 0 )
-   {
-      FC_ASSERT( d.get_balance(*_paying_account, _bitasset_data->options.short_backing_asset(d)) >= o.additional_collateral,
-                 "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.additional_collateral.amount)
-                 ("b", d.get_balance(*_paying_account, o.additional_collateral.asset_id(d)).amount) );
-   }
-
    const collateral_bid_index& bids = d.get_index_type<collateral_bid_index>();
    const auto& index = bids.indices().get<by_account>();
    const auto& bid = index.find( boost::make_tuple( o.debt_covered.asset_id, o.bidder ) );
@@ -380,6 +383,22 @@ void_result bid_collateral_evaluator::do_evaluate(const bid_collateral_operation
       _bid = &(*bid);
    else
        FC_ASSERT( o.debt_covered.amount > 0, "Can't find bid to cancel?!");
+
+   if( o.additional_collateral.amount > 0 )
+   {
+      if( _bid && d.head_block_time() >= HARDFORK_CORE_1692_TIME ) // TODO: see if HF check can be removed after HF
+      {
+         asset delta = o.additional_collateral - _bid->get_additional_collateral();
+         FC_ASSERT( d.get_balance(*_paying_account, _bitasset_data->options.short_backing_asset(d)) >= delta,
+                    "Cannot increase bid from ${oc} to ${nc} collateral when payer only has ${b}",
+                    ("oc", _bid->get_additional_collateral().amount)("nc", o.additional_collateral.amount)
+                    ("b", d.get_balance(*_paying_account, o.additional_collateral.asset_id(d)).amount) );
+      } else
+         FC_ASSERT( d.get_balance( *_paying_account,
+                                   _bitasset_data->options.short_backing_asset(d) ) >= o.additional_collateral,
+                    "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.additional_collateral.amount)
+                    ("b", d.get_balance(*_paying_account, o.additional_collateral.asset_id(d)).amount) );
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

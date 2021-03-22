@@ -438,6 +438,67 @@ BOOST_AUTO_TEST_CASE( prediction_market )
    }
 }
 
+/***
+ * Prediction markets should not suffer a black swan (Issue #460)
+ */
+BOOST_AUTO_TEST_CASE( prediction_market_black_swan )
+{ 
+   try {
+      ACTORS((judge)(dan)(nathan));
+
+      // progress to recent hardfork
+      generate_blocks( HARDFORK_CORE_1270_TIME );
+      set_expiration( db, trx );
+
+      const auto& pmark = create_prediction_market("PMARK", judge_id);
+
+      int64_t init_balance(1000000);
+      transfer(committee_account, judge_id, asset(init_balance));
+      transfer(committee_account, dan_id, asset(init_balance));
+
+      update_feed_producers( pmark, { judge_id });
+      price_feed feed;
+      feed.settlement_price = asset( 1, pmark.id ) / asset( 1 );
+      publish_feed( pmark, judge, feed );
+
+      borrow( dan, pmark.amount(1000), asset(1000) );
+
+      // feed a price that will cause a black swan
+      feed.settlement_price = asset( 1, pmark.id ) / asset( 1000 );
+      publish_feed( pmark, judge, feed );
+
+      // verify a black swan happened
+      GRAPHENE_REQUIRE_THROW(borrow( dan, pmark.amount(1000), asset(1000) ), fc::exception);
+      trx.clear();
+
+      // progress past hardfork
+      generate_blocks( HARDFORK_CORE_460_TIME + db.get_global_properties().parameters.maintenance_interval );
+      set_expiration( db, trx );
+
+      // create another prediction market to test the hardfork
+      const auto& pmark2 = create_prediction_market("PMARKII", judge_id);
+      update_feed_producers( pmark2, { judge_id });
+      price_feed feed2;
+      feed2.settlement_price = asset( 1, pmark2.id ) / asset( 1 );
+      publish_feed( pmark2, judge, feed2 );
+
+      borrow( dan, pmark2.amount(1000), asset(1000) );
+
+      // feed a price that would have caused a black swan
+      feed2.settlement_price = asset( 1, pmark2.id ) / asset( 1000 );
+      publish_feed( pmark2, judge, feed2 );
+
+      // verify a black swan did not happen
+      borrow( dan, pmark2.amount(1000), asset(1000) );
+
+      generate_block(~database::skip_transaction_dupe_check);
+      generate_blocks( db.get_dynamic_global_properties().next_maintenance_time );
+      generate_block();
+   } catch( const fc::exception& e) {
+      edump((e.to_detail_string()));
+      throw;
+   }
+}
 
 BOOST_AUTO_TEST_CASE( create_account_test )
 {
@@ -1462,6 +1523,111 @@ BOOST_AUTO_TEST_CASE( reserve_asset_test )
       edump((e.to_detail_string()));
       throw;
    }
+}
+
+BOOST_AUTO_TEST_CASE( call_order_update_evaluator_test )
+{
+   try
+   {
+      ACTORS( (alice) (bob) );
+      transfer(committee_account, alice_id, asset(10000000 * GRAPHENE_BLOCKCHAIN_PRECISION));
+
+      const auto& core   = asset_id_type()(db);
+
+      // attempt to increase current supply beyond max_supply
+      const auto& bitjmj = create_bitasset( "JMJBIT", alice_id );
+      auto bitjmj_id = bitjmj.get_id();
+      share_type original_max_supply = bitjmj.options.max_supply;
+
+      {
+         BOOST_TEST_MESSAGE( "Setting price feed to $100000 / 1" );
+         update_feed_producers( bitjmj, {alice_id} );
+         price_feed current_feed;
+         current_feed.settlement_price = bitjmj.amount( 100000 ) / core.amount(1);
+         publish_feed( bitjmj, alice, current_feed );
+      }
+
+      {
+         BOOST_TEST_MESSAGE( "Attempting a call_order_update that exceeds max_supply" );
+         call_order_update_operation op;
+         op.funding_account = alice_id;
+         op.delta_collateral = asset( 1000000 * GRAPHENE_BLOCKCHAIN_PRECISION );
+         op.delta_debt = asset( bitjmj.options.max_supply + 1, bitjmj.id );
+         transaction tx;
+         tx.operations.push_back( op );
+         set_expiration( db, tx );
+         PUSH_TX( db, tx, database::skip_tapos_check | database::skip_transaction_signatures );
+         generate_block();
+      }
+
+      // advance past hardfork
+      generate_blocks( HARDFORK_CORE_1465_TIME );
+      set_expiration( db, trx );
+
+      // bitjmj should have its problem corrected
+      auto newbitjmj = bitjmj_id(db);
+      BOOST_REQUIRE_GT(newbitjmj.options.max_supply.value, original_max_supply.value);
+
+      // now try with an asset after the hardfork
+      const auto& bitusd = create_bitasset( "USDBIT", alice_id );
+
+      {
+         BOOST_TEST_MESSAGE( "Setting price feed to $100000 / 1" );
+         update_feed_producers( bitusd, {alice_id} );
+         price_feed current_feed;
+         current_feed.settlement_price = bitusd.amount( 100000 ) / core.amount(1);
+         publish_feed( bitusd, alice_id(db), current_feed );
+      }
+
+      {
+         BOOST_TEST_MESSAGE( "Attempting a call_order_update that exceeds max_supply" );
+         call_order_update_operation op;
+         op.funding_account = alice_id;
+         op.delta_collateral = asset( 1000000 * GRAPHENE_BLOCKCHAIN_PRECISION );
+         op.delta_debt = asset( bitusd.options.max_supply + 1, bitusd.id );
+         transaction tx;
+         tx.operations.push_back( op );
+         set_expiration( db, tx );
+         GRAPHENE_REQUIRE_THROW(PUSH_TX( db, tx, database::skip_tapos_check | database::skip_transaction_signatures ), fc::exception );
+      }
+
+      {
+         BOOST_TEST_MESSAGE( "Creating 2 bitusd and transferring to bob (increases current supply)" );
+         call_order_update_operation op;
+         op.funding_account = alice_id;
+         op.delta_collateral = asset( 100 * GRAPHENE_BLOCKCHAIN_PRECISION );
+         op.delta_debt = asset( 2, bitusd.id );
+         transaction tx;
+         tx.operations.push_back( op );
+         set_expiration( db, tx );
+         PUSH_TX( db, tx, database::skip_tapos_check | database::skip_transaction_signatures );
+         transfer( alice_id(db), bob_id(db), asset( 2, bitusd.id ) );
+      }
+
+      {
+         BOOST_TEST_MESSAGE( "Again attempting a call_order_update_operation that is max_supply - 1 (should throw)" );
+         call_order_update_operation op;
+         op.funding_account = alice_id;
+         op.delta_collateral = asset( 100000 * GRAPHENE_BLOCKCHAIN_PRECISION );
+         op.delta_debt = asset( bitusd.options.max_supply - 1, bitusd.id );
+         transaction tx;
+         tx.operations.push_back( op );
+         set_expiration( db, tx );
+         GRAPHENE_REQUIRE_THROW(PUSH_TX( db, tx, database::skip_tapos_check | database::skip_transaction_signatures ), fc::exception);
+      }
+
+      {
+         BOOST_TEST_MESSAGE( "Again attempting a call_order_update_operation that equals max_supply (should work)" );
+         call_order_update_operation op;
+         op.funding_account = alice_id;
+         op.delta_collateral = asset( 100000 * GRAPHENE_BLOCKCHAIN_PRECISION );
+         op.delta_debt = asset( bitusd.options.max_supply - 2, bitusd.id );
+         transaction tx;
+         tx.operations.push_back( op );
+         set_expiration( db, tx );
+         PUSH_TX( db, tx, database::skip_tapos_check | database::skip_transaction_signatures );
+      }
+   } FC_LOG_AND_RETHROW()
 }
 
 /**

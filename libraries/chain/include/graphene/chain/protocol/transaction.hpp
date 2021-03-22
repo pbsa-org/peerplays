@@ -116,6 +116,8 @@ namespace graphene { namespace chain {
                                      flat_set<account_id_type>& owner,
                                      vector<authority>& other,
                                      bool ignore_custom_operation_required_auths )const;
+      virtual uint64_t get_packed_size()const;
+
    };
 
    /**
