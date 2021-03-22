@@ -15,6 +15,8 @@ add_library( peerplays_sidechain
              bitcoin/utils.cpp
              bitcoin/sign_bitcoin_transaction.cpp
              common/rpc_client.cpp
+             hive/transaction.cpp
+             hive/types.cpp
            )
 
 if (ENABLE_DEV_FEATURES)

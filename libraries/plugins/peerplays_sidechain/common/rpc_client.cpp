@@ -21,6 +21,20 @@ rpc_client::rpc_client(std::string _ip, uint32_t _port, std::string _user, std::
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
 }
 
+std::string rpc_client::retrieve_value_from_reply(std::string reply_str, std::string value_path) {
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+   if (json.find("result") == json.not_found()) {
+      return "";
+   }
+   auto json_result = json.get_child("result");
+   if (json_result.find(value_path) == json_result.not_found()) {
+      return "";
+   }
+   return json_result.get<std::string>(value_path);
+}
+
 std::string rpc_client::send_post_request(std::string method, std::string params, bool show_log) {
    std::stringstream body;
 

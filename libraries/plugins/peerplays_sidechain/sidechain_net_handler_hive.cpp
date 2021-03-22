@@ -13,12 +13,15 @@
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 #include <fc/smart_ref_impl.hpp>
+#include <fc/time.hpp>
 
 #include <graphene/chain/account_object.hpp>
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/peerplays_sidechain/hive/operations.hpp>
+#include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
@@ -36,6 +39,25 @@ std::string hive_node_rpc_client::database_api_get_dynamic_global_properties() {
    return send_post_request("database_api.get_dynamic_global_properties", "", false);
 }
 
+std::string hive_node_rpc_client::database_api_get_version() {
+   return send_post_request("database_api.get_version", "", true);
+}
+
+std::string hive_node_rpc_client::get_chain_id() {
+   std::string reply_str = database_api_get_version();
+   return retrieve_value_from_reply(reply_str, "chain_id");
+}
+
+std::string hive_node_rpc_client::get_head_block_id() {
+   std::string reply_str = database_api_get_dynamic_global_properties();
+   return retrieve_value_from_reply(reply_str, "head_block_id");
+}
+
+std::string hive_node_rpc_client::get_head_block_time() {
+   std::string reply_str = database_api_get_dynamic_global_properties();
+   return retrieve_value_from_reply(reply_str, "time");
+}
+
 hive_wallet_rpc_client::hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
       rpc_client(_ip, _port, _user, _password) {
 }
@@ -47,6 +69,10 @@ std::string hive_wallet_rpc_client::get_account(std::string account) {
 
 std::string hive_wallet_rpc_client::lock() {
    return send_post_request("lock", "", true);
+}
+
+std::string hive_wallet_rpc_client::info() {
+   return send_post_request("info", "", true);
 }
 
 std::string hive_wallet_rpc_client::unlock(std::string password) {
@@ -67,6 +93,11 @@ std::string hive_wallet_rpc_client::update_account_auth_account(std::string acco
 std::string hive_wallet_rpc_client::update_account_auth_threshold(std::string account_name, std::string type, std::string threshold) {
    std::string params = "[\"" + account_name + "\", \"" + type + "\", " + threshold + "]";
    return send_post_request("update_account_auth_account", params, true);
+}
+
+std::string hive_wallet_rpc_client::get_account_memo_key(std::string account) {
+   std::string reply_str = get_account(account);
+   return retrieve_value_from_reply(reply_str, "memo_key");
 }
 
 sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
@@ -230,21 +261,52 @@ void sidechain_net_handler_hive::process_primary_wallet() {
 
          const chain::global_property_object &gpo = database.get_global_properties();
 
-         //auto active_sons = gpo.active_sons;
-         //string reply_str = create_primary_wallet_address(active_sons);
+         auto active_sons = gpo.active_sons;
+         fc::flat_map<std::string, uint16_t> account_auths;
+         uint32_t total_weight = 0;
+         for (const auto &active_son : active_sons) {
+            total_weight = total_weight + active_son.weight;
+            account_auths[active_son.sidechain_public_keys.at(sidechain)] = active_son.weight;
+         }
 
-         //std::stringstream active_pw_ss(reply_str);
-         //boost::property_tree::ptree active_pw_pt;
-         //boost::property_tree::read_json(active_pw_ss, active_pw_pt);
-         //if (active_pw_pt.count("error") && active_pw_pt.get_child("error").empty()) {
+         std::string memo_key = wallet_rpc_client->get_account_memo_key("son-account");
+         if (memo_key.empty()) {
+            return;
+         }
+
+         hive::authority active;
+         active.weight_threshold = 1;
+         active.account_auths = account_auths;
+
+         hive::account_update_operation auo;
+         auo.account = "son-account";
+         auo.active = active;
+         auo.memo_key = hive::public_key_type(memo_key);
+
+         std::string block_id_str = node_rpc_client->get_head_block_id();
+         hive::block_id_type head_block_id(block_id_str);
+
+         std::string head_block_time_str = node_rpc_client->get_head_block_time();
+         time_point head_block_time = fc::time_point_sec::from_iso_string(head_block_time_str);
+
+         hive::signed_transaction htrx;
+         htrx.set_reference_block(head_block_id);
+         htrx.set_expiration(head_block_time + fc::seconds(90));
+
+         htrx.operations.push_back(auo);
+         ilog("TRX: ${htrx}", ("htrx", htrx));
+
+         std::string chain_id_str = node_rpc_client->get_chain_id();
+         const hive::chain_id_type chain_id(chain_id_str);
+
+         // create sidechain transaction for wallet update, to collect SON signatures
+
+         return; // temporary
 
          proposal_create_operation proposal_op;
          proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
          uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
          proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
-
-         //std::stringstream res;
-         //boost::property_tree::json_parser::write_json(res, active_pw_pt.get_child("result"));
 
          son_wallet_update_operation swu_op;
          swu_op.payer = gpo.parameters.son_account();
@@ -253,21 +315,6 @@ void sidechain_net_handler_hive::process_primary_wallet() {
          swu_op.address = "son-account";
 
          proposal_op.proposed_ops.emplace_back(swu_op);
-
-         //const auto &prev_sw = std::next(active_sw);
-         //if (prev_sw != swi.rend()) {
-         //   std::string new_pw_address = active_pw_pt.get<std::string>("result.address");
-         //   std::string tx_str = create_primary_wallet_transaction(*prev_sw, new_pw_address);
-         //   if (!tx_str.empty()) {
-         //      sidechain_transaction_create_operation stc_op;
-         //      stc_op.payer = gpo.parameters.son_account();
-         //      stc_op.object_id = prev_sw->id;
-         //      stc_op.sidechain = sidechain;
-         //      stc_op.transaction = tx_str;
-         //      stc_op.signers = prev_sw->sons;
-         //      proposal_op.proposed_ops.emplace_back(stc_op);
-         //   }
-         //}
 
          signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
          try {
@@ -279,7 +326,6 @@ void sidechain_net_handler_hive::process_primary_wallet() {
             elog("Sending proposal for son wallet update operation failed with exception ${e}", ("e", e.what()));
             return;
          }
-         //}
       }
    }
 }
@@ -495,15 +541,6 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
             }
          }
       }
-
-      //boost::property_tree::ptree transactions_json = block_json.get_child("result.block.transactions");
-      //ss.str("");
-      //boost::property_tree::write_json(ss, transactions_json);
-      //elog("Transactions: ${ss}", ("ss", ss.str()));
-
-      //{"jsonrpc":"2.0","result":{"block":{"previous":"00006dd6c2b98bc7d1214f61f1c797bb22edb4cd","timestamp":"2021-03-10T12:18:21","witness":"initminer","transaction_merkle_root":"55d89a7b615a4d25f32d9160ce6714a5de5f2b05","extensions":[],"witness_signature":"1f0e2115cb18d862a279de93f3d4d82df4210984e26231db206de8b37e26b2aa8048f21fc7447f842047fea7ffa2a481eede07d379bf9577ab09b5395434508d86","transactions":[{"ref_block_num":28118,"ref_block_prefix":3347823042,"expiration":"2021-03-10T12:18:48","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f55c34b9fab328de76d7c4afd30ca1b64742f46d2aee759b66fc9b0e9d90653a44dbad1ef583c9578666abc23db0ca540f32746d7ac4ff7a6394d28a2c9ef29f3"]}],"block_id":"00006dd7a264f6a8d833ad88a7eeb3abdd483af3","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["73eb9d7a19b9bcb941500f4a9924c13fe3b94c4a"]}},"id":"block_api.get_block"}
-      //{"jsonrpc":"2.0","result":{"block":{"previous":"00006de5714685397129f52693504ed3abde8e44","timestamp":"2021-03-10T12:19:06","witness":"initminer","transaction_merkle_root":"8b9bcb4b0aed33624a68abdf2860e76136ae9313","extensions":[],"witness_signature":"20f0743c1c3f63230f8af615e14ca0c5143ddfde0c5cee83c24486276223ceb21e7950f1b503750aad73f979bbdf6a298c9e22a079cc1397ed9d4a6eb8aeccea79","transactions":[{"ref_block_num":28133,"ref_block_prefix":965035633,"expiration":"2021-03-10T12:19:33","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f519b0e13ee672108670540f846ad7cef676c94e3169e2d4c3ff12b5dad6dc412154cb45677b2caa0f839b5e2826ae96d6bbf36987ab40a928c3e0081e10a082e"]}],"block_id":"00006de655bac50cb40e05fc02eaef112ccae454","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["28c09bb777827fbf41023c50600aef65e0c83a8b"]}},"id":"block_api.get_block"}
-      //{"jsonrpc":"2.0","result":{"block":{"previous":"00006dfe471f2224d4b6c3189c7a2a5ed261c277","timestamp":"2021-03-10T12:20:21","witness":"initminer","transaction_merkle_root":"e407272ab2e383e5fef487651d88e0c0c3617e29","extensions":[],"witness_signature":"1f48152244ad2036e3761248a93a9c38fb8c7ee8a0721f9f47ae267b63808e56c223ab15641ec2baad6be4a54db5df04ead9b7f1107dba267a89c02c49d8115fbf","transactions":[{"ref_block_num":28158,"ref_block_prefix":606216007,"expiration":"2021-03-10T12:20:48","operations":[{"type":"transfer_operation","value":{"from":"initminer","to":"deepcrypto8","amount":{"amount":"100000000","precision":3,"nai":"@@000000021"},"memo":""}}],"extensions":[],"signatures":["1f5b4c7a8695b6c68b6ee96000367ffa96c23d9f4ed8ca36f639b38351b8198d18626f3b8277ca5c92bd537c68db5f9730f3f9df59a8ce631e9dcf7ce53032796b"]}],"block_id":"00006dff4bcd9a790193924fe44d0bdc3fde1c83","signing_key":"TST6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4","transaction_ids":["50b8f4b268a0fa3a34698dd6f8152117343e6c06"]}},"id":"block_api.get_block"}
 
       //const auto &vins = extract_info_from_block(block);
 
