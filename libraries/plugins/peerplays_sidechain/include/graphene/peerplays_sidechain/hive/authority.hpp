@@ -21,7 +21,7 @@ struct authority {
    };
 
    uint32_t weight_threshold = 0;
-   fc::flat_map<std::string, uint16_t> account_auths;
+   fc::flat_map<account_name_type, uint16_t> account_auths;
    fc::flat_map<public_key_type, uint16_t> key_auths;
 };
 

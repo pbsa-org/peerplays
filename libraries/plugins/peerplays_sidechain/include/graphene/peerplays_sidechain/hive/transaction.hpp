@@ -16,7 +16,6 @@ struct transaction {
    fc::time_point_sec expiration;
    std::vector<hive_operation> operations;
    extensions_type extensions;
-   std::vector<fc::ecc::compact_signature> signatures;
 
    digest_type sig_digest(const chain_id_type &chain_id) const;
 

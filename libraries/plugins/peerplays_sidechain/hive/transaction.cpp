@@ -1,5 +1,7 @@
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 
+#include <boost/algorithm/hex.hpp>
+
 #include <fc/bitutil.hpp>
 #include <fc/io/raw.hpp>
 
@@ -28,7 +30,23 @@ void signed_transaction::clear() {
 
 const signature_type &signed_transaction::sign(const hive::private_key_type &key, const hive::chain_id_type &chain_id) {
    digest_type h = sig_digest(chain_id);
-   signatures.push_back(key.sign_compact(h, true));
+   auto sig = key.sign_compact(h, true);
+
+   ilog("Signing1: chain_id  = ${chain_id}", ("chain_id", chain_id));
+   ilog("Signing1: key       = ${key}", ("key", key));
+   ilog("Signing1: this      = ${this}", ("this", *this));
+   ilog("Signing1: h         = ${h}", ("h", h));
+   ilog("Signing1: signature = ${sig}", ("sig", sig));
+
+   std::stringstream ss_st;
+   fc::raw::pack(ss_st, chain_id);
+   ilog("Signing: ${ss_st}", ("ss_st", boost::algorithm::hex(ss_st.str())));
+
+   ss_st.str("");
+   fc::raw::pack(ss_st, *this);
+   ilog("Signing: ${ss_st}", ("ss_st", boost::algorithm::hex(ss_st.str())));
+
+   signatures.push_back(sig);
    return signatures.back();
 }
 

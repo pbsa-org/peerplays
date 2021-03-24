@@ -19,8 +19,6 @@ public_key_type::public_key_type(const fc::ecc::public_key &pubkey) :
       key_data(pubkey){};
 
 public_key_type::public_key_type(const std::string &base58str) {
-   // TODO:  Refactor syntactic checks into static is_valid()
-   //        to make public_key_type API more similar to address API
    std::string prefix(ADDRESS_PREFIX);
 
    const size_t prefix_len = prefix.size();

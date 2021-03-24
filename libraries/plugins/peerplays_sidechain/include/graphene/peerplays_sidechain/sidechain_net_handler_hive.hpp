@@ -8,6 +8,7 @@
 #include <fc/signals.hpp>
 
 #include <graphene/peerplays_sidechain/common/rpc_client.hpp>
+#include <graphene/peerplays_sidechain/hive/types.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
@@ -65,6 +66,8 @@ private:
    std::string wallet_rpc_user;
    std::string wallet_rpc_password;
    hive_wallet_rpc_client *wallet_rpc_client;
+
+   hive::chain_id_type chain_id;
 
    uint64_t last_block_received;
    fc::future<void> _listener_task;

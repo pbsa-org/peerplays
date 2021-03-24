@@ -12,7 +12,7 @@ typedef fc::flat_set<future_extensions> extensions_type;
 
 typedef fc::ecc::private_key private_key_type;
 typedef fc::sha256 chain_id_type;
-//typedef fixed_string<16> account_name_type;
+typedef std::string account_name_type;
 typedef fc::ripemd160 block_id_type;
 //typedef fc::ripemd160 checksum_type;
 //typedef fc::ripemd160 transaction_id_type;
