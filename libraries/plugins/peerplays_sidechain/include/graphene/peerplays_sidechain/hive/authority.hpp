@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 #include <fc/container/flat_fwd.hpp>
 
@@ -21,8 +20,8 @@ struct authority {
    };
 
    uint32_t weight_threshold = 0;
-   fc::flat_map<account_name_type, uint16_t> account_auths;
-   fc::flat_map<public_key_type, uint16_t> key_auths;
+   fc::flat_map<hive::account_name_type, uint16_t> account_auths;
+   fc::flat_map<hive::public_key_type, uint16_t> key_auths;
 };
 
 }}} // namespace graphene::peerplays_sidechain::hive

@@ -10,6 +10,7 @@
 
 #include <fc/crypto/base64.hpp>
 #include <fc/crypto/hex.hpp>
+#include <fc/io/json.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -41,6 +42,11 @@ std::string hive_node_rpc_client::database_api_get_dynamic_global_properties() {
 
 std::string hive_node_rpc_client::database_api_get_version() {
    return send_post_request("database_api.get_version", "", false);
+}
+
+std::string hive_node_rpc_client::network_broadcast_api_broadcast_transaction(std::string htrx) {
+   std::string params = "{ \"trx\": " + htrx + ", \"max_block_age\": -1 }";
+   return send_post_request("network_broadcast_api.broadcast_transaction", params, true);
 }
 
 std::string hive_node_rpc_client::get_chain_id() {
@@ -278,7 +284,7 @@ void sidechain_net_handler_hive::process_primary_wallet() {
          }
 
          hive::authority active;
-         active.weight_threshold = 1;
+         active.weight_threshold = total_weight * 2 / 3 + 1;
          active.account_auths = account_auths;
 
          hive::account_update_operation auo;
@@ -442,14 +448,7 @@ std::string sidechain_net_handler_hive::process_sidechain_transaction(const side
    hive::signed_transaction htrx;
    fc::raw::unpack(ss_trx, htrx, 1000);
 
-   // temp
-   // sign_transaction {"ref_block_num":0,"ref_block_prefix":0,"expiration":"1970-01-01T00:00:0","operations":[["account_update",{"account":"son-account","active":{"weight_threshold":1,"account_auths":[["sonaccount01",1],["sonaccount02",1],["sonaccount03",1],["sonaccount04",1],["sonaccount05",1],["sonaccount06",1],["sonaccount07",1],["sonaccount08",1],["sonaccount09",1],["sonaccount10",1],["sonaccount11",1],["sonaccount12",1],["sonaccount13",1],["sonaccount14",1],["sonaccount15",1]],"key_auths":[]},"memo_key":"TST78bZV5JsuNKUVM7WDVKBnuiuXBTR8gsPEaev2fj96iXqq5R13u","json_metadata":""}]],"extensions":[]} false
-   htrx.set_reference_block(block_id_type("0000d68fd4d7abb7e8975398b9e93f93db990ac8"));
-   htrx.set_expiration(fc::time_point::from_iso_string("2021-03-23T19:21:24"));
-   // temp
-
    ilog("TRX: ${htrx}", ("htrx", htrx));
-   ilog("EXP: {\"ref_block_num\":54927,\"ref_block_prefix\":3081492436,\"expiration\":\"2021-03-23T19:21:24\",\"operations\":[{\"type\":\"account_update_operation\",\"value\":{\"account\":\"son-account\",\"active\":{\"weight_threshold\":1,\"account_auths\":[[\"sonaccount01\",1],[\"sonaccount02\",1],[\"sonaccount03\",1],[\"sonaccount04\",1],[\"sonaccount05\",1],[\"sonaccount06\",1],[\"sonaccount07\",1],[\"sonaccount08\",1],[\"sonaccount09\",1],[\"sonaccount10\",1],[\"sonaccount11\",1],[\"sonaccount12\",1],[\"sonaccount13\",1],[\"sonaccount14\",1],[\"sonaccount15\",1]],\"key_auths\":[]},\"memo_key\":\"TST1111111111111111111111111111111114T1Anm\",\"json_metadata\":\"\"}}],\"extensions\":[],\"signatures\":[\"1f323561e46aa7703850d6afc5fdf00b338424eed695c9513568135bb5dbc051f3242a463f29d17257d982ae616214239b5405073ae7771469a7ea9e36c1577c45\"]}");
 
    std::string chain_id_str = node_rpc_client->get_chain_id();
    const hive::chain_id_type chain_id(chain_id_str);
@@ -458,13 +457,11 @@ std::string sidechain_net_handler_hive::process_sidechain_transaction(const side
    signature_type st = htrx.sign(*privkey, chain_id);
 
    ilog("TRX: ${htrx}", ("htrx", htrx));
-   ilog("EXP: {\"ref_block_num\":54927,\"ref_block_prefix\":3081492436,\"expiration\":\"2021-03-23T19:21:24\",\"operations\":[{\"type\":\"account_update_operation\",\"value\":{\"account\":\"son-account\",\"active\":{\"weight_threshold\":1,\"account_auths\":[[\"sonaccount01\",1],[\"sonaccount02\",1],[\"sonaccount03\",1],[\"sonaccount04\",1],[\"sonaccount05\",1],[\"sonaccount06\",1],[\"sonaccount07\",1],[\"sonaccount08\",1],[\"sonaccount09\",1],[\"sonaccount10\",1],[\"sonaccount11\",1],[\"sonaccount12\",1],[\"sonaccount13\",1],[\"sonaccount14\",1],[\"sonaccount15\",1]],\"key_auths\":[]},\"memo_key\":\"TST1111111111111111111111111111111114T1Anm\",\"json_metadata\":\"\"}}],\"extensions\":[],\"signatures\":[\"1f323561e46aa7703850d6afc5fdf00b338424eed695c9513568135bb5dbc051f3242a463f29d17257d982ae616214239b5405073ae7771469a7ea9e36c1577c45\"]}");
 
    std::stringstream ss_st;
    fc::raw::pack(ss_st, st, 1000);
    std::string st_str = boost::algorithm::hex(ss_st.str());
 
-   st_str = "";
    return st_str;
 }
 
@@ -483,6 +480,10 @@ std::string sidechain_net_handler_hive::send_sidechain_transaction(const sidecha
       }
    }
    ilog("HTRX: ${htrx}", ("htrx", htrx));
+
+   std::string params = fc::json::to_string(htrx);
+   ilog("HTRX: ${htrx}", ("htrx", params));
+   node_rpc_client->network_broadcast_api_broadcast_transaction(params);
 
    //   try {
    //      trx.validate();

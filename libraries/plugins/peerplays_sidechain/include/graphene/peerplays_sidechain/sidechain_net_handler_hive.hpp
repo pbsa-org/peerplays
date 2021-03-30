@@ -19,6 +19,7 @@ public:
    std::string block_api_get_block(uint32_t block_number);
    std::string database_api_get_dynamic_global_properties();
    std::string database_api_get_version();
+   std::string network_broadcast_api_broadcast_transaction(std::string htrx);
 
    std::string get_chain_id();
    std::string get_head_block_id();
