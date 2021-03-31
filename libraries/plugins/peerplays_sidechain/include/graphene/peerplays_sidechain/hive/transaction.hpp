@@ -17,6 +17,8 @@ struct transaction {
    std::vector<hive_operation> operations;
    extensions_type extensions;
 
+   digest_type digest() const;
+   transaction_id_type id() const;
    digest_type sig_digest(const chain_id_type &chain_id) const;
 
    void set_expiration(fc::time_point_sec expiration_time);

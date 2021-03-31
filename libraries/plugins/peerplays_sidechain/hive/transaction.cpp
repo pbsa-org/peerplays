@@ -7,6 +7,19 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace hive {
 
+digest_type transaction::digest() const {
+   digest_type::encoder enc;
+   fc::raw::pack(enc, *this);
+   return enc.result();
+}
+
+transaction_id_type transaction::id() const {
+   auto h = digest();
+   transaction_id_type result;
+   memcpy(result._hash, h._hash, std::min(sizeof(result), sizeof(h)));
+   return result;
+}
+
 digest_type transaction::sig_digest(const chain_id_type &chain_id) const {
    digest_type::encoder enc;
    fc::raw::pack(enc, chain_id);

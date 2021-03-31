@@ -15,7 +15,7 @@ typedef fc::sha256 chain_id_type;
 typedef std::string account_name_type;
 typedef fc::ripemd160 block_id_type;
 //typedef fc::ripemd160 checksum_type;
-//typedef fc::ripemd160 transaction_id_type;
+typedef fc::ripemd160 transaction_id_type;
 typedef fc::sha256 digest_type;
 typedef fc::ecc::compact_signature signature_type;
 //typedef safe<int64_t> share_type;

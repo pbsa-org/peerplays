@@ -496,7 +496,7 @@ std::string sidechain_net_handler_hive::send_sidechain_transaction(const sidecha
    //      return "";
    //   }
 
-   return "";
+   return htrx.id().str();
 }
 
 int64_t sidechain_net_handler_hive::settle_sidechain_transaction(const sidechain_transaction_object &sto) {
