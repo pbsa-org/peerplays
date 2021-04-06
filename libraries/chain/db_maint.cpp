@@ -1929,6 +1929,80 @@ void database::perform_son_tasks()
                gpo.pending_parameters->extensions.value.btc_asset = btc_asset.get_id();
       });
    }
+   // create HBD asset here because son_account is the issuer of the HBD
+   if (gpo.parameters.hbd_asset() == asset_id_type()  && head_block_time() >= HARDFORK_SON_FOR_HIVE_TIME)
+   {
+      const asset_dynamic_data_object& dyn_asset =
+         create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
+            a.current_supply = 0;
+         });
+
+      const asset_object& hbd_asset =
+         create<asset_object>( [&gpo, &dyn_asset]( asset_object& a ) {
+            a.symbol = "HBD";
+            a.precision = 3;
+            a.issuer = gpo.parameters.son_account();
+            a.options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
+            a.options.market_fee_percent = 500; // 5%
+            a.options.issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK;
+            a.options.flags = asset_issuer_permission_flags::charge_market_fee |
+                              //asset_issuer_permission_flags::white_list |
+                              asset_issuer_permission_flags::override_authority |
+                              asset_issuer_permission_flags::transfer_restricted |
+                              asset_issuer_permission_flags::disable_confidential;
+            a.options.core_exchange_rate.base.amount = 100000;
+            a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
+            a.options.core_exchange_rate.quote.amount = 2500; // CoinMarketCap approx value
+            a.options.core_exchange_rate.quote.asset_id = a.id;
+            a.options.whitelist_authorities.clear(); // accounts allowed to use asset, if not empty
+            a.options.blacklist_authorities.clear(); // accounts who can blacklist other accounts to use asset, if white_list flag is set
+            a.options.whitelist_markets.clear(); // might be traded with
+            a.options.blacklist_markets.clear(); // might not be traded with
+            a.dynamic_asset_data_id = dyn_asset.id;
+         });
+      modify( gpo, [&hbd_asset]( global_property_object& gpo ) {
+            gpo.parameters.extensions.value.hbd_asset = hbd_asset.get_id();
+            if( gpo.pending_parameters )
+               gpo.pending_parameters->extensions.value.hbd_asset = hbd_asset.get_id();
+      });
+   }
+   // create HIVE asset here because son_account is the issuer of the HIVE
+   if (gpo.parameters.hive_asset() == asset_id_type()  && head_block_time() >= HARDFORK_SON_TIME)
+   {
+      const asset_dynamic_data_object& dyn_asset =
+         create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) {
+            a.current_supply = 0;
+         });
+
+      const asset_object& hive_asset =
+         create<asset_object>( [&gpo, &dyn_asset]( asset_object& a ) {
+            a.symbol = "HIVE";
+            a.precision = 8;
+            a.issuer = gpo.parameters.son_account();
+            a.options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
+            a.options.market_fee_percent = 500; // 5%
+            a.options.issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK;
+            a.options.flags = asset_issuer_permission_flags::charge_market_fee |
+                              //asset_issuer_permission_flags::white_list |
+                              asset_issuer_permission_flags::override_authority |
+                              asset_issuer_permission_flags::transfer_restricted |
+                              asset_issuer_permission_flags::disable_confidential;
+            a.options.core_exchange_rate.base.amount = 100000;
+            a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
+            a.options.core_exchange_rate.quote.amount = 2500; // CoinMarketCap approx value
+            a.options.core_exchange_rate.quote.asset_id = a.id;
+            a.options.whitelist_authorities.clear(); // accounts allowed to use asset, if not empty
+            a.options.blacklist_authorities.clear(); // accounts who can blacklist other accounts to use asset, if white_list flag is set
+            a.options.whitelist_markets.clear(); // might be traded with
+            a.options.blacklist_markets.clear(); // might not be traded with
+            a.dynamic_asset_data_id = dyn_asset.id;
+         });
+      modify( gpo, [&hive_asset]( global_property_object& gpo ) {
+            gpo.parameters.extensions.value.hive_asset = hive_asset.get_id();
+            if( gpo.pending_parameters )
+               gpo.pending_parameters->extensions.value.hive_asset = hive_asset.get_id();
+      });
+   }
    // Pay the SONs
    if (head_block_time() >= HARDFORK_SON_TIME)
    {
@@ -2157,6 +2231,10 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
             p.pending_parameters->extensions.value.btc_asset = p.parameters.extensions.value.btc_asset;
 	 if( !p.pending_parameters->extensions.value.maximum_son_count.valid() )
             p.pending_parameters->extensions.value.maximum_son_count = p.parameters.extensions.value.maximum_son_count;
+         if( !p.pending_parameters->extensions.value.hbd_asset.valid() )
+            p.pending_parameters->extensions.value.hbd_asset = p.parameters.extensions.value.hbd_asset;
+         if( !p.pending_parameters->extensions.value.hive_asset.valid() )
+            p.pending_parameters->extensions.value.hive_asset = p.parameters.extensions.value.hive_asset;
          p.parameters = std::move(*p.pending_parameters);
          p.pending_parameters.reset();
       }
