@@ -16,7 +16,9 @@ class hive_node_rpc_client : public rpc_client {
 public:
    hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
 
+   std::string account_history_api_get_transaction(std::string transaction_id);
    std::string block_api_get_block(uint32_t block_number);
+   std::string condenser_api_get_transaction(std::string transaction_id);
    std::string database_api_get_dynamic_global_properties();
    std::string database_api_get_version();
    std::string network_broadcast_api_broadcast_transaction(std::string htrx);

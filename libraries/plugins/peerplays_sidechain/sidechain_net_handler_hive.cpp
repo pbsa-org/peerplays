@@ -31,9 +31,19 @@ hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std:
       rpc_client(_ip, _port, _user, _password) {
 }
 
+std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
+   std::string params = "{ \"id\": \"" + transaction_id + "\" }";
+   return send_post_request("account_history_api.get_transaction", params, false);
+}
+
 std::string hive_node_rpc_client::block_api_get_block(uint32_t block_number) {
    std::string params = "{ \"block_num\": " + std::to_string(block_number) + " }";
    return send_post_request("block_api.get_block", params, false);
+}
+
+std::string hive_node_rpc_client::condenser_api_get_transaction(std::string transaction_id) {
+   std::string params = "[\"" + transaction_id + "\"]";
+   return send_post_request("condenser_api.get_transaction", params, false);
 }
 
 std::string hive_node_rpc_client::database_api_get_dynamic_global_properties() {
@@ -349,41 +359,40 @@ void sidechain_net_handler_hive::process_primary_wallet() {
 }
 
 void sidechain_net_handler_hive::process_sidechain_addresses() {
-   //   const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
-   //   const auto &sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
-   //   const auto &sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
-   //   std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
-   //                 [&](const sidechain_address_object &sao) {
-   //                     bool retval = true;
-   //                    if (sao.expires == time_point_sec::maximum()) {
-   //                       if (sao.deposit_address == "") {
-   //                          sidechain_address_update_operation op;
-   //                           op.payer = plugin.get_current_son_object().son_account;
-   //                           op.sidechain_address_id = sao.id;
-   //                           op.sidechain_address_account = sao.sidechain_address_account;
-   //                           op.sidechain = sao.sidechain;
-   //                           op.deposit_public_key = sao.deposit_public_key;
-   //                           op.deposit_address = sao.withdraw_address;
-   //                           op.deposit_address_data = sao.withdraw_address;
-   //                           op.withdraw_public_key = sao.withdraw_public_key;
-   //                           op.withdraw_address = sao.withdraw_address;
-   //
-   //                           signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), op);
-   //                           try {
-   //                              trx.validate();
-   //                              database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-   //                              if (plugin.app().p2p_node())
-   //                                 plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-   //                              retval = true;
-   //                           } catch (fc::exception &e) {
-   //                              elog("Sending transaction for update deposit address operation failed with exception ${e}", ("e", e.what()));
-   //                              retval = false;
-   //                           }
-   //                       }
-   //                    }
-   //                     return retval;
-   //                 });
-   return;
+   const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>();
+   const auto &sidechain_addresses_by_sidechain_idx = sidechain_addresses_idx.indices().get<by_sidechain>();
+   const auto &sidechain_addresses_by_sidechain_range = sidechain_addresses_by_sidechain_idx.equal_range(sidechain);
+   std::for_each(sidechain_addresses_by_sidechain_range.first, sidechain_addresses_by_sidechain_range.second,
+                 [&](const sidechain_address_object &sao) {
+                    bool retval = true;
+                    if (sao.expires == time_point_sec::maximum()) {
+                       if (sao.deposit_address == "") {
+                          sidechain_address_update_operation op;
+                          op.payer = plugin.get_current_son_object().son_account;
+                          op.sidechain_address_id = sao.id;
+                          op.sidechain_address_account = sao.sidechain_address_account;
+                          op.sidechain = sao.sidechain;
+                          op.deposit_public_key = sao.deposit_public_key;
+                          op.deposit_address = sao.withdraw_address;
+                          op.deposit_address_data = sao.withdraw_address;
+                          op.withdraw_public_key = sao.withdraw_public_key;
+                          op.withdraw_address = sao.withdraw_address;
+
+                          signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), op);
+                          try {
+                             trx.validate();
+                             database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+                             if (plugin.app().p2p_node())
+                                plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+                             retval = true;
+                          } catch (fc::exception &e) {
+                             elog("Sending transaction for update deposit address operation failed with exception ${e}", ("e", e.what()));
+                             retval = false;
+                          }
+                       }
+                    }
+                    return retval;
+                 });
 }
 
 bool sidechain_net_handler_hive::process_deposit(const son_wallet_deposit_object &swdo) {
@@ -485,17 +494,6 @@ std::string sidechain_net_handler_hive::send_sidechain_transaction(const sidecha
    ilog("HTRX: ${htrx}", ("htrx", params));
    node_rpc_client->network_broadcast_api_broadcast_transaction(params);
 
-   //   try {
-   //      trx.validate();
-   //      database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-   //      if (plugin.app().p2p_node())
-   //         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-   //      return trx.id().str();
-   //   } catch (fc::exception &e) {
-   //      elog("Sidechain transaction failed with exception ${e}", ("e", e.what()));
-   //      return "";
-   //   }
-
    return htrx.id().str();
 }
 
@@ -543,64 +541,66 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
       boost::property_tree::ptree block_json;
       boost::property_tree::read_json(ss, block_json);
 
-      for (const auto &tx_child : block_json.get_child("result.block.transactions")) {
-         const auto &tx = tx_child.second;
+      for (const auto &tx_ids_child : block_json.get_child("result.block.transaction_ids")) {
+         const auto &transaction_id = tx_ids_child.second.get_value<std::string>();
 
-         for (const auto &ops : tx.get_child("operations")) {
-            const auto &op = ops.second;
+         std::string tx_str = node_rpc_client->account_history_api_get_transaction(transaction_id);
+         if (tx_str != "") {
 
-            std::string operation_type = op.get<std::string>("type");
-            ilog("Transactions: ${operation_type}", ("operation_type", operation_type));
+            std::stringstream ss_tx(tx_str);
+            boost::property_tree::ptree tx;
+            boost::property_tree::read_json(ss_tx, tx);
 
-            if (operation_type == "transfer_operation") {
-               const auto &op_value = op.get_child("value");
+            size_t operation_index = -1;
+            for (const auto &ops : tx.get_child("result.operations")) {
+               const auto &op = ops.second;
+               operation_index = operation_index + 1;
 
-               std::string from = op_value.get<std::string>("from");
-               std::string to = op_value.get<std::string>("to");
+               std::string operation_type = op.get<std::string>("type");
 
-               const auto &amount_child = op_value.get_child("amount");
+               if (operation_type == "transfer_operation") {
+                  const auto &op_value = op.get_child("value");
 
-               uint64_t amount = amount_child.get<uint64_t>("amount");
-               uint64_t precision = amount_child.get<uint64_t>("precision");
-               std::string nai = amount_child.get<std::string>("nai");
+                  std::string from = op_value.get<std::string>("from");
+                  std::string to = op_value.get<std::string>("to");
 
-               ilog("Transfer from ${from} to ${to}, amount ${amount}, precision ${precision}, nai ${nai}",
-                    ("from", from)("to", to)("amount", amount)("precision", precision)("nai", nai));
+                  const auto &amount_child = op_value.get_child("amount");
+
+                  uint64_t amount = amount_child.get<uint64_t>("amount");
+                  uint64_t precision = amount_child.get<uint64_t>("precision");
+                  std::string nai = amount_child.get<std::string>("nai");
+
+                  if (to == "son-account") {
+                     const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
+                     const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, from, time_point_sec::maximum()));
+                     if (addr_itr == sidechain_addresses_idx.end())
+                        continue;
+
+                     std::stringstream ss;
+                     ss << "hive"
+                        << "-" << transaction_id << "-" << operation_index;
+                     std::string sidechain_uid = ss.str();
+
+                     sidechain_event_data sed;
+                     sed.timestamp = database.head_block_time();
+                     sed.block_num = database.head_block_num();
+                     sed.sidechain = addr_itr->sidechain;
+                     sed.sidechain_uid = sidechain_uid;
+                     sed.sidechain_transaction_id = transaction_id;
+                     sed.sidechain_from = from;
+                     sed.sidechain_to = to;
+                     sed.sidechain_currency = "HIVE";
+                     sed.sidechain_amount = amount;
+                     sed.peerplays_from = addr_itr->sidechain_address_account;
+                     sed.peerplays_to = database.get_global_properties().parameters.son_account();
+                     price hive_price = database.get<asset_object>(database.get_global_properties().parameters.hive_asset()).options.core_exchange_rate;
+                     sed.peerplays_asset = asset(sed.sidechain_amount * hive_price.base.amount / hive_price.quote.amount);
+                     sidechain_event_data_received(sed);
+                  }
+               }
             }
          }
       }
-
-      //const auto &vins = extract_info_from_block(block);
-
-      //const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
-
-      /*for (const auto &v : vins) {
-         // !!! EXTRACT DEPOSIT ADDRESS FROM SIDECHAIN ADDRESS OBJECT
-         const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, v.address, time_point_sec::maximum()));
-         if (addr_itr == sidechain_addresses_idx.end())
-            continue;
-
-         std::stringstream ss;
-         ss << "bitcoin"
-            << "-" << v.out.hash_tx << "-" << v.out.n_vout;
-         std::string sidechain_uid = ss.str();
-
-         sidechain_event_data sed;
-         sed.timestamp = database.head_block_time();
-         sed.block_num = database.head_block_num();
-         sed.sidechain = addr_itr->sidechain;
-         sed.sidechain_uid = sidechain_uid;
-         sed.sidechain_transaction_id = v.out.hash_tx;
-         sed.sidechain_from = "";
-         sed.sidechain_to = v.address;
-         sed.sidechain_currency = "BTC";
-         sed.sidechain_amount = v.out.amount;
-         sed.peerplays_from = addr_itr->sidechain_address_account;
-         sed.peerplays_to = database.get_global_properties().parameters.son_account();
-         price btc_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
-         sed.peerplays_asset = asset(sed.sidechain_amount * btc_price.base.amount / btc_price.quote.amount);
-         sidechain_event_data_received(sed);
-      }*/
    }
 }
 
