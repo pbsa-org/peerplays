@@ -1094,7 +1094,7 @@ bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) 
       if (swdo != idx.end()) {
 
          std::string swdo_txid = swdo->sidechain_transaction_id;
-         std::string swdo_address = swdo->sidechain_to;
+         std::string swdo_address = swdo->sidechain_from;
          uint64_t swdo_amount = swdo->sidechain_amount.value;
          uint64_t swdo_vout = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-") + 1));
 
@@ -1611,7 +1611,7 @@ std::string sidechain_net_handler_bitcoin::create_deposit_transaction(const son_
       return "";
    }
    //Get redeem script for deposit address
-   std::string redeem_script = get_redeemscript_for_userdeposit(swdo.sidechain_to);
+   std::string redeem_script = get_redeemscript_for_userdeposit(swdo.sidechain_from);
    std::string pw_address_json = obj->addresses.find(sidechain_type::bitcoin)->second;
 
    std::stringstream ss(pw_address_json);
@@ -1803,8 +1803,8 @@ void sidechain_net_handler_bitcoin::handle_event(const std::string &event_data) 
          sed.sidechain = addr_itr->sidechain;
          sed.sidechain_uid = sidechain_uid;
          sed.sidechain_transaction_id = v.out.hash_tx;
-         sed.sidechain_from = "";
-         sed.sidechain_to = v.address;
+         sed.sidechain_from = v.address;
+         sed.sidechain_to = "";
          sed.sidechain_currency = "BTC";
          sed.sidechain_amount = v.out.amount;
          sed.peerplays_from = addr_itr->sidechain_address_account;

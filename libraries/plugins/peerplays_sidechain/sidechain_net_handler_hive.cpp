@@ -25,7 +25,8 @@
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
-namespace graphene { namespace peerplays_sidechain {
+namespace graphene {
+namespace peerplays_sidechain {
 
 hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
       rpc_client(_ip, _port, _user, _password) {
@@ -195,73 +196,95 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
 
    bool should_approve = false;
 
-   //   const chain::global_property_object &gpo = database.get_global_properties();
-   //
-   //   int32_t op_idx_0 = -1;
-   //   chain::operation op_obj_idx_0;
-   //
-   //   if (po.proposed_transaction.operations.size() >= 1) {
-   //      op_idx_0 = po.proposed_transaction.operations[0].which();
-   //      op_obj_idx_0 = po.proposed_transaction.operations[0];
-   //   }
-   //
-   //   switch (op_idx_0) {
-   //
-   //   case chain::operation::tag<chain::son_wallet_update_operation>::value: {
-   //      should_approve = false;
-   //      break;
-   //   }
-   //
-   //   case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
-   //      son_wallet_deposit_id_type swdo_id = op_obj_idx_0.get<son_wallet_deposit_process_operation>().son_wallet_deposit_id;
-   //      const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
-   //      const auto swdo = idx.find(swdo_id);
-   //      if (swdo != idx.end()) {
-   //
-   //         uint32_t swdo_block_num = swdo->block_num;
-   //         std::string swdo_sidechain_transaction_id = swdo->sidechain_transaction_id;
-   //         uint32_t swdo_op_idx = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-") + 1));
-   //
-   //         const auto &block = database.fetch_block_by_number(swdo_block_num);
-   //
-   //         for (const auto &tx : block->transactions) {
-   //            if (tx.id().str() == swdo_sidechain_transaction_id) {
-   //               operation op = tx.operations[swdo_op_idx];
-   //               transfer_operation t_op = op.get<transfer_operation>();
-   //
-   //               asset sidechain_asset = asset(swdo->sidechain_amount, fc::variant(swdo->sidechain_currency, 1).as<asset_id_type>(1));
-   //               price sidechain_asset_price = database.get<asset_object>(sidechain_asset.asset_id).options.core_exchange_rate;
-   //               asset peerplays_asset = asset(sidechain_asset.amount * sidechain_asset_price.base.amount / sidechain_asset_price.quote.amount);
-   //
-   //               should_approve = (gpo.parameters.son_account() == t_op.to) &&
-   //                                (swdo->peerplays_from == t_op.from) &&
-   //                                (sidechain_asset == t_op.amount) &&
-   //                                (swdo->peerplays_asset == peerplays_asset);
-   //               break;
-   //            }
-   //         }
-   //      }
-   //      break;
-   //   }
-   //
-   //   case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
-   //      should_approve = false;
-   //      break;
-   //   }
-   //
-   //   case chain::operation::tag<chain::sidechain_transaction_settle_operation>::value: {
-   //      should_approve = true;
-   //      break;
-   //   }
-   //
-   //   default:
-   //      should_approve = false;
-   //      elog("==================================================");
-   //      elog("Proposal not considered for approval ${po}", ("po", po));
-   //      elog("==================================================");
-   //   }
+   //const chain::global_property_object &gpo = database.get_global_properties();
 
-   should_approve = true;
+   int32_t op_idx_0 = -1;
+   chain::operation op_obj_idx_0;
+
+   if (po.proposed_transaction.operations.size() >= 1) {
+      op_idx_0 = po.proposed_transaction.operations[0].which();
+      op_obj_idx_0 = po.proposed_transaction.operations[0];
+   }
+
+   switch (op_idx_0) {
+
+   case chain::operation::tag<chain::son_wallet_update_operation>::value: {
+      should_approve = true;
+      break;
+   }
+
+   case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
+      bool process_ok = false;
+      son_wallet_deposit_id_type swdo_id = op_obj_idx_0.get<son_wallet_deposit_process_operation>().son_wallet_deposit_id;
+      const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
+      const auto swdo = idx.find(swdo_id);
+      if (swdo != idx.end()) {
+
+         std::string swdo_txid = swdo->sidechain_transaction_id;
+         std::string swdo_sidechain_from = swdo->sidechain_from;
+         std::string swdo_sidechain_currency = swdo->sidechain_currency;
+         uint64_t swdo_sidechain_amount = swdo->sidechain_amount.value;
+         uint64_t swdo_op_idx = std::stoll(swdo->sidechain_uid.substr(swdo->sidechain_uid.find_last_of("-")));
+
+         std::string tx_str = node_rpc_client->account_history_api_get_transaction(swdo_txid);
+         if (tx_str != "") {
+
+            std::stringstream ss_tx(tx_str);
+            boost::property_tree::ptree tx;
+            boost::property_tree::read_json(ss_tx, tx);
+
+            uint64_t op_idx = -1;
+            for (const auto &ops : tx.get_child("result.operations")) {
+               const auto &op = ops.second;
+               op_idx = op_idx + 1;
+               if (op_idx == swdo_op_idx) {
+                  std::string operation_type = op.get<std::string>("type");
+
+                  if (operation_type == "transfer_operation") {
+                     const auto &op_value = op.get_child("value");
+
+                     std::string address = op_value.get<std::string>("from");
+
+                     const auto &amount_child = op_value.get_child("amount");
+
+                     uint64_t amount = amount_child.get<uint64_t>("amount");
+                     std::string nai = amount_child.get<std::string>("nai");
+                     std::string sidechain_currency = "";
+                     if ((nai == "@@000000013" /*?? HBD*/) || (nai == "@@000000013" /*TBD*/)) {
+                        sidechain_currency = "HBD";
+                     }
+                     if ((nai == "@@000000021") /*?? HIVE*/ || (nai == "@@000000021" /*TESTS*/)) {
+                        sidechain_currency = "HIVE";
+                     }
+
+                     process_ok = (swdo_sidechain_from == address) &&
+                                  (swdo_sidechain_currency == sidechain_currency) &&
+                                  (swdo_sidechain_amount == amount);
+                  }
+               }
+            }
+         }
+      }
+      should_approve = process_ok;
+      break;
+   }
+
+   case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
+      should_approve = true;
+      break;
+   }
+
+   case chain::operation::tag<chain::sidechain_transaction_settle_operation>::value: {
+      should_approve = true;
+      break;
+   }
+
+   default:
+      should_approve = false;
+      elog("==================================================");
+      elog("Proposal not considered for approval ${po}", ("po", po));
+      elog("==================================================");
+   }
 
    return should_approve;
 }
@@ -397,53 +420,48 @@ void sidechain_net_handler_hive::process_sidechain_addresses() {
 
 bool sidechain_net_handler_hive::process_deposit(const son_wallet_deposit_object &swdo) {
 
-   //   const chain::global_property_object &gpo = database.get_global_properties();
-   //
-   //   asset_issue_operation ai_op;
-   //   ai_op.issuer = gpo.parameters.son_account();
-   //   price btc_price = database.get<asset_object>(database.get_global_properties().parameters.btc_asset()).options.core_exchange_rate;
-   //   ai_op.asset_to_issue = asset(swdo.peerplays_asset.amount * btc_price.quote.amount / btc_price.base.amount, database.get_global_properties().parameters.btc_asset());
-   //   ai_op.issue_to_account = swdo.peerplays_from;
-   //
-   //   signed_transaction tx;
-   //   auto dyn_props = database.get_dynamic_global_properties();
-   //   tx.set_reference_block(dyn_props.head_block_id);
-   //   tx.set_expiration(database.head_block_time() + gpo.parameters.maximum_time_until_expiration);
-   //   tx.operations.push_back(ai_op);
-   //   database.current_fee_schedule().set_fee(tx.operations.back());
-   //
-   //   std::stringstream ss;
-   //   fc::raw::pack(ss, tx, 1000);
-   //   std::string tx_str = boost::algorithm::hex(ss.str());
-   //
-   //   if (!tx_str.empty()) {
-   //      const chain::global_property_object &gpo = database.get_global_properties();
-   //
-   //      sidechain_transaction_create_operation stc_op;
-   //      stc_op.payer = gpo.parameters.son_account();
-   //      stc_op.object_id = swdo.id;
-   //      stc_op.sidechain = sidechain;
-   //      stc_op.transaction = tx_str;
-   //      stc_op.signers = gpo.active_sons;
-   //
-   //      proposal_create_operation proposal_op;
-   //      proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
-   //      proposal_op.proposed_ops.emplace_back(stc_op);
-   //      uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
-   //      proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
-   //
-   //      signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
-   //      try {
-   //         trx.validate();
-   //         database.push_transaction(trx, database::validation_steps::skip_block_size_check);
-   //         if (plugin.app().p2p_node())
-   //            plugin.app().p2p_node()->broadcast(net::trx_message(trx));
-   //         return true;
-   //      } catch (fc::exception &e) {
-   //         elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
-   //         return false;
-   //      }
-   //   }
+   const chain::global_property_object &gpo = database.get_global_properties();
+
+   price asset_price;
+   asset asset_to_issue;
+   if (swdo.sidechain_currency == "HBD") {
+      asset_price = database.get<asset_object>(database.get_global_properties().parameters.hbd_asset()).options.core_exchange_rate;
+      asset_to_issue = asset(swdo.peerplays_asset.amount * asset_price.quote.amount / asset_price.base.amount, database.get_global_properties().parameters.hbd_asset());
+   }
+   if (swdo.sidechain_currency == "HIVE") {
+      asset_price = database.get<asset_object>(database.get_global_properties().parameters.hive_asset()).options.core_exchange_rate;
+      asset_to_issue = asset(swdo.peerplays_asset.amount * asset_price.quote.amount / asset_price.base.amount, database.get_global_properties().parameters.hive_asset());
+   }
+
+   proposal_create_operation proposal_op;
+   proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
+   uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+   proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
+
+   son_wallet_deposit_process_operation swdp_op;
+   swdp_op.payer = gpo.parameters.son_account();
+   swdp_op.son_wallet_deposit_id = swdo.id;
+   proposal_op.proposed_ops.emplace_back(swdp_op);
+
+   asset_issue_operation ai_op;
+   ai_op.fee = asset(2001000);
+   ai_op.issuer = gpo.parameters.son_account();
+   ai_op.asset_to_issue = asset_to_issue;
+   ai_op.issue_to_account = swdo.peerplays_from;
+   proposal_op.proposed_ops.emplace_back(ai_op);
+
+   signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+   try {
+      trx.validate();
+      database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+      if (plugin.app().p2p_node())
+         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      return true;
+   } catch (fc::exception &e) {
+      elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+      return false;
+   }
+
    return false;
 }
 
@@ -551,10 +569,10 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
             boost::property_tree::ptree tx;
             boost::property_tree::read_json(ss_tx, tx);
 
-            size_t operation_index = -1;
+            size_t op_idx = -1;
             for (const auto &ops : tx.get_child("result.operations")) {
                const auto &op = ops.second;
-               operation_index = operation_index + 1;
+               op_idx = op_idx + 1;
 
                std::string operation_type = op.get<std::string>("type");
 
@@ -567,8 +585,15 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                   const auto &amount_child = op_value.get_child("amount");
 
                   uint64_t amount = amount_child.get<uint64_t>("amount");
-                  uint64_t precision = amount_child.get<uint64_t>("precision");
+                  //uint64_t precision = amount_child.get<uint64_t>("precision");
                   std::string nai = amount_child.get<std::string>("nai");
+                  std::string sidechain_currency = "";
+                  if ((nai == "@@000000013" /*?? HBD*/) || (nai == "@@000000013" /*TBD*/)) {
+                     sidechain_currency = "HBD";
+                  }
+                  if ((nai == "@@000000021") /*?? HIVE*/ || (nai == "@@000000021" /*TESTS*/)) {
+                     sidechain_currency = "HIVE";
+                  }
 
                   if (to == "son-account") {
                      const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
@@ -578,7 +603,7 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
 
                      std::stringstream ss;
                      ss << "hive"
-                        << "-" << transaction_id << "-" << operation_index;
+                        << "-" << transaction_id << "-" << op_idx;
                      std::string sidechain_uid = ss.str();
 
                      sidechain_event_data sed;
@@ -589,7 +614,7 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                      sed.sidechain_transaction_id = transaction_id;
                      sed.sidechain_from = from;
                      sed.sidechain_to = to;
-                     sed.sidechain_currency = "HIVE";
+                     sed.sidechain_currency = sidechain_currency;
                      sed.sidechain_amount = amount;
                      sed.peerplays_from = addr_itr->sidechain_address_account;
                      sed.peerplays_to = database.get_global_properties().parameters.son_account();
@@ -639,5 +664,5 @@ void sidechain_net_handler_hive::on_applied_block(const signed_block &b) {
    //      }
    //   }
 }
-
-}} // namespace graphene::peerplays_sidechain
+}
+} // namespace graphene::peerplays_sidechain

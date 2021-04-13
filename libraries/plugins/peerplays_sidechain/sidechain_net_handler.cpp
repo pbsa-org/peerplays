@@ -161,20 +161,24 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
 
    const chain::global_property_object &gpo = database.get_global_properties();
 
-   asset_id_type btc_asset_id = database.get_global_properties().parameters.btc_asset();
-   std::string btc_asset_id_str = fc::to_string(btc_asset_id.space_id) + "." +
-                                  fc::to_string(btc_asset_id.type_id) + "." +
-                                  fc::to_string((uint64_t)btc_asset_id.instance);
-
+   bool enable_peerplays_asset_deposits = false;
 #ifdef ENABLE_PEERPLAYS_ASSET_DEPOSITS
-   // Accepts BTC and peerplays asset deposits
-   bool deposit_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) != 0));
-   bool withdraw_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) == 0));
-#else
-   // Accepts BTC deposits only
-   bool deposit_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare("BTC") == 0));
-   bool withdraw_condition = ((sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain_currency.compare(btc_asset_id_str) == 0));
+   enable_peerplays_asset_deposits = (sed.sidechain == sidechain_type::peerplays) &&
+                                     (sed.sidechain_currency.compare("BTC") != 0) &&
+                                     (sed.sidechain_currency.compare("HBD") != 0) &&
+                                     (sed.sidechain_currency.compare("HIVE") != 0);
 #endif
+
+   bool deposit_condition = (sed.peerplays_to == gpo.parameters.son_account()) &&
+                            (((sed.sidechain == sidechain_type::bitcoin) && (sed.sidechain_currency.compare("BTC") == 0)) ||
+                             ((sed.sidechain == sidechain_type::hive) && (sed.sidechain_currency.compare("HBD") == 0)) ||
+                             ((sed.sidechain == sidechain_type::hive) && (sed.sidechain_currency.compare("HIVE") == 0)) ||
+                             enable_peerplays_asset_deposits);
+
+   bool withdraw_condition = (sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::peerplays) &&
+                             ((sed.sidechain_currency.compare("BTC") == 0) ||
+                              (sed.sidechain_currency.compare("HBD") == 0) ||
+                              (sed.sidechain_currency.compare("HIVE") == 0));
 
    // Deposit request
    if (deposit_condition) {
@@ -379,7 +383,7 @@ void sidechain_net_handler::process_deposits() {
       }
       //Ignore the deposits which are not valid anymore, considered refunds.
       const auto &sidechain_addresses_idx = database.get_index_type<sidechain_address_index>().indices().get<by_sidechain_and_deposit_address_and_expires>();
-      const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, swdo.sidechain_to, time_point_sec::maximum()));
+      const auto &addr_itr = sidechain_addresses_idx.find(std::make_tuple(sidechain, swdo.sidechain_from, time_point_sec::maximum()));
       if (addr_itr == sidechain_addresses_idx.end()) {
          return;
       }
