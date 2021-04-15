@@ -1977,7 +1977,7 @@ void database::perform_son_tasks()
       const asset_object& hive_asset =
          create<asset_object>( [&gpo, &dyn_asset]( asset_object& a ) {
             a.symbol = "HIVE";
-            a.precision = 8;
+            a.precision = 3;
             a.issuer = gpo.parameters.son_account();
             a.options.max_supply = GRAPHENE_MAX_SHARE_SUPPLY;
             a.options.market_fee_percent = 500; // 5%
