@@ -274,6 +274,11 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
       break;
    }
 
+   case chain::operation::tag<chain::sidechain_transaction_sign_operation>::value: {
+      should_approve = true;
+      break;
+   }
+
    case chain::operation::tag<chain::sidechain_transaction_settle_operation>::value: {
       should_approve = true;
       break;
