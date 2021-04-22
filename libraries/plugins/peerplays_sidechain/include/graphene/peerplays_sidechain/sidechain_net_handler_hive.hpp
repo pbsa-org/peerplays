@@ -78,8 +78,6 @@ private:
    void schedule_hive_listener();
    void hive_listener_loop();
    void handle_event(const std::string &event_data);
-
-   void on_applied_block(const signed_block &b);
 };
 
 }} // namespace graphene::peerplays_sidechain

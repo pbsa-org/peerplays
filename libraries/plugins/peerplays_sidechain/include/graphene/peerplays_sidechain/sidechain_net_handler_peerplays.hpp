@@ -23,7 +23,6 @@ public:
    int64_t settle_sidechain_transaction(const sidechain_transaction_object &sto);
 
 private:
-   void on_applied_block(const signed_block &b);
 };
 
 }} // namespace graphene::peerplays_sidechain

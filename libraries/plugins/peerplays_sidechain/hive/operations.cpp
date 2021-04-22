@@ -15,8 +15,8 @@ static std::string trim_typename_namespace(const std::string &name) {
 }
 
 struct from_static_variant_for_hive {
-   variant &var;
-   from_static_variant_for_hive(variant &dv) :
+   fc::variant &var;
+   from_static_variant_for_hive(fc::variant &dv) :
          var(dv) {
    }
 
@@ -24,15 +24,15 @@ struct from_static_variant_for_hive {
    template <typename T>
    void operator()(const T &v) const {
       auto name = trim_typename_namespace(fc::get_typename<T>::name());
-      variant value;
+      fc::variant value;
       to_variant(v, value, 5);
       var = mutable_variant_object("type", name).set("value", value);
    }
 };
 
 struct to_static_variant_for_hive {
-   const variant &var;
-   to_static_variant_for_hive(const variant &dv) :
+   const fc::variant &var;
+   to_static_variant_for_hive(const fc::variant &dv) :
          var(dv) {
    }
 

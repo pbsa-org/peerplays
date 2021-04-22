@@ -3,12 +3,17 @@
 #include <fc/log/logger.hpp>
 #include <graphene/chain/chain_property_object.hpp>
 #include <graphene/chain/proposal_object.hpp>
+#include <graphene/peerplays_sidechain/common/utils.hpp>
 
 namespace graphene { namespace peerplays_sidechain {
 
 sidechain_net_handler::sidechain_net_handler(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       plugin(_plugin),
       database(_plugin.database()) {
+
+   database.applied_block.connect([&](const signed_block &b) {
+      on_applied_block(b);
+   });
 }
 
 sidechain_net_handler::~sidechain_net_handler() {
@@ -568,6 +573,57 @@ void sidechain_net_handler::settle_sidechain_transactions() {
          elog("Sending proposal for sidechain transaction settle operation failed with exception ${e}", ("e", e.what()));
       }
    });
+}
+
+bool sidechain_net_handler::is_tracked_asset(asset_id_type asset_id) {
+   bool is_tracked_asset = false;
+   for (const auto &tracked_asset_id : tracked_assets) {
+      if (asset_id == tracked_asset_id) {
+         is_tracked_asset = true;
+         break;
+      }
+   }
+   return is_tracked_asset;
+}
+
+void sidechain_net_handler::on_applied_block(const signed_block &b) {
+   for (const auto &trx : b.transactions) {
+      size_t operation_index = -1;
+      for (auto op : trx.operations) {
+         operation_index = operation_index + 1;
+         if (op.which() == operation::tag<transfer_operation>::value) {
+            transfer_operation transfer_op = op.get<transfer_operation>();
+            if (transfer_op.to != plugin.database().get_global_properties().parameters.son_account()) {
+               continue;
+            }
+
+            if (!is_tracked_asset(transfer_op.amount.asset_id)) {
+               continue;
+            }
+
+            std::stringstream ss;
+            ss << "peerplays"
+               << "-" << trx.id().str() << "-" << operation_index;
+            std::string sidechain_uid = ss.str();
+
+            sidechain_event_data sed;
+            sed.timestamp = database.head_block_time();
+            sed.block_num = database.head_block_num();
+            sed.sidechain = sidechain_type::peerplays;
+            sed.sidechain_uid = sidechain_uid;
+            sed.sidechain_transaction_id = trx.id().str();
+            sed.sidechain_from = account_id_to_string(transfer_op.from);
+            sed.sidechain_to = account_id_to_string(transfer_op.to);
+            sed.sidechain_currency = asset_id_to_string(transfer_op.amount.asset_id);
+            sed.sidechain_amount = transfer_op.amount.amount;
+            sed.peerplays_from = transfer_op.from;
+            sed.peerplays_to = transfer_op.to;
+            price asset_price = database.get<asset_object>(transfer_op.amount.asset_id).options.core_exchange_rate;
+            sed.peerplays_asset = asset(transfer_op.amount.amount * asset_price.base.amount / asset_price.quote.amount);
+            sidechain_event_data_received(sed);
+         }
+      }
+   }
 }
 
 }} // namespace graphene::peerplays_sidechain

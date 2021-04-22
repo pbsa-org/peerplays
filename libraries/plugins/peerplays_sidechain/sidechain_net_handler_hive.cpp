@@ -25,8 +25,7 @@
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
 
-namespace graphene {
-namespace peerplays_sidechain {
+namespace graphene { namespace peerplays_sidechain {
 
 hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
       rpc_client(_ip, _port, _user, _password) {
@@ -120,6 +119,8 @@ std::string hive_wallet_rpc_client::get_account_memo_key(std::string account) {
 sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::hive;
+   tracked_assets.push_back(database.get_global_properties().parameters.hbd_asset());
+   tracked_assets.push_back(database.get_global_properties().parameters.hive_asset());
 
    node_ip = options.at("hive-node-ip").as<std::string>();
    node_rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
@@ -593,11 +594,14 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                   //uint64_t precision = amount_child.get<uint64_t>("precision");
                   std::string nai = amount_child.get<std::string>("nai");
                   std::string sidechain_currency = "";
+                  price sidechain_currency_price = {};
                   if ((nai == "@@000000013" /*?? HBD*/) || (nai == "@@000000013" /*TBD*/)) {
                      sidechain_currency = "HBD";
+                     sidechain_currency_price = database.get<asset_object>(database.get_global_properties().parameters.hbd_asset()).options.core_exchange_rate;
                   }
                   if ((nai == "@@000000021") /*?? HIVE*/ || (nai == "@@000000021" /*TESTS*/)) {
                      sidechain_currency = "HIVE";
+                     sidechain_currency_price = database.get<asset_object>(database.get_global_properties().parameters.hive_asset()).options.core_exchange_rate;
                   }
 
                   if (to == "son-account") {
@@ -623,8 +627,7 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
                      sed.sidechain_amount = amount;
                      sed.peerplays_from = addr_itr->sidechain_address_account;
                      sed.peerplays_to = database.get_global_properties().parameters.son_account();
-                     price hive_price = database.get<asset_object>(database.get_global_properties().parameters.hive_asset()).options.core_exchange_rate;
-                     sed.peerplays_asset = asset(sed.sidechain_amount * hive_price.base.amount / hive_price.quote.amount);
+                     sed.peerplays_asset = asset(sed.sidechain_amount * sidechain_currency_price.base.amount / sidechain_currency_price.quote.amount);
                      sidechain_event_data_received(sed);
                   }
                }
@@ -634,40 +637,4 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
    }
 }
 
-void sidechain_net_handler_hive::on_applied_block(const signed_block &b) {
-   //   for (const auto &trx : b.transactions) {
-   //      size_t operation_index = -1;
-   //      for (auto op : trx.operations) {
-   //         operation_index = operation_index + 1;
-   //         if (op.which() == operation::tag<transfer_operation>::value) {
-   //            transfer_operation transfer_op = op.get<transfer_operation>();
-   //            if (transfer_op.to != plugin.database().get_global_properties().parameters.son_account()) {
-   //               continue;
-   //            }
-   //
-   //            std::stringstream ss;
-   //            ss << "peerplays"
-   //               << "-" << trx.id().str() << "-" << operation_index;
-   //            std::string sidechain_uid = ss.str();
-   //
-   //            sidechain_event_data sed;
-   //            sed.timestamp = database.head_block_time();
-   //            sed.block_num = database.head_block_num();
-   //            sed.sidechain = sidechain_type::peerplays;
-   //            sed.sidechain_uid = sidechain_uid;
-   //            sed.sidechain_transaction_id = trx.id().str();
-   //            sed.sidechain_from = fc::to_string(transfer_op.from.space_id) + "." + fc::to_string(transfer_op.from.type_id) + "." + fc::to_string((uint64_t)transfer_op.from.instance);
-   //            sed.sidechain_to = fc::to_string(transfer_op.to.space_id) + "." + fc::to_string(transfer_op.to.type_id) + "." + fc::to_string((uint64_t)transfer_op.to.instance);
-   //            sed.sidechain_currency = fc::to_string(transfer_op.amount.asset_id.space_id) + "." + fc::to_string(transfer_op.amount.asset_id.type_id) + "." + fc::to_string((uint64_t)transfer_op.amount.asset_id.instance);
-   //            sed.sidechain_amount = transfer_op.amount.amount;
-   //            sed.peerplays_from = transfer_op.from;
-   //            sed.peerplays_to = transfer_op.to;
-   //            price asset_price = database.get<asset_object>(transfer_op.amount.asset_id).options.core_exchange_rate;
-   //            sed.peerplays_asset = asset(transfer_op.amount.amount * asset_price.base.amount / asset_price.quote.amount);
-   //            sidechain_event_data_received(sed);
-   //         }
-   //      }
-   //   }
-}
-}
-} // namespace graphene::peerplays_sidechain
+}} // namespace graphene::peerplays_sidechain

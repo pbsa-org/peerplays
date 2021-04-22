@@ -910,6 +910,7 @@ void zmq_listener::handle_zmq() {
 sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::bitcoin;
+   tracked_assets.push_back(database.get_global_properties().parameters.btc_asset());
 
    ip = options.at("bitcoin-node-ip").as<std::string>();
    zmq_port = options.at("bitcoin-node-zmq-port").as<uint32_t>();

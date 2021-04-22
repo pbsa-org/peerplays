@@ -55,6 +55,10 @@ protected:
 
    std::map<std::string, std::string> private_keys;
 
+   std::vector<asset_id_type> tracked_assets;
+   bool is_tracked_asset(asset_id_type asset_id);
+   void on_applied_block(const signed_block &b);
+
 private:
 };
 
