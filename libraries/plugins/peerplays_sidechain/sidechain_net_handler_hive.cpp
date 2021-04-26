@@ -472,6 +472,78 @@ bool sidechain_net_handler_hive::process_deposit(const son_wallet_deposit_object
 }
 
 bool sidechain_net_handler_hive::process_withdrawal(const son_wallet_withdraw_object &swwo) {
+
+   const chain::global_property_object &gpo = database.get_global_properties();
+
+   //=====
+
+   uint32_t asset_num = 0;
+   if (swwo.withdraw_currency == "HBD") {
+      asset_num = HIVE_ASSET_NUM_HBD;
+   }
+   if (swwo.withdraw_currency == "HIVE") {
+      asset_num = HIVE_ASSET_NUM_HIVE;
+   }
+
+   hive::transfer_operation t_op;
+   t_op.from = "son-account";
+   t_op.to = swwo.withdraw_address;
+   t_op.amount.amount = swwo.withdraw_amount;
+   t_op.amount.symbol = hive::asset_symbol_type::from_asset_num(asset_num);
+   t_op.memo = "";
+
+   std::string block_id_str = node_rpc_client->get_head_block_id();
+   hive::block_id_type head_block_id(block_id_str);
+
+   std::string head_block_time_str = node_rpc_client->get_head_block_time();
+   time_point head_block_time = fc::time_point_sec::from_iso_string(head_block_time_str);
+
+   hive::signed_transaction htrx;
+   htrx.set_reference_block(head_block_id);
+   htrx.set_expiration(head_block_time + fc::seconds(90));
+
+   htrx.operations.push_back(t_op);
+   ilog("TRX: ${htrx}", ("htrx", htrx));
+
+   std::stringstream ss;
+   fc::raw::pack(ss, htrx, 1000);
+   std::string tx_str = boost::algorithm::hex(ss.str());
+   if (tx_str.empty()) {
+      return false;
+   }
+
+   //=====
+
+   proposal_create_operation proposal_op;
+   proposal_op.fee_paying_account = plugin.get_current_son_object().son_account;
+   uint32_t lifetime = (gpo.parameters.block_interval * gpo.active_witnesses.size()) * 3;
+   proposal_op.expiration_time = time_point_sec(database.head_block_time().sec_since_epoch() + lifetime);
+
+   son_wallet_withdraw_process_operation swwp_op;
+   swwp_op.payer = gpo.parameters.son_account();
+   swwp_op.son_wallet_withdraw_id = swwo.id;
+   proposal_op.proposed_ops.emplace_back(swwp_op);
+
+   sidechain_transaction_create_operation stc_op;
+   stc_op.payer = gpo.parameters.son_account();
+   stc_op.object_id = swwo.id;
+   stc_op.sidechain = sidechain;
+   stc_op.transaction = tx_str;
+   stc_op.signers = gpo.active_sons;
+   proposal_op.proposed_ops.emplace_back(stc_op);
+
+   signed_transaction trx = database.create_signed_transaction(plugin.get_private_key(plugin.get_current_son_id()), proposal_op);
+   try {
+      trx.validate();
+      database.push_transaction(trx, database::validation_steps::skip_block_size_check);
+      if (plugin.app().p2p_node())
+         plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+      return true;
+   } catch (fc::exception &e) {
+      elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+      return false;
+   }
+
    return false;
 }
 
@@ -635,6 +707,42 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
          }
       }
    }
+
+   //==========
+   {
+      hive::transfer_operation t_op;
+      t_op.from = "sonaccount01";
+      t_op.to = "account05";
+      t_op.amount.amount = 1000;
+      t_op.amount.symbol = hive::asset_symbol_type::from_asset_num(HIVE_ASSET_NUM_HIVE);
+      t_op.memo = "";
+
+      std::string block_id_str = node_rpc_client->get_head_block_id();
+      hive::block_id_type head_block_id(block_id_str);
+      //hive::block_id_type head_block_id("000087723a5513e7cc0f03a71bf05a5b7b36102f");
+
+      std::string head_block_time_str = node_rpc_client->get_head_block_time();
+      time_point head_block_time = fc::time_point_sec::from_iso_string(head_block_time_str);
+      //time_point head_block_time = fc::time_point_sec::from_iso_string("2021-04-23T10:38:03");
+
+      hive::signed_transaction htrx;
+      htrx.set_reference_block(head_block_id);
+      htrx.set_expiration(head_block_time + fc::seconds(30));
+
+      htrx.operations.push_back(t_op);
+      ilog("TRX: ${htrx}", ("htrx", htrx));
+
+      std::string chain_id_str = node_rpc_client->get_chain_id();
+      const hive::chain_id_type chain_id(chain_id_str);
+
+      fc::optional<fc::ecc::private_key> privkey = graphene::utilities::wif_to_key(get_private_key("sonaccount01"));
+      htrx.sign(*privkey, chain_id);
+
+      std::string params = fc::json::to_string(htrx);
+      ilog("HTRX: ${htrx}", ("htrx", params));
+      node_rpc_client->network_broadcast_api_broadcast_transaction(params);
+   }
+   //==========
 }
 
 }} // namespace graphene::peerplays_sidechain

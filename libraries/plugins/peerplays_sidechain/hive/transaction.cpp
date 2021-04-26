@@ -67,7 +67,15 @@ signature_type signed_transaction::sign(const hive::private_key_type &key, const
    digest_type::encoder enc;
    fc::raw::pack(enc, chain_id);
    fc::raw::pack(enc, *this);
-   return key.sign_compact(enc.result(), true);
+   auto sig = key.sign_compact(enc.result(), true);
+
+   ilog("Signing2: chain_id  = ${chain_id}", ("chain_id", chain_id));
+   ilog("Signing2: key       = ${key}", ("key", key));
+   ilog("Signing2: this      = ${this}", ("this", *this));
+   ilog("Signing2: h         = ${h}", ("h", enc.result()));
+   ilog("Signing2: signature = ${sig}", ("sig", sig));
+
+   return sig;
 }
 
 }}} // namespace graphene::peerplays_sidechain::hive

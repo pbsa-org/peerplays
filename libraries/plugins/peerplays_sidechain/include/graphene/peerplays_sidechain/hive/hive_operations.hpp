@@ -6,6 +6,7 @@
 #include <fc/optional.hpp>
 
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/peerplays_sidechain/hive/asset.hpp>
 #include <graphene/peerplays_sidechain/hive/authority.hpp>
 #include <graphene/peerplays_sidechain/hive/types.hpp>
 
@@ -15,7 +16,12 @@ struct vote_operation {};
 
 struct comment_operation {};
 
-struct transfer_operation {};
+struct transfer_operation {
+   hive::account_name_type from;
+   hive::account_name_type to;
+   hive::asset amount;
+   std::string memo;
+};
 
 struct transfer_to_vesting_operation {};
 
@@ -44,7 +50,8 @@ struct account_update_operation {
 
 FC_REFLECT(graphene::peerplays_sidechain::hive::vote_operation, )
 FC_REFLECT(graphene::peerplays_sidechain::hive::comment_operation, )
-FC_REFLECT(graphene::peerplays_sidechain::hive::transfer_operation, )
+FC_REFLECT(graphene::peerplays_sidechain::hive::transfer_operation,
+           (from)(to)(amount)(memo))
 FC_REFLECT(graphene::peerplays_sidechain::hive::transfer_to_vesting_operation, )
 FC_REFLECT(graphene::peerplays_sidechain::hive::withdraw_vesting_operation, )
 FC_REFLECT(graphene::peerplays_sidechain::hive::limit_order_create_operation, )

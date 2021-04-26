@@ -18,7 +18,7 @@ typedef fc::ripemd160 block_id_type;
 typedef fc::ripemd160 transaction_id_type;
 typedef fc::sha256 digest_type;
 typedef fc::ecc::compact_signature signature_type;
-//typedef safe<int64_t> share_type;
+typedef fc::safe<int64_t> share_type;
 //typedef safe<uint64_t> ushare_type;
 //typedef uint16_t weight_type;
 //typedef uint32_t contribution_id_type;
