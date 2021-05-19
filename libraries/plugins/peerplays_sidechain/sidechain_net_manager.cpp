@@ -12,9 +12,9 @@ sidechain_net_manager::sidechain_net_manager(peerplays_sidechain_plugin &_plugin
       plugin(_plugin),
       database(_plugin.database()) {
 
-   database.applied_block.connect([&](const signed_block &b) {
-      on_applied_block(b);
-   });
+   //database.applied_block.connect([&](const signed_block &b) {
+   //   on_applied_block(b);
+   //});
 }
 
 sidechain_net_manager::~sidechain_net_manager() {

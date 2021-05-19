@@ -21,6 +21,7 @@
 #include <graphene/chain/protocol/son_wallet.hpp>
 #include <graphene/chain/son_info.hpp>
 #include <graphene/chain/son_wallet_object.hpp>
+#include <graphene/peerplays_sidechain/hive/asset.hpp>
 #include <graphene/peerplays_sidechain/hive/operations.hpp>
 #include <graphene/peerplays_sidechain/hive/transaction.hpp>
 #include <graphene/utilities/key_conversion.hpp>
@@ -477,19 +478,19 @@ bool sidechain_net_handler_hive::process_withdrawal(const son_wallet_withdraw_ob
 
    //=====
 
-   uint32_t asset_num = 0;
+   uint64_t symbol = 0;
    if (swwo.withdraw_currency == "HBD") {
-      asset_num = HIVE_ASSET_NUM_HBD;
+      symbol = TBD_SYMBOL_SER;
    }
    if (swwo.withdraw_currency == "HIVE") {
-      asset_num = HIVE_ASSET_NUM_HIVE;
+      symbol = TESTS_SYMBOL_SER;
    }
 
    hive::transfer_operation t_op;
    t_op.from = "son-account";
    t_op.to = swwo.withdraw_address;
    t_op.amount.amount = swwo.withdraw_amount;
-   t_op.amount.symbol = hive::asset_symbol_type::from_asset_num(asset_num);
+   t_op.amount.symbol = symbol;
    t_op.memo = "";
 
    std::string block_id_str = node_rpc_client->get_head_block_id();
@@ -707,42 +708,6 @@ void sidechain_net_handler_hive::handle_event(const std::string &event_data) {
          }
       }
    }
-
-   //==========
-   {
-      hive::transfer_operation t_op;
-      t_op.from = "sonaccount01";
-      t_op.to = "account05";
-      t_op.amount.amount = 1000;
-      t_op.amount.symbol = hive::asset_symbol_type::from_asset_num(HIVE_ASSET_NUM_HIVE);
-      t_op.memo = "";
-
-      std::string block_id_str = node_rpc_client->get_head_block_id();
-      hive::block_id_type head_block_id(block_id_str);
-      //hive::block_id_type head_block_id("000087723a5513e7cc0f03a71bf05a5b7b36102f");
-
-      std::string head_block_time_str = node_rpc_client->get_head_block_time();
-      time_point head_block_time = fc::time_point_sec::from_iso_string(head_block_time_str);
-      //time_point head_block_time = fc::time_point_sec::from_iso_string("2021-04-23T10:38:03");
-
-      hive::signed_transaction htrx;
-      htrx.set_reference_block(head_block_id);
-      htrx.set_expiration(head_block_time + fc::seconds(30));
-
-      htrx.operations.push_back(t_op);
-      ilog("TRX: ${htrx}", ("htrx", htrx));
-
-      std::string chain_id_str = node_rpc_client->get_chain_id();
-      const hive::chain_id_type chain_id(chain_id_str);
-
-      fc::optional<fc::ecc::private_key> privkey = graphene::utilities::wif_to_key(get_private_key("sonaccount01"));
-      htrx.sign(*privkey, chain_id);
-
-      std::string params = fc::json::to_string(htrx);
-      ilog("HTRX: ${htrx}", ("htrx", params));
-      node_rpc_client->network_broadcast_api_broadcast_transaction(params);
-   }
-   //==========
 }
 
 }} // namespace graphene::peerplays_sidechain
