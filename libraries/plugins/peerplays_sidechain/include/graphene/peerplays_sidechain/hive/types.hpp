@@ -5,6 +5,11 @@
 
 namespace graphene { namespace peerplays_sidechain { namespace hive {
 
+enum network {
+   mainnet,
+   testnet
+};
+
 struct void_t {};
 
 typedef fc::static_variant<void_t> future_extensions;

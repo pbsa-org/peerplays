@@ -25,6 +25,8 @@ namespace graphene { namespace peerplays_sidechain { namespace hive {
 #define TESTS_SYMBOL_SER (uint64_t(3) | (TESTS_SYMBOL_U64 << 8))
 
 struct asset {
+   static uint64_t hbd_symbol_ser;
+   static uint64_t hive_symbol_ser;
    share_type amount;
    uint64_t symbol;
 };

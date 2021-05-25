@@ -42,6 +42,11 @@ std::string hive_node_rpc_client::block_api_get_block(uint32_t block_number) {
    return send_post_request("block_api.get_block", params, false);
 }
 
+std::string hive_node_rpc_client::condenser_api_get_config() {
+   std::string params = "[]";
+   return send_post_request("condenser_api.get_config", params, false);
+}
+
 std::string hive_node_rpc_client::condenser_api_get_transaction(std::string transaction_id) {
    std::string params = "[\"" + transaction_id + "\"]";
    return send_post_request("condenser_api.get_transaction", params, false);
@@ -73,6 +78,11 @@ std::string hive_node_rpc_client::get_head_block_id() {
 std::string hive_node_rpc_client::get_head_block_time() {
    std::string reply_str = database_api_get_dynamic_global_properties();
    return retrieve_value_from_reply(reply_str, "time");
+}
+
+std::string hive_node_rpc_client::get_is_test_net() {
+   std::string reply_str = condenser_api_get_config();
+   return retrieve_value_from_reply(reply_str, "IS_TEST_NET");
 }
 
 hive_wallet_rpc_client::hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
@@ -181,6 +191,16 @@ sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugi
 
    std::string chain_id_str = node_rpc_client->get_chain_id();
    chain_id = chain_id_type(chain_id_str);
+
+   std::string is_test_net = node_rpc_client->get_is_test_net();
+   network_type = is_test_net.compare("true") == 0 ? hive::network::testnet : hive::network::mainnet;
+   if (network_type == hive::network::mainnet) {
+      hive::asset::hbd_symbol_ser = HBD_SYMBOL_SER;
+      hive::asset::hive_symbol_ser = HIVE_SYMBOL_SER;
+   } else {
+      hive::asset::hbd_symbol_ser = TBD_SYMBOL_SER;
+      hive::asset::hive_symbol_ser = TESTS_SYMBOL_SER;
+   }
 
    last_block_received = 0;
    schedule_hive_listener();
@@ -480,10 +500,10 @@ bool sidechain_net_handler_hive::process_withdrawal(const son_wallet_withdraw_ob
 
    uint64_t symbol = 0;
    if (swwo.withdraw_currency == "HBD") {
-      symbol = TBD_SYMBOL_SER;
+      symbol = hive::asset::hbd_symbol_ser;
    }
    if (swwo.withdraw_currency == "HIVE") {
-      symbol = TESTS_SYMBOL_SER;
+      symbol = hive::asset::hive_symbol_ser;
    }
 
    hive::transfer_operation t_op;
