@@ -218,7 +218,7 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
 
    bool should_approve = false;
 
-   //const chain::global_property_object &gpo = database.get_global_properties();
+   const chain::global_property_object &gpo = database.get_global_properties();
 
    int32_t op_idx_0 = -1;
    chain::operation op_obj_idx_0;
@@ -228,10 +228,101 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
       op_obj_idx_0 = po.proposed_transaction.operations[0];
    }
 
+   int32_t op_idx_1 = -1;
+   chain::operation op_obj_idx_1;
+   (void)op_idx_1;
+
+   if (po.proposed_transaction.operations.size() >= 2) {
+      op_idx_1 = po.proposed_transaction.operations[1].which();
+      op_obj_idx_1 = po.proposed_transaction.operations[1];
+   }
+
    switch (op_idx_0) {
 
    case chain::operation::tag<chain::son_wallet_update_operation>::value: {
-      should_approve = true;
+      bool address_ok = false;
+      bool transaction_ok = false;
+      son_wallet_id_type swo_id = op_obj_idx_0.get<son_wallet_update_operation>().son_wallet_id;
+      const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+      const auto swo = idx.find(swo_id);
+      if (swo != idx.end()) {
+
+         auto active_sons = gpo.active_sons;
+         vector<son_info> wallet_sons = swo->sons;
+
+         bool son_sets_equal = (active_sons.size() == wallet_sons.size());
+
+         if (son_sets_equal) {
+            for (size_t i = 0; i < active_sons.size(); i++) {
+               son_sets_equal = son_sets_equal && active_sons.at(i) == wallet_sons.at(i);
+            }
+         }
+
+         if (son_sets_equal) {
+            address_ok = (op_obj_idx_0.get<son_wallet_update_operation>().address == "son-account");
+         }
+
+         if (po.proposed_transaction.operations.size() >= 2) {
+            object_id_type object_id = op_obj_idx_1.get<sidechain_transaction_create_operation>().object_id;
+            std::string op_tx_str = op_obj_idx_1.get<sidechain_transaction_create_operation>().transaction;
+
+            const auto &st_idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_object_id>();
+            const auto st = st_idx.find(object_id);
+            if (st == st_idx.end()) {
+
+               std::string tx_str = "";
+
+               if (object_id.is<son_wallet_id_type>()) {
+                  const auto &idx = database.get_index_type<son_wallet_index>().indices().get<by_id>();
+                  const auto swo = idx.find(object_id);
+                  if (swo != idx.end()) {
+
+                     std::stringstream ss_trx(boost::algorithm::unhex(op_tx_str));
+                     hive::signed_transaction op_trx;
+                     fc::raw::unpack(ss_trx, op_trx, 1000);
+                     ilog("TRX: ${op_trx}", ("op_trx", op_trx));
+
+                     fc::flat_map<std::string, uint16_t> account_auths;
+                     uint32_t total_weight = 0;
+                     for (const auto &wallet_son : wallet_sons) {
+                        total_weight = total_weight + wallet_son.weight;
+                        account_auths[wallet_son.sidechain_public_keys.at(sidechain)] = wallet_son.weight;
+                     }
+
+                     std::string memo_key = wallet_rpc_client->get_account_memo_key("son-account");
+
+                     hive::authority active;
+                     active.weight_threshold = total_weight * 2 / 3 + 1;
+                     active.account_auths = account_auths;
+
+                     hive::account_update_operation auo;
+                     auo.account = "son-account";
+                     auo.active = active;
+                     auo.memo_key = op_trx.operations[0].get<hive::account_update_operation>().memo_key;
+
+                     hive::signed_transaction htrx;
+                     htrx.ref_block_num = op_trx.ref_block_num;
+                     htrx.ref_block_prefix = op_trx.ref_block_prefix;
+                     htrx.set_expiration(op_trx.expiration);
+
+                     htrx.operations.push_back(auo);
+                     ilog("TRX: ${htrx}", ("htrx", htrx));
+
+                     std::stringstream ss;
+                     fc::raw::pack(ss, htrx, 1000);
+                     tx_str = boost::algorithm::hex(ss.str());
+                  }
+               }
+
+               transaction_ok = (op_tx_str == tx_str);
+            }
+         } else {
+            transaction_ok = true;
+         }
+      }
+
+      should_approve = address_ok &&
+                       transaction_ok;
       break;
    }
 
