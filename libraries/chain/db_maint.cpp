@@ -207,7 +207,7 @@ void database::pay_sons()
          const auto& idx = get_index_type<son_index>().indices().get<by_id>();
          auto son_obj = idx.find( s.owner );
          auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id]);
-         if( now < HARDFORK_NEXT_TIME ) {
+         if( now < HARDFORK_SON2_TIME ) {
             son_weight = get_weight_next_hf(_vote_tally_buffer[son_obj->vote_id]);
          }
          weighted_total_txs_signed += (s.txs_signed * son_weight);
@@ -1954,7 +1954,7 @@ void database::perform_son_tasks()
 
 void update_son_asset(database& db)
 {
-   if( db.head_block_time() >= HARDFORK_NEXT_TIME )
+   if( db.head_block_time() >= HARDFORK_SON2_TIME )
    {
       const auto& gpo = db.get_global_properties();
       const asset_object& btc_asset = gpo.parameters.btc_asset()(db);
