@@ -383,7 +383,88 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
    }
 
    case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
-      should_approve = true;
+      bool process_ok = false;
+      bool transaction_ok = false;
+      son_wallet_withdraw_id_type swwo_id = op_obj_idx_0.get<son_wallet_withdraw_process_operation>().son_wallet_withdraw_id;
+      const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
+      const auto swwo = idx.find(swwo_id);
+      if (swwo != idx.end()) {
+
+         uint32_t swwo_block_num = swwo->block_num;
+         std::string swwo_peerplays_transaction_id = swwo->peerplays_transaction_id;
+         uint32_t swwo_op_idx = std::stoll(swwo->peerplays_uid.substr(swwo->peerplays_uid.find_last_of("-") + 1));
+
+         const auto &block = database.fetch_block_by_number(swwo_block_num);
+
+         for (const auto &tx : block->transactions) {
+            if (tx.id().str() == swwo_peerplays_transaction_id) {
+               operation op = tx.operations[swwo_op_idx];
+               transfer_operation t_op = op.get<transfer_operation>();
+
+               price asset_price = database.get<asset_object>(t_op.amount.asset_id).options.core_exchange_rate;
+               asset peerplays_asset = asset(t_op.amount.amount * asset_price.base.amount / asset_price.quote.amount);
+
+               process_ok = (t_op.to == gpo.parameters.son_account()) &&
+                            (swwo->peerplays_from == t_op.from) &&
+                            (swwo->peerplays_asset == peerplays_asset);
+               break;
+            }
+         }
+
+         object_id_type object_id = op_obj_idx_1.get<sidechain_transaction_create_operation>().object_id;
+         std::string op_tx_str = op_obj_idx_1.get<sidechain_transaction_create_operation>().transaction;
+
+         const auto &st_idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_object_id>();
+         const auto st = st_idx.find(object_id);
+         if (st == st_idx.end()) {
+
+            std::string tx_str = "";
+
+            if (object_id.is<son_wallet_withdraw_id_type>()) {
+               const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
+               const auto swwo = idx.find(object_id);
+               if (swwo != idx.end()) {
+
+                  std::stringstream ss_trx(boost::algorithm::unhex(op_tx_str));
+                  hive::signed_transaction op_trx;
+                  fc::raw::unpack(ss_trx, op_trx, 1000);
+                  ilog("TRX: ${op_trx}", ("op_trx", op_trx));
+
+                  uint64_t symbol = 0;
+                  if (swwo->withdraw_currency == "HBD") {
+                     symbol = hive::asset::hbd_symbol_ser;
+                  }
+                  if (swwo->withdraw_currency == "HIVE") {
+                     symbol = hive::asset::hive_symbol_ser;
+                  }
+
+                  hive::transfer_operation t_op;
+                  t_op.from = "son-account";
+                  t_op.to = swwo->withdraw_address;
+                  t_op.amount.amount = swwo->withdraw_amount;
+                  t_op.amount.symbol = symbol;
+                  t_op.memo = "";
+
+                  hive::signed_transaction htrx;
+                  htrx.ref_block_num = op_trx.ref_block_num;
+                  htrx.ref_block_prefix = op_trx.ref_block_prefix;
+                  htrx.set_expiration(op_trx.expiration);
+
+                  htrx.operations.push_back(t_op);
+                  ilog("TRX: ${htrx}", ("htrx", htrx));
+
+                  std::stringstream ss;
+                  fc::raw::pack(ss, htrx, 1000);
+                  tx_str = boost::algorithm::hex(ss.str());
+               }
+            }
+
+            transaction_ok = (op_tx_str == tx_str);
+         }
+      }
+
+      should_approve = process_ok &&
+                       transaction_ok;
       break;
    }
 
