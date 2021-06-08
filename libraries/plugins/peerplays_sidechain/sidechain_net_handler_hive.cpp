@@ -470,6 +470,23 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
 
    case chain::operation::tag<chain::sidechain_transaction_sign_operation>::value: {
       should_approve = true;
+      son_id_type signer = op_obj_idx_0.get<sidechain_transaction_sign_operation>().signer;
+      std::string signature = op_obj_idx_0.get<sidechain_transaction_sign_operation>().signature;
+      sidechain_transaction_id_type sidechain_transaction_id = op_obj_idx_0.get<sidechain_transaction_sign_operation>().sidechain_transaction_id;
+      const auto &st_idx = database.get_index_type<sidechain_transaction_index>().indices().get<by_id>();
+      const auto sto = st_idx.find(sidechain_transaction_id);
+      if (sto == st_idx.end()) {
+         should_approve = false;
+         break;
+      }
+
+      const auto &s_idx = database.get_index_type<son_index>().indices().get<by_id>();
+      const auto son = s_idx.find(signer);
+      if (son == s_idx.end()) {
+         should_approve = false;
+         break;
+      }
+
       break;
    }
 
