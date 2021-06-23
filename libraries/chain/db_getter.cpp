@@ -315,6 +315,23 @@ bool database::is_son_active( son_id_type son_id )
    return (it_son != active_son_ids.end());
 }
 
+bool database::is_asset_creation_allowed(const string &symbol)
+{
+   time_point_sec now = head_block_time();
+   if (symbol == "BTC")
+   {
+      if (now < HARDFORK_SON_TIME)
+         return false;
+   }
+
+   if (symbol == "ETH" || symbol == "EOS" || symbol == "BNB" || symbol == "ADA" || symbol == "FIL" || symbol == "DOT")
+   {
+      if (now >= HARDFORK_SON_TIME)
+         return false;
+   }
+   return true;
+}
+
 vector<uint64_t> database::get_random_numbers(uint64_t minimum, uint64_t maximum, uint64_t selections, bool duplicates)
 {
    FC_ASSERT( selections <= 100000 );
