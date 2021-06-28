@@ -19,7 +19,6 @@ public:
    std::string account_history_api_get_transaction(std::string transaction_id);
    std::string block_api_get_block(uint32_t block_number);
    std::string condenser_api_get_config();
-   std::string condenser_api_get_transaction(std::string transaction_id);
    std::string database_api_get_dynamic_global_properties();
    std::string database_api_get_version();
    std::string network_broadcast_api_broadcast_transaction(std::string htrx);
@@ -28,6 +27,7 @@ public:
    std::string get_head_block_id();
    std::string get_head_block_time();
    std::string get_is_test_net();
+   std::string get_last_irreversible_block_num();
 };
 
 class hive_wallet_rpc_client : public rpc_client {
@@ -57,7 +57,7 @@ public:
    bool process_withdrawal(const son_wallet_withdraw_object &swwo);
    std::string process_sidechain_transaction(const sidechain_transaction_object &sto);
    std::string send_sidechain_transaction(const sidechain_transaction_object &sto);
-   int64_t settle_sidechain_transaction(const sidechain_transaction_object &sto);
+   bool settle_sidechain_transaction(const sidechain_transaction_object &sto, asset &settle_amount);
 
 private:
    std::string node_ip;

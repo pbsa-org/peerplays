@@ -34,22 +34,17 @@ hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std:
 
 std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
    std::string params = "{ \"id\": \"" + transaction_id + "\" }";
-   return send_post_request("account_history_api.get_transaction", params, false);
+   return send_post_request("account_history_api.get_transaction", params, true);
 }
 
 std::string hive_node_rpc_client::block_api_get_block(uint32_t block_number) {
    std::string params = "{ \"block_num\": " + std::to_string(block_number) + " }";
-   return send_post_request("block_api.get_block", params, false);
+   return send_post_request("block_api.get_block", params, true);
 }
 
 std::string hive_node_rpc_client::condenser_api_get_config() {
    std::string params = "[]";
    return send_post_request("condenser_api.get_config", params, false);
-}
-
-std::string hive_node_rpc_client::condenser_api_get_transaction(std::string transaction_id) {
-   std::string params = "[\"" + transaction_id + "\"]";
-   return send_post_request("condenser_api.get_transaction", params, false);
 }
 
 std::string hive_node_rpc_client::database_api_get_dynamic_global_properties() {
@@ -83,6 +78,11 @@ std::string hive_node_rpc_client::get_head_block_time() {
 std::string hive_node_rpc_client::get_is_test_net() {
    std::string reply_str = condenser_api_get_config();
    return retrieve_value_from_reply(reply_str, "IS_TEST_NET");
+}
+
+std::string hive_node_rpc_client::get_last_irreversible_block_num() {
+   std::string reply_str = database_api_get_dynamic_global_properties();
+   return retrieve_value_from_reply(reply_str, "last_irreversible_block_num");
 }
 
 hive_wallet_rpc_client::hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password) :
@@ -803,9 +803,47 @@ std::string sidechain_net_handler_hive::send_sidechain_transaction(const sidecha
    return htrx.id().str();
 }
 
-int64_t sidechain_net_handler_hive::settle_sidechain_transaction(const sidechain_transaction_object &sto) {
-   int64_t settle_amount = 0;
-   return settle_amount;
+bool sidechain_net_handler_hive::settle_sidechain_transaction(const sidechain_transaction_object &sto, asset &settle_amount) {
+
+   if (sto.object_id.is<son_wallet_id_type>()) {
+      settle_amount.amount = 0;
+      return true;
+   }
+
+   if (sto.sidechain_transaction.empty()) {
+      return false;
+   }
+
+   std::string tx_str = node_rpc_client->account_history_api_get_transaction(sto.sidechain_transaction);
+   if (tx_str != "") {
+
+      std::stringstream ss_tx(tx_str);
+      boost::property_tree::ptree tx_json;
+      boost::property_tree::read_json(ss_tx, tx_json);
+
+      //const chain::global_property_object &gpo = database.get_global_properties();
+
+      std::string tx_txid = tx_json.get<std::string>("result.transaction_id");
+      uint32_t tx_block_num = tx_json.get<uint32_t>("result.block_num");
+      uint32_t last_irreversible_block = std::stoul(node_rpc_client->get_last_irreversible_block_num());
+
+      //std::string tx_address = addr.get_address();
+      //int64_t tx_amount = -1;
+
+      if (tx_block_num <= last_irreversible_block) {
+         if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
+            auto swwo = database.get<son_wallet_withdraw_object>(sto.object_id);
+            if (swwo.withdraw_currency == "HBD") {
+               settle_amount = asset(swwo.withdraw_amount, database.get_global_properties().parameters.hbd_asset());
+            }
+            if (swwo.withdraw_currency == "HIVE") {
+               settle_amount = asset(swwo.withdraw_amount, database.get_global_properties().parameters.hive_asset());
+            }
+            return true;
+         }
+      }
+   }
+   return false;
 }
 
 void sidechain_net_handler_hive::schedule_hive_listener() {

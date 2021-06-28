@@ -1484,16 +1484,15 @@ std::string sidechain_net_handler_bitcoin::send_sidechain_transaction(const side
    return send_transaction(sto);
 }
 
-int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidechain_transaction_object &sto) {
+bool sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidechain_transaction_object &sto, asset &settle_amount) {
 
    if (sto.object_id.is<son_wallet_id_type>()) {
-      return 0;
+      settle_amount = asset(0, database.get_global_properties().parameters.btc_asset());
+      return true;
    }
 
-   int64_t settle_amount = -1;
-
    if (sto.sidechain_transaction.empty()) {
-      return settle_amount;
+      return false;
    }
 
    std::string tx_str = bitcoin_client->getrawtransaction(sto.sidechain_transaction, true);
@@ -1502,7 +1501,7 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
    boost::property_tree::read_json(tx_ss, tx_json);
 
    if ((tx_json.count("error")) && (!tx_json.get_child("error").empty())) {
-      return settle_amount;
+      return false;
    }
 
    const chain::global_property_object &gpo = database.get_global_properties();
@@ -1533,15 +1532,17 @@ int64_t sidechain_net_handler_bitcoin::settle_sidechain_transaction(const sidech
                }
             }
          }
-         settle_amount = tx_amount;
+         settle_amount = asset(tx_amount, database.get_global_properties().parameters.btc_asset());
+         return true;
       }
 
       if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
          auto swwo = database.get<son_wallet_withdraw_object>(sto.object_id);
-         settle_amount = swwo.withdraw_amount.value;
+         settle_amount = swwo.withdraw_amount;
+         return true;
       }
    }
-   return settle_amount;
+   return false;
 }
 
 std::string sidechain_net_handler_bitcoin::create_primary_wallet_address(const std::vector<son_info> &son_pubkeys) {

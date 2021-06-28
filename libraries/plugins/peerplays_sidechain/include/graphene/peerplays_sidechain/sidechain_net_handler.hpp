@@ -46,7 +46,7 @@ public:
    virtual bool process_withdrawal(const son_wallet_withdraw_object &swwo) = 0;
    virtual std::string process_sidechain_transaction(const sidechain_transaction_object &sto) = 0;
    virtual std::string send_sidechain_transaction(const sidechain_transaction_object &sto) = 0;
-   virtual int64_t settle_sidechain_transaction(const sidechain_transaction_object &sto) = 0;
+   virtual bool settle_sidechain_transaction(const sidechain_transaction_object &sto, asset &settle_amount) = 0;
 
 protected:
    peerplays_sidechain_plugin &plugin;

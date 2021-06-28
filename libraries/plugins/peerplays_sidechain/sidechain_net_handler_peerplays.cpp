@@ -25,12 +25,12 @@ namespace graphene { namespace peerplays_sidechain {
 sidechain_net_handler_peerplays::sidechain_net_handler_peerplays(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::peerplays;
-   const auto &assets_by_symbol = database.get_index_type<asset_index>().indices().get<by_symbol>();
-   const auto get_asset_id = [&assets_by_symbol](const string &symbol) {
-      auto asset_itr = assets_by_symbol.find(symbol);
-      FC_ASSERT(asset_itr != assets_by_symbol.end(), "Unable to find asset '${sym}'", ("sym", symbol));
-      return asset_itr->get_id();
-   };
+   //const auto &assets_by_symbol = database.get_index_type<asset_index>().indices().get<by_symbol>();
+   //const auto get_asset_id = [&assets_by_symbol](const string &symbol) {
+   //   auto asset_itr = assets_by_symbol.find(symbol);
+   //   FC_ASSERT(asset_itr != assets_by_symbol.end(), "Unable to find asset '${sym}'", ("sym", symbol));
+   //   return asset_itr->get_id();
+   //};
    //tracked_assets.push_back(get_asset_id("PBTC"));
    //tracked_assets.push_back(get_asset_id("PETH"));
    //tracked_assets.push_back(get_asset_id("PEOS"));
@@ -271,9 +271,23 @@ std::string sidechain_net_handler_peerplays::send_sidechain_transaction(const si
    return "";
 }
 
-int64_t sidechain_net_handler_peerplays::settle_sidechain_transaction(const sidechain_transaction_object &sto) {
-   int64_t settle_amount = 0;
-   return settle_amount;
+bool sidechain_net_handler_peerplays::settle_sidechain_transaction(const sidechain_transaction_object &sto, asset &settle_amount) {
+
+   if (sto.object_id.is<son_wallet_id_type>()) {
+      settle_amount = asset(0);
+   }
+
+   if (sto.object_id.is<son_wallet_deposit_id_type>()) {
+      //auto swdo = database.get<son_wallet_deposit_object>(sto.object_id);
+      //settle_amount = asset(swdo.sidechain_amount, swdo.sidechain_currency);
+   }
+
+   if (sto.object_id.is<son_wallet_withdraw_id_type>()) {
+      auto swwo = database.get<son_wallet_withdraw_object>(sto.object_id);
+      settle_amount = swwo.peerplays_asset;
+   }
+
+   return true;
 }
 
 }} // namespace graphene::peerplays_sidechain
