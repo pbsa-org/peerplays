@@ -35,12 +35,6 @@ public:
    hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
 
    std::string get_account(std::string account);
-   std::string info();
-   std::string lock();
-   std::string unlock(std::string password);
-   std::string update_account_auth_key(std::string account_name, std::string type, std::string public_key, std::string weight);
-   std::string update_account_auth_account(std::string account_name, std::string type, std::string auth_account, std::string weight);
-   std::string update_account_auth_threshold(std::string account_name, std::string type, std::string threshold);
 
    std::string get_account_memo_key(std::string account);
 };

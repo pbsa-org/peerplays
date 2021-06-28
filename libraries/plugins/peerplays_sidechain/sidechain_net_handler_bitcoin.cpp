@@ -910,7 +910,6 @@ void zmq_listener::handle_zmq() {
 sidechain_net_handler_bitcoin::sidechain_net_handler_bitcoin(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::bitcoin;
-   tracked_assets.push_back(database.get_global_properties().parameters.btc_asset());
 
    ip = options.at("bitcoin-node-ip").as<std::string>();
    zmq_port = options.at("bitcoin-node-zmq-port").as<uint32_t>();
@@ -990,7 +989,7 @@ sidechain_net_handler_bitcoin::~sidechain_net_handler_bitcoin() {
 
 bool sidechain_net_handler_bitcoin::process_proposal(const proposal_object &po) {
 
-   ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", po.id)("son_id", plugin.get_current_son_id()));
+   //ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", po.id)("son_id", plugin.get_current_son_id()));
 
    bool should_approve = false;
 
@@ -1379,7 +1378,7 @@ void sidechain_net_handler_bitcoin::process_sidechain_addresses() {
                                 plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                              retval = true;
                           } catch (fc::exception &e) {
-                             elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+                             elog("Sending transaction for sidechain address update operation failed with exception ${e}", ("e", e.what()));
                              retval = false;
                           }
                        }

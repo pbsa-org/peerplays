@@ -180,19 +180,10 @@ void sidechain_net_handler::sidechain_event_data_received(const sidechain_event_
                              ((sed.sidechain == sidechain_type::hive) && (sed.sidechain_currency.compare("HIVE") == 0)) ||
                              enable_peerplays_asset_deposits);
 
-   bool is_tracked_asset = false;
-   if (sed.sidechain == sidechain_type::peerplays) {
-      for (const auto &asset_id : tracked_assets) {
-         std::string asset_id_str = asset_id_to_string(asset_id);
-         if (sed.sidechain_currency == asset_id_str) {
-            is_tracked_asset = true;
-            break;
-         }
-      }
-   }
-
    bool withdraw_condition = (sed.peerplays_to == gpo.parameters.son_account()) && (sed.sidechain == sidechain_type::peerplays) &&
-                             is_tracked_asset;
+                             ((sed.sidechain_currency == asset_id_to_string(gpo.parameters.btc_asset())) ||
+                              (sed.sidechain_currency == asset_id_to_string(gpo.parameters.hbd_asset())) ||
+                              (sed.sidechain_currency == asset_id_to_string(gpo.parameters.hive_asset())));
 
    // Deposit request
    if (deposit_condition) {
@@ -600,18 +591,10 @@ void sidechain_net_handler::settle_sidechain_transactions() {
    });
 }
 
-bool sidechain_net_handler::is_tracked_asset(asset_id_type asset_id) {
-   bool is_tracked_asset = false;
-   for (const auto &tracked_asset_id : tracked_assets) {
-      if (asset_id == tracked_asset_id) {
-         is_tracked_asset = true;
-         break;
-      }
-   }
-   return is_tracked_asset;
-}
-
 void sidechain_net_handler::on_applied_block(const signed_block &b) {
+
+   const chain::global_property_object &gpo = plugin.database().get_global_properties();
+
    for (const auto &trx : b.transactions) {
       size_t operation_index = -1;
       for (auto op : trx.operations) {
@@ -619,11 +602,16 @@ void sidechain_net_handler::on_applied_block(const signed_block &b) {
          if (op.which() == operation::tag<transfer_operation>::value) {
             transfer_operation transfer_op = op.get<transfer_operation>();
 
-            if (transfer_op.to != plugin.database().get_global_properties().parameters.son_account()) {
+            if (transfer_op.to != gpo.parameters.son_account()) {
                continue;
             }
 
-            if (!is_tracked_asset(transfer_op.amount.asset_id)) {
+            bool is_tracked_asset =
+                  ((sidechain == sidechain_type::bitcoin) && (transfer_op.amount.asset_id == gpo.parameters.btc_asset())) ||
+                  ((sidechain == sidechain_type::hive) && (transfer_op.amount.asset_id == gpo.parameters.hbd_asset())) ||
+                  ((sidechain == sidechain_type::hive) && (transfer_op.amount.asset_id == gpo.parameters.hive_asset()));
+
+            if (!is_tracked_asset) {
                continue;
             }
 

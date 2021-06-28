@@ -34,12 +34,12 @@ hive_node_rpc_client::hive_node_rpc_client(std::string _ip, uint32_t _port, std:
 
 std::string hive_node_rpc_client::account_history_api_get_transaction(std::string transaction_id) {
    std::string params = "{ \"id\": \"" + transaction_id + "\" }";
-   return send_post_request("account_history_api.get_transaction", params, true);
+   return send_post_request("account_history_api.get_transaction", params, false);
 }
 
 std::string hive_node_rpc_client::block_api_get_block(uint32_t block_number) {
    std::string params = "{ \"block_num\": " + std::to_string(block_number) + " }";
-   return send_post_request("block_api.get_block", params, true);
+   return send_post_request("block_api.get_block", params, false);
 }
 
 std::string hive_node_rpc_client::condenser_api_get_config() {
@@ -57,7 +57,7 @@ std::string hive_node_rpc_client::database_api_get_version() {
 
 std::string hive_node_rpc_client::network_broadcast_api_broadcast_transaction(std::string htrx) {
    std::string params = "{ \"trx\": " + htrx + ", \"max_block_age\": -1 }";
-   return send_post_request("network_broadcast_api.broadcast_transaction", params, true);
+   return send_post_request("network_broadcast_api.broadcast_transaction", params, false);
 }
 
 std::string hive_node_rpc_client::get_chain_id() {
@@ -91,35 +91,7 @@ hive_wallet_rpc_client::hive_wallet_rpc_client(std::string _ip, uint32_t _port, 
 
 std::string hive_wallet_rpc_client::get_account(std::string account) {
    std::string params = "[\"" + account + "\"]";
-   return send_post_request("get_account", params, true);
-}
-
-std::string hive_wallet_rpc_client::lock() {
-   return send_post_request("lock", "", true);
-}
-
-std::string hive_wallet_rpc_client::info() {
-   return send_post_request("info", "", true);
-}
-
-std::string hive_wallet_rpc_client::unlock(std::string password) {
-   std::string params = "[\"" + password + "\"]";
-   return send_post_request("unlock", params, true);
-}
-
-std::string hive_wallet_rpc_client::update_account_auth_key(std::string account_name, std::string type, std::string public_key, std::string weight) {
-   std::string params = "[\"" + account_name + "\", \"" + type + "\", \"" + public_key + "\", " + weight + "]";
-   return send_post_request("update_account_auth_key", params, true);
-}
-
-std::string hive_wallet_rpc_client::update_account_auth_account(std::string account_name, std::string type, std::string auth_account, std::string weight) {
-   std::string params = "[\"" + account_name + "\", \"" + type + "\", \"" + auth_account + "\", " + weight + "]";
-   return send_post_request("update_account_auth_account", params, true);
-}
-
-std::string hive_wallet_rpc_client::update_account_auth_threshold(std::string account_name, std::string type, std::string threshold) {
-   std::string params = "[\"" + account_name + "\", \"" + type + "\", " + threshold + "]";
-   return send_post_request("update_account_auth_account", params, true);
+   return send_post_request("get_account", params, false);
 }
 
 std::string hive_wallet_rpc_client::get_account_memo_key(std::string account) {
@@ -130,8 +102,6 @@ std::string hive_wallet_rpc_client::get_account_memo_key(std::string account) {
 sidechain_net_handler_hive::sidechain_net_handler_hive(peerplays_sidechain_plugin &_plugin, const boost::program_options::variables_map &options) :
       sidechain_net_handler(_plugin, options) {
    sidechain = sidechain_type::hive;
-   tracked_assets.push_back(database.get_global_properties().parameters.hbd_asset());
-   tracked_assets.push_back(database.get_global_properties().parameters.hive_asset());
 
    node_ip = options.at("hive-node-ip").as<std::string>();
    node_rpc_port = options.at("hive-node-rpc-port").as<uint32_t>();
@@ -214,7 +184,7 @@ sidechain_net_handler_hive::~sidechain_net_handler_hive() {
 
 bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
 
-   ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", po.id)("son_id", plugin.get_current_son_id()));
+   //ilog("Proposal to process: ${po}, SON id ${son_id}", ("po", po.id)("son_id", plugin.get_current_son_id()));
 
    bool should_approve = false;
 
@@ -280,7 +250,6 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                      std::stringstream ss_trx(boost::algorithm::unhex(op_tx_str));
                      hive::signed_transaction op_trx;
                      fc::raw::unpack(ss_trx, op_trx, 1000);
-                     ilog("TRX: ${op_trx}", ("op_trx", op_trx));
 
                      fc::flat_map<std::string, uint16_t> account_auths;
                      uint32_t total_weight = 0;
@@ -306,7 +275,6 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                      htrx.set_expiration(op_trx.expiration);
 
                      htrx.operations.push_back(auo);
-                     ilog("TRX: ${htrx}", ("htrx", htrx));
 
                      std::stringstream ss;
                      fc::raw::pack(ss, htrx, 1000);
@@ -428,7 +396,6 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                   std::stringstream ss_trx(boost::algorithm::unhex(op_tx_str));
                   hive::signed_transaction op_trx;
                   fc::raw::unpack(ss_trx, op_trx, 1000);
-                  ilog("TRX: ${op_trx}", ("op_trx", op_trx));
 
                   uint64_t symbol = 0;
                   if (swwo->withdraw_currency == "HBD") {
@@ -451,7 +418,6 @@ bool sidechain_net_handler_hive::process_proposal(const proposal_object &po) {
                   htrx.set_expiration(op_trx.expiration);
 
                   htrx.operations.push_back(t_op);
-                  ilog("TRX: ${htrx}", ("htrx", htrx));
 
                   std::stringstream ss;
                   fc::raw::pack(ss, htrx, 1000);
@@ -552,7 +518,6 @@ void sidechain_net_handler_hive::process_primary_wallet() {
          htrx.set_expiration(head_block_time + fc::seconds(90));
 
          htrx.operations.push_back(auo);
-         ilog("TRX: ${htrx}", ("htrx", htrx));
 
          std::stringstream ss;
          fc::raw::pack(ss, htrx, 1000);
@@ -625,7 +590,7 @@ void sidechain_net_handler_hive::process_sidechain_addresses() {
                                 plugin.app().p2p_node()->broadcast(net::trx_message(trx));
                              retval = true;
                           } catch (fc::exception &e) {
-                             elog("Sending transaction for update deposit address operation failed with exception ${e}", ("e", e.what()));
+                             elog("Sending transaction for sidechain address update operation failed with exception ${e}", ("e", e.what()));
                              retval = false;
                           }
                        }
@@ -713,7 +678,6 @@ bool sidechain_net_handler_hive::process_withdrawal(const son_wallet_withdraw_ob
    htrx.set_expiration(head_block_time + fc::seconds(90));
 
    htrx.operations.push_back(t_op);
-   ilog("TRX: ${htrx}", ("htrx", htrx));
 
    std::stringstream ss;
    fc::raw::pack(ss, htrx, 1000);
@@ -750,7 +714,7 @@ bool sidechain_net_handler_hive::process_withdrawal(const son_wallet_withdraw_ob
          plugin.app().p2p_node()->broadcast(net::trx_message(trx));
       return true;
    } catch (fc::exception &e) {
-      elog("Sending proposal for deposit sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
+      elog("Sending proposal for withdraw sidechain transaction create operation failed with exception ${e}", ("e", e.what()));
       return false;
    }
 
@@ -763,15 +727,11 @@ std::string sidechain_net_handler_hive::process_sidechain_transaction(const side
    hive::signed_transaction htrx;
    fc::raw::unpack(ss_trx, htrx, 1000);
 
-   ilog("TRX: ${htrx}", ("htrx", htrx));
-
    std::string chain_id_str = node_rpc_client->get_chain_id();
    const hive::chain_id_type chain_id(chain_id_str);
 
    fc::optional<fc::ecc::private_key> privkey = graphene::utilities::wif_to_key(get_private_key(plugin.get_current_son_object().sidechain_public_keys.at(sidechain)));
    signature_type st = htrx.sign(*privkey, chain_id);
-
-   ilog("TRX: ${htrx}", ("htrx", htrx));
 
    std::stringstream ss_st;
    fc::raw::pack(ss_st, st, 1000);
@@ -794,10 +754,8 @@ std::string sidechain_net_handler_hive::send_sidechain_transaction(const sidecha
          htrx.signatures.push_back(st);
       }
    }
-   ilog("HTRX: ${htrx}", ("htrx", htrx));
 
    std::string params = fc::json::to_string(htrx);
-   ilog("HTRX: ${htrx}", ("htrx", params));
    node_rpc_client->network_broadcast_api_broadcast_transaction(params);
 
    return htrx.id().str();
