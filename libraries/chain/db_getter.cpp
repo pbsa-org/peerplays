@@ -318,13 +318,16 @@ bool database::is_son_active( son_id_type son_id )
 bool database::is_asset_creation_allowed(const string &symbol)
 {
    time_point_sec now = head_block_time();
+   std::unordered_set<std::string> post_son_hf_symbols = {"ETH", "USDT", "BNB", "ADA", "DOGE", "XRP", "USDC", "DOT", "UNI", "BUSD", "BCH", "LTC", "SOL", "LINK", "MATIC", "THETA",
+                                                          "WBTC", "XLM", "ICP", "DAI", "VET", "ETC", "TRX", "FIL", "XMR", "EGR", "EOS", "SHIB", "AAVE", "CRO", "ALGO", "AMP", "BTCB",
+                                                          "BSV", "KLAY", "CAKE", "FTT", "LEO", "XTZ", "TFUEL", "MIOTA", "LUNA", "NEO", "ATOM", "MKR", "FEI", "WBNB", "UST", "AVAX"};
    if (symbol == "BTC")
    {
       if (now < HARDFORK_SON_TIME)
          return false;
    }
 
-   if (symbol == "ETH" || symbol == "EOS" || symbol == "BNB" || symbol == "ADA" || symbol == "FIL" || symbol == "DOT")
+   if (post_son_hf_symbols.find(symbol) != post_son_hf_symbols.end())
    {
       if (now >= HARDFORK_SON_TIME)
          return false;
