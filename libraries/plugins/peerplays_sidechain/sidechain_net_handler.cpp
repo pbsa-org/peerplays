@@ -299,6 +299,7 @@ void sidechain_net_handler::process_proposals() {
 
          int32_t op_idx_0 = -1;
          chain::operation op_obj_idx_0;
+         object_id_type object_id;
 
          if (po->proposed_transaction.operations.size() >= 1) {
             op_idx_0 = po->proposed_transaction.operations[0].which();
@@ -317,11 +318,13 @@ void sidechain_net_handler::process_proposals() {
          switch (op_idx_0) {
          case chain::operation::tag<chain::son_wallet_update_operation>::value: {
             should_process = (op_obj_idx_0.get<son_wallet_update_operation>().sidechain == sidechain);
+            object_id = op_obj_idx_0.get<son_wallet_update_operation>().son_wallet_id;
             break;
          }
 
          case chain::operation::tag<chain::son_wallet_deposit_process_operation>::value: {
             son_wallet_deposit_id_type swdo_id = op_obj_idx_0.get<son_wallet_deposit_process_operation>().son_wallet_deposit_id;
+            object_id = swdo_id;
             const auto &idx = database.get_index_type<son_wallet_deposit_index>().indices().get<by_id>();
             const auto swdo = idx.find(swdo_id);
             if (swdo != idx.end()) {
@@ -332,6 +335,7 @@ void sidechain_net_handler::process_proposals() {
 
          case chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value: {
             son_wallet_withdraw_id_type swwo_id = op_obj_idx_0.get<son_wallet_withdraw_process_operation>().son_wallet_withdraw_id;
+            object_id = swwo_id;
             const auto &idx = database.get_index_type<son_wallet_withdraw_index>().indices().get<by_id>();
             const auto swwo = idx.find(swwo_id);
             if (swwo != idx.end()) {
@@ -347,6 +351,7 @@ void sidechain_net_handler::process_proposals() {
             const auto sto = idx.find(st_id);
             if (sto != idx.end()) {
                should_process = ((sto->sidechain == sidechain) && (sto->status == sidechain_transaction_status::valid) && signer_expected(*sto, signer));
+               object_id = sto->object_id;
             }
             break;
          }
@@ -357,6 +362,7 @@ void sidechain_net_handler::process_proposals() {
             const auto sto = idx.find(st_id);
             if (sto != idx.end()) {
                should_process = (sto->sidechain == sidechain);
+               object_id = sto->object_id;
             }
             break;
          }
@@ -368,10 +374,14 @@ void sidechain_net_handler::process_proposals() {
             elog("==================================================");
          }
 
-         if (should_process) {
+         if (should_process && (op_idx_0 == chain::operation::tag<chain::sidechain_transaction_sign_operation>::value || plugin.can_son_participate(op_idx_0, object_id))) {
             bool should_approve = process_proposal(*po);
             if (should_approve) {
-               approve_proposal(po->id, plugin.get_current_son_id());
+               if (approve_proposal(po->id, plugin.get_current_son_id())) {
+                  if (op_idx_0 != chain::operation::tag<chain::sidechain_transaction_sign_operation>::value) {
+                     plugin.log_son_proposal_retry(op_idx_0, object_id);
+                  }
+               }
             }
          }
       }
@@ -398,7 +408,7 @@ void sidechain_net_handler::process_deposits() {
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const son_wallet_deposit_object &swdo) {
-      if (swdo.id == object_id_type(0, 0, 0)) {
+      if (swdo.id == object_id_type(0, 0, 0) || !plugin.can_son_participate(chain::operation::tag<chain::son_wallet_deposit_process_operation>::value, swdo.id)) {
          return;
       }
       //Ignore the deposits which are not valid anymore, considered refunds.
@@ -416,6 +426,7 @@ void sidechain_net_handler::process_deposits() {
          wlog("Deposit not processed: ${swdo}", ("swdo", swdo));
          return;
       }
+      plugin.log_son_proposal_retry(chain::operation::tag<chain::son_wallet_deposit_process_operation>::value, swdo.id);
    });
 }
 
@@ -428,7 +439,7 @@ void sidechain_net_handler::process_withdrawals() {
    const auto &idx_range = idx.equal_range(std::make_tuple(sidechain, true, false));
 
    std::for_each(idx_range.first, idx_range.second, [&](const son_wallet_withdraw_object &swwo) {
-      if (swwo.id == object_id_type(0, 0, 0)) {
+      if (swwo.id == object_id_type(0, 0, 0) || !plugin.can_son_participate(chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value, swwo.id)) {
          return;
       }
 
@@ -440,6 +451,7 @@ void sidechain_net_handler::process_withdrawals() {
          wlog("Withdraw not processed: ${swwo}", ("swwo", swwo));
          return;
       }
+      plugin.log_son_proposal_retry(chain::operation::tag<chain::son_wallet_withdraw_process_operation>::value, swwo.id);
    });
 }
 
@@ -538,6 +550,10 @@ void sidechain_net_handler::settle_sidechain_transactions() {
          return;
       }
 
+      if (!plugin.can_son_participate(chain::operation::tag<chain::sidechain_transaction_settle_operation>::value, sto.object_id)) {
+         return;
+      }
+
       ilog("Sidechain transaction to settle: ${sto}", ("sto", sto.id));
 
       asset settle_amount;
@@ -585,6 +601,7 @@ void sidechain_net_handler::settle_sidechain_transactions() {
          database.push_transaction(trx, database::validation_steps::skip_block_size_check);
          if (plugin.app().p2p_node())
             plugin.app().p2p_node()->broadcast(net::trx_message(trx));
+         plugin.log_son_proposal_retry(chain::operation::tag<chain::sidechain_transaction_settle_operation>::value, sto.object_id);
       } catch (fc::exception &e) {
          elog("Sending proposal for sidechain transaction settle operation failed with exception ${e}", ("e", e.what()));
       }
