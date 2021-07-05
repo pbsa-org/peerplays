@@ -1925,10 +1925,7 @@ void database::perform_son_tasks()
             a.options.market_fee_percent = 500; // 5%
             a.options.issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK;
             a.options.flags = asset_issuer_permission_flags::charge_market_fee |
-                              //asset_issuer_permission_flags::white_list |
-                              asset_issuer_permission_flags::override_authority |
-                              asset_issuer_permission_flags::transfer_restricted |
-                              asset_issuer_permission_flags::disable_confidential;
+                              asset_issuer_permission_flags::override_authority;
             a.options.core_exchange_rate.base.amount = 100000;
             a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
             a.options.core_exchange_rate.quote.amount = 2500; // CoinMarketCap approx value
@@ -1962,10 +1959,7 @@ void database::perform_son_tasks()
             a.options.market_fee_percent = 500; // 5%
             a.options.issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK;
             a.options.flags = asset_issuer_permission_flags::charge_market_fee |
-                              //asset_issuer_permission_flags::white_list |
-                              asset_issuer_permission_flags::override_authority |
-                              asset_issuer_permission_flags::transfer_restricted |
-                              asset_issuer_permission_flags::disable_confidential;
+                              asset_issuer_permission_flags::override_authority;
             a.options.core_exchange_rate.base.amount = 100000;
             a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
             a.options.core_exchange_rate.quote.amount = 2500; // CoinMarketCap approx value
@@ -1999,10 +1993,7 @@ void database::perform_son_tasks()
             a.options.market_fee_percent = 500; // 5%
             a.options.issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK;
             a.options.flags = asset_issuer_permission_flags::charge_market_fee |
-                              //asset_issuer_permission_flags::white_list |
-                              asset_issuer_permission_flags::override_authority |
-                              asset_issuer_permission_flags::transfer_restricted |
-                              asset_issuer_permission_flags::disable_confidential;
+                              asset_issuer_permission_flags::override_authority;
             a.options.core_exchange_rate.base.amount = 100000;
             a.options.core_exchange_rate.base.asset_id = asset_id_type(0);
             a.options.core_exchange_rate.quote.amount = 2500; // CoinMarketCap approx value
