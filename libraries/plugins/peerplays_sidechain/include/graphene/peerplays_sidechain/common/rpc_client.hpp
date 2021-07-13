@@ -12,6 +12,7 @@ public:
    rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
 
 protected:
+   std::string retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx);
    std::string retrieve_value_from_reply(std::string reply_str, std::string value_path);
    std::string send_post_request(std::string method, std::string params, bool show_log);
 

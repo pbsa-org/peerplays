@@ -21,6 +21,35 @@ rpc_client::rpc_client(std::string _ip, uint32_t _port, std::string _user, std::
    authorization.val = "Basic " + fc::base64_encode(user + ":" + password);
 }
 
+std::string rpc_client::retrieve_array_value_from_reply(std::string reply_str, std::string array_path, uint32_t idx) {
+   std::stringstream ss(reply_str);
+   boost::property_tree::ptree json;
+   boost::property_tree::read_json(ss, json);
+   if (json.find("result") == json.not_found()) {
+      return "";
+   }
+   auto json_result = json.get_child("result");
+   if (json_result.find(array_path) == json_result.not_found()) {
+      return "";
+   }
+
+   boost::property_tree::ptree array_ptree = json_result;
+   if (!array_path.empty()) {
+      array_ptree = json_result.get_child(array_path);
+   }
+   uint32_t array_el_idx = -1;
+   for (const auto &array_el : array_ptree) {
+      array_el_idx = array_el_idx + 1;
+      if (array_el_idx == idx) {
+         std::stringstream ss_res;
+         boost::property_tree::json_parser::write_json(ss_res, array_el.second);
+         return ss_res.str();
+      }
+   }
+
+   return "";
+}
+
 std::string rpc_client::retrieve_value_from_reply(std::string reply_str, std::string value_path) {
    std::stringstream ss(reply_str);
    boost::property_tree::ptree json;

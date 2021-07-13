@@ -18,25 +18,19 @@ public:
 
    std::string account_history_api_get_transaction(std::string transaction_id);
    std::string block_api_get_block(uint32_t block_number);
+   std::string condenser_api_get_accounts(std::vector<std::string> accounts);
    std::string condenser_api_get_config();
    std::string database_api_get_dynamic_global_properties();
    std::string database_api_get_version();
    std::string network_broadcast_api_broadcast_transaction(std::string htrx);
 
+   std::string get_account(std::string account);
+   std::string get_account_memo_key(std::string account);
    std::string get_chain_id();
    std::string get_head_block_id();
    std::string get_head_block_time();
    std::string get_is_test_net();
    std::string get_last_irreversible_block_num();
-};
-
-class hive_wallet_rpc_client : public rpc_client {
-public:
-   hive_wallet_rpc_client(std::string _ip, uint32_t _port, std::string _user, std::string _password);
-
-   std::string get_account(std::string account);
-
-   std::string get_account_memo_key(std::string account);
 };
 
 class sidechain_net_handler_hive : public sidechain_net_handler {
@@ -59,12 +53,6 @@ private:
    std::string node_rpc_user;
    std::string node_rpc_password;
    hive_node_rpc_client *node_rpc_client;
-
-   std::string wallet_ip;
-   uint32_t wallet_rpc_port;
-   std::string wallet_rpc_user;
-   std::string wallet_rpc_password;
-   hive_wallet_rpc_client *wallet_rpc_client;
 
    hive::chain_id_type chain_id;
    hive::network network_type;
