@@ -97,7 +97,15 @@ object_id_type sidechain_transaction_sign_evaluator::do_apply(const sidechain_tr
    });
 
    db().modify(son_obj->statistics(db()), [&](son_statistics_object& sso) {
-      sso.txs_signed += 1;
+      if (sso.total_txs_signed.find(sto_obj->sidechain) == sso.total_txs_signed.end()) {
+         sso.total_txs_signed[sto_obj->sidechain] = 0;
+      }
+      sso.total_txs_signed[sto_obj->sidechain] += 1;
+
+      if (sso.txs_signed.find(sto_obj->sidechain) == sso.txs_signed.end()) {
+         sso.txs_signed[sto_obj->sidechain] = 0;
+      }
+      sso.txs_signed[sto_obj->sidechain] += 1;
    });
 
    return op.sidechain_transaction_id;

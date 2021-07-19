@@ -210,20 +210,29 @@ void database::pay_sons()
          if( now < HARDFORK_SON2_TIME ) {
             son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id]);
          }
-         weighted_total_txs_signed += (s.txs_signed * son_weight);
+         uint64_t txs_signed = 0;
+         for (const auto &ts : s.txs_signed) {
+            txs_signed = txs_signed + ts.second;
+         }
+         weighted_total_txs_signed += (txs_signed * son_weight);
       });
 
       // Now pay off each SON proportional to the number of transactions signed.
       get_index_type<son_stats_index>().inspect_all_objects([this, &weighted_total_txs_signed, &dpo, &son_budget, &get_weight, &get_weight_before_son2_hf, &now](const object& o) {
          const son_statistics_object& s = static_cast<const son_statistics_object&>(o);
-         if(s.txs_signed > 0){
+         uint64_t txs_signed = 0;
+         for (const auto &ts : s.txs_signed) {
+            txs_signed = txs_signed + ts.second;
+         }
+
+         if(txs_signed > 0){
             const auto& idx = get_index_type<son_index>().indices().get<by_id>();
             auto son_obj = idx.find( s.owner );
             auto son_weight = get_weight(_vote_tally_buffer[son_obj->vote_id]);
             if( now < HARDFORK_SON2_TIME ) {
                son_weight = get_weight_before_son2_hf(_vote_tally_buffer[son_obj->vote_id]);
             }
-            share_type pay = (s.txs_signed * son_weight * son_budget.value)/weighted_total_txs_signed;
+            share_type pay = (txs_signed * son_weight * son_budget.value)/weighted_total_txs_signed;
             modify( *son_obj, [&]( son_object& _son_obj)
             {
                _son_obj.pay_son_fee(pay, *this);
@@ -236,8 +245,9 @@ void database::pay_sons()
             //Reset the tx counter in each son statistics object
             modify( s, [&]( son_statistics_object& _s)
             {
-               _s.total_txs_signed += _s.txs_signed;
-               _s.txs_signed = 0;
+               for (const auto &ts : s.txs_signed) {
+                  _s.txs_signed.at(ts.first) = 0;
+               }
             });
          }
       });
@@ -593,7 +603,7 @@ void database::update_active_committee_members()
          update_committee_member_total_votes( cm );
       }
    }
-   
+
    // Update committee authorities
    if( !committee_members.empty() )
    {
@@ -1243,13 +1253,13 @@ double database::calculate_vesting_factor(const account_object& stake_account)
    //  variables needed
    const auto number_of_subperiods = vesting_period / vesting_subperiod;
    double vesting_factor;
-  
+
     // get in what sub period we are
    uint32_t current_subperiod = get_gpos_current_subperiod();
- 
+
    if(current_subperiod == 0 || current_subperiod > number_of_subperiods) return 0;
 
-   // On starting new vesting period, all votes become zero until someone votes, To avoid a situation of zero votes, 
+   // On starting new vesting period, all votes become zero until someone votes, To avoid a situation of zero votes,
    // changes were done to roll in GPOS rules, the vesting factor will be 1 for whoever votes in 6th sub-period of last vesting period
    // BLOCKBACK-174 fix
    if(current_subperiod == 1 && this->head_block_time() >= HARDFORK_GPOS_TIME + vesting_period)   //Applicable only from 2nd vesting period
@@ -2176,7 +2186,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
          }
       }
    } tally_helper(*this, gpo);
-   
+
    perform_account_maintenance( tally_helper );
    struct clear_canary {
       clear_canary(vector<uint64_t>& target): target(target){}
@@ -2222,7 +2232,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
          if( !p.pending_parameters->extensions.value.gpos_subperiod.valid() )
             p.pending_parameters->extensions.value.gpos_subperiod = p.parameters.extensions.value.gpos_subperiod;
          if( !p.pending_parameters->extensions.value.gpos_vesting_lockin_period.valid() )
-            p.pending_parameters->extensions.value.gpos_vesting_lockin_period = p.parameters.extensions.value.gpos_vesting_lockin_period;                              
+            p.pending_parameters->extensions.value.gpos_vesting_lockin_period = p.parameters.extensions.value.gpos_vesting_lockin_period;
          if( !p.pending_parameters->extensions.value.rbac_max_permissions_per_account.valid() )
             p.pending_parameters->extensions.value.rbac_max_permissions_per_account = p.parameters.extensions.value.rbac_max_permissions_per_account;
          if( !p.pending_parameters->extensions.value.rbac_max_account_authority_lifetime.valid() )
